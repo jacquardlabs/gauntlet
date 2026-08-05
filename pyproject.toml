@@ -11,6 +11,13 @@ dependencies = []
 # title matters: a non-conforming one produces no release rather than an error.
 version_variables = [".claude-plugin/plugin.json:version"]
 tag_format = "v{version}"
+# Both of these are non-default and both are load-bearing. Without
+# allow_zero_version, semantic-release normalises any 0.x to 1.0.0 on the first
+# release — which is exactly what happened here, publishing a v1.0.0 that
+# claimed a stable plugin surface while 10 of 21 lanes were still unmigrated.
+# major_on_zero then keeps a breaking change inside the 0.x line rather than
+# promoting it to 1.0.0 before the surface has earned that.
+allow_zero_version = true
 commit_message = "chore(release): v{version} [skip ci]"
 major_on_zero = false
 build_command = ""
