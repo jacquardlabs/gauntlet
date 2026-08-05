@@ -38,8 +38,10 @@ The roster. Columns are load-bearing:
 | Judge | Lane | Mounts | Standard | Backed by |
 |---|---|---|---|---|
 | `security-auditor` | security | `acceptance` | `security-checklist` | `agents/security-auditor.md` |
+| `infra-auditor` | infrastructure | `acceptance` | `infra-checklist` | `agents/infra-auditor.md` |
+| `operability-auditor` | operability | `acceptance` | `operability-checklist` | `agents/operability-auditor.md` |
 
-The rest of the fleet migrates from studious under issue #2. A judge is registered here
+The rest of the fleet migrates from studious under issue #2, in the cohorts recorded there. A judge is registered here
 in the same change that adds its file; a row without a file, a file without a row, or a
 standard with no `reference/<name>.md` all fail the check.
 
@@ -61,6 +63,8 @@ needs a registered judge.
 | Judge | A critical must cite |
 |---|---|
 | `security-auditor` | a named signature from `reference/security-checklist.md` (SSRF, Command injection, XSS, Path traversal, …) plus the traced path from untrusted input to that sink, at `file:line` |
+| `infra-auditor` | the resource or config property in the artifact, at `file:line`, and the failure it produces — data loss, public exposure, or outage |
+| `operability-auditor` | the failure this artifact makes undetectable or unrecoverable, and the missing alarm, log, or rollback path by name |
 
 ## What migration must strip
 
