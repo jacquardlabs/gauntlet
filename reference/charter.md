@@ -43,6 +43,9 @@ The roster. Columns are load-bearing:
 | `operability-auditor` | operability | `acceptance` | `operability-checklist` | `agents/operability-auditor.md` |
 | `dependency-auditor` | supply chain | `acceptance` | `dependency-checklist` | `agents/dependency-auditor.md` |
 | `accessibility-auditor` | accessibility | `acceptance` | `accessibility-checklist` | `agents/accessibility-auditor.md` |
+| `code-auditor` | code quality | `acceptance` | `idioms/` | `agents/code-auditor.md` |
+| `test-auditor` | test adequacy | `acceptance` | (inline) | `agents/test-auditor.md` |
+| `architecture-auditor` | structural fit | `acceptance` | (inline) | `agents/architecture-auditor.md` |
 
 The rest of the fleet migrates from studious under issue #2, in the cohorts recorded
 there. A judge is registered here in the same change that adds its file; a row without a
@@ -95,6 +98,9 @@ needs a registered judge.
 | `operability-auditor` | the failure this artifact makes undetectable or unrecoverable, and the missing alarm, log, or rollback path by name |
 | `dependency-auditor` | a named advisory (CVE or GHSA) reachable from the code, or the exact version delta the artifact introduces |
 | `accessibility-auditor` | the named guideline that fails (keyboard access, contrast ratio, focus indicator) and the core flow it fails on |
+| `code-auditor` | a behavior delta: the input, the code path at `file:line`, and the wrong output or crash it produces |
+| `test-auditor` | a named test or command whose result the artifact changes, or a load-bearing behavior with no test at all, named |
+| `architecture-auditor` | the contract that broke and the downstream consumer that relies on it, named by path |
 
 ## What migration must strip
 
