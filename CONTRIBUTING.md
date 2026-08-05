@@ -49,6 +49,10 @@ uv run --no-project --with vermin==1.8.0 vermin --no-tips -t=3.9- scripts/
   matrix covers.
 - **Ruff's rule set is pinned explicitly** in `pyproject.toml`, not extended from the
   defaults — a floating rule set turns a pinned linter into an unpinned one.
+- **The version line is 0.x, deliberately.** `allow_zero_version = true` is set because
+  semantic-release otherwise normalises the first release of any 0.x project to 1.0.0,
+  and `major_on_zero = false` keeps a breaking change inside 0.x. The surface leaves 0.x
+  when it has earned the promise — the full fleet migrated, not before.
 - **Never edit the version in `.claude-plugin/plugin.json` by hand.** CI bumps it on
   merge to `main` via semantic-release, tags the commit, publishes a GitHub release, and
   pings the marketplace to re-pin. The PR title is what drives the bump — a title that
