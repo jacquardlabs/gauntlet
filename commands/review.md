@@ -120,8 +120,12 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/report.py" --findings <tmp>/findings \
   --format pr-comments > <tmp>/review.json
 ```
 
-`report.py` splits the findings itself: those whose locus lands on a line the diff
-actually contains become `comments[]`, and the rest ride in `summary`, most severe first.
+`report.py` does the noise work itself, so you do not have to: findings naming the same
+`path:line` are merged into one that keeps the highest tier and names every lane that
+found it; `track` findings never post inline, since a tier meaning "revisit later"
+contradicts a channel demanding attention now; and only findings landing on a line the
+diff actually contains become `comments[]`, the rest riding in `summary`, most severe
+first.
 That split is not cosmetic — **the reviews API rejects the entire review if any one
 comment names a line outside the diff**, so an unfiltered payload loses every finding
 rather than one. Expect the un-anchorable set to hold your best findings: "you changed X

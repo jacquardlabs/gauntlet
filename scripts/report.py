@@ -105,17 +105,74 @@ def _artifact_id(artifact: dict) -> str:
     return artifact.get("path", "?")
 
 
+def merge_by_locus(findings: List[dict]) -> List[dict]:
+    """Collapse findings that name the same place into one.
+
+    Two lanes reaching the same `path:line` is strong evidence the defect is
+    real — and two comments on one line is how a reader learns to stop opening
+    them. Those are different audiences: convergence is signal to whoever ran
+    the review, noise to whoever reads the PR. So the evidence is kept as a
+    `judges` list on one finding rather than as repeated comments.
+
+    The survivor is the most severe, and among equals the best anchored — an
+    anchored critical says more than an unanchored one, and a `sourced` finding
+    more than an `inferred` one. Findings with no `path` are never merged: a
+    document locus is too coarse to prove two lanes mean the same thing.
+    """
+    TIER = {tier: i for i, tier in enumerate(schema.TIERS)}
+    BASIS = {"sourced": 0, "inferred": 1, "taste": 2}
+
+    grouped: Dict[tuple, List[dict]] = {}
+    singles: List[dict] = []
+    for f in findings:
+        path = f["locus"].get("path")
+        line = f["locus"].get("line")
+        if path is None or line is None:
+            singles.append(f)
+        else:
+            grouped.setdefault((path, line), []).append(f)
+
+    merged: List[dict] = []
+    for group in grouped.values():
+        if len(group) == 1:
+            merged.append(group[0])
+            continue
+        best = sorted(
+            group,
+            key=lambda f: (
+                TIER.get(f["tier"], len(TIER)),
+                0 if f.get("anchor") else 1,
+                BASIS.get(f["basis"], len(BASIS)),
+                -len(f.get("failure_scenario", "")),
+            ),
+        )[0]
+        winner = dict(best)
+        winner["judges"] = sorted({f["_judge"] for f in group})
+        # Keep every lane's recommendation: they often differ usefully, and the
+        # one the survivor carries is not automatically the most actionable.
+        others = [
+            f["recommendation"]
+            for f in group
+            if f is not best and f.get("recommendation")
+        ]
+        if others:
+            winner["also_recommended"] = others
+        merged.append(winner)
+
+    return merged + singles
+
+
 def flatten(documents: List[dict]) -> List[dict]:
     """Every finding, tagged with its judge, most severe first.
 
     Within a tier, order is by judge then by locus, so two runs over the same
     artifact read the same way — a report whose order churns cannot be diffed.
     """
-    findings = [
+    findings = merge_by_locus([
         {**finding, "_judge": doc["judge"]}
         for doc in documents
         for finding in doc["findings"]
-    ]
+    ])
     return sorted(
         findings,
         key=lambda f: (
@@ -131,6 +188,12 @@ def counts(findings: List[dict]) -> Dict[str, int]:
     """Per-tier tally, zero-filled — the renderers index every tier unconditionally."""
     tallied = Counter(f["tier"] for f in findings)
     return {tier: tallied[tier] for tier in schema.TIERS}
+
+
+def _attribution(finding: dict) -> str:
+    """Which lane(s) raised this — plural when they converged on one locus."""
+    judges = finding.get("judges") or [finding["_judge"]]
+    return " + ".join(f"`{j}`" for j in judges)
 
 
 def _grounds(finding: dict) -> str:
@@ -181,10 +244,10 @@ def render_markdown(
             continue
         lines += [f"## {TIER_LABEL[tier]}", ""]
         for f in in_tier:
-            grounds = _grounds(f)
             lines.append(
                 f"### {f['summary']}\n\n"
-                f"`{f['_judge']}` · {f['dimension']} · {_locus(f['locus'])} · {grounds}"
+                f"{_attribution(f)} · {f['dimension']} · {_locus(f['locus'])} "
+                f"· {_grounds(f)}"
             )
             for label, key in (
                 ("Anchor", "anchor"),
@@ -193,6 +256,8 @@ def render_markdown(
             ):
                 if f.get(key):
                     lines.append(f"\n**{label}.** {f[key]}")
+            for extra in f.get("also_recommended", []):
+                lines.append(f"\n**Also.** {extra}")
             if f.get("receipts"):
                 lines.append("\n**Receipts.** " + ", ".join(f"`{r}`" for r in f["receipts"]))
             lines.append("")
@@ -242,7 +307,7 @@ def diff_lines(base: str, head: str, root: Optional[str] = None) -> Dict[str, se
 def render_pr_comments(
     documents: List[dict], notes: List[str], failures: List[str]
 ) -> str:
-    """Anchorable findings as comments; everything else in the summary body.
+    """Actionable, anchorable findings as comments; everything else in the body.
 
     A finding anchors only when its locus names a path *and* a line the diff
     actually contains. Two ways to miss: a document locus with no path at all,
@@ -270,16 +335,24 @@ def render_pr_comments(
     unanchored = []
 
     for f in findings:
-        body = (
-            f"**{f['tier'].upper()} · {f['_judge']} · {f['dimension']}** — {f['summary']}"
-        )
+        judges = " + ".join(f.get("judges") or [f["_judge"]])
+        body = f"**{f['tier'].upper()} · {judges} · {f['dimension']}** — {f['summary']}"
         for label, key in (("Fails when", "failure_scenario"), ("Do", "recommendation")):
             if f.get(key):
                 body += f"\n\n**{label}.** {f[key]}"
         body += f"\n\n_Grounds: {_grounds(f)}_"
+        for extra in f.get("also_recommended", []):
+            body += f"\n\n**Also.** {extra}"
         locus = f["locus"]
         line = locus.get("line")
-        if line is not None and line in anchorable.get(locus.get("path", ""), set()):
+        # `track` means "revisit later"; an inline comment demands attention on
+        # that line now. Posting one is a tier contradicting its own channel, and
+        # a reader who opens three no-action comments stops opening them.
+        if (
+            f["tier"] != "track"
+            and line is not None
+            and line in anchorable.get(locus.get("path", ""), set())
+        ):
             comments.append({"path": locus["path"], "line": line, "body": body})
         else:
             unanchored.append(f)
