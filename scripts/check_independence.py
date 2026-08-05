@@ -104,6 +104,9 @@ def _slash_command(line: str) -> Optional[str]:
             return match.group("cmd")  # space, paren, bracket, start of a clause
     return None
 
+#: A Standard cell declaring that the judge's own prompt is the rubric.
+INLINE_STANDARD = "(inline)"
+
 #: `tools: Read, Grep, Bash` in YAML frontmatter.
 TOOLS_LINE = re.compile(r"^tools:\s*(?P<tools>.+)$", re.MULTILINE)
 
@@ -132,6 +135,60 @@ def _cell_tokens(cell: str) -> List[str]:
     return re.findall(r"`([^`]+)`", cell)
 
 
+def _standard_problems(judge: str, cell: str) -> List[str]:
+    """Validate one roster row's Standard cell.
+
+    Three legal forms, and the distinction between them is the ruling in the
+    charter's "Two kinds of standard" section:
+
+    - `` `name` `` — lookup data at `reference/name.md`. Sinks, defaults,
+      signatures: the specifics a judge consults but would not recall verbatim.
+    - `` `name/` `` — lookup data that varies by dimension, at `reference/name/`
+      with at least one entry. The code lane's per-language idioms are the case
+      this exists for.
+    - `(inline)` — the judge's own prompt is the rubric, so `standard.name`
+      echoes the judge name and `version` is the plugin's. Correct wherever the
+      rubric is judgment rather than data; extracting one of those to a file
+      splits a judge from its own identity and leaves both halves thinner.
+    """
+    problems: List[str] = []
+    inline = INLINE_STANDARD in cell
+    named = [t for t in _cell_tokens(cell) if t != INLINE_STANDARD]
+
+    if inline and named:
+        return [
+            f"charter: `{judge}` declares both {INLINE_STANDARD} and a rubric file "
+            f"({', '.join(named)}) — a lane judges against one standard, not two"
+        ]
+    if not inline and not named:
+        return [
+            f"charter: `{judge}` names no standard — the invocation's `standard.name` "
+            f"would have no source (contract §3). Use {INLINE_STANDARD} when the "
+            f"judge's own prompt is the rubric"
+        ]
+
+    for name in named:
+        if name.endswith("/"):
+            directory = REPO / "reference" / name.rstrip("/")
+            if not directory.is_dir():
+                problems.append(
+                    f"charter: `{judge}` judges against `{name}`, but "
+                    f"reference/{name} is not a directory"
+                )
+            elif not any(directory.glob("*.md")):
+                problems.append(
+                    f"charter: `{judge}` judges against `{name}`, but "
+                    f"reference/{name} holds no rubric files"
+                )
+        elif not (REPO / "reference" / f"{name}.md").is_file():
+            problems.append(
+                f"charter: `{judge}` judges against `{name}`, but "
+                f"reference/{name}.md does not exist — a standard nothing can read is "
+                f"a lane with no rubric"
+            )
+    return problems
+
+
 def charter_problems(text: str) -> List[str]:
     """Roster integrity: mounts valid, anchors paired, names unique."""
     judges, anchors = parse_charter(text)
@@ -157,19 +214,7 @@ def charter_problems(text: str) -> List[str]:
             for mount in mounts
             if mount not in schema.MOUNTS
         )
-        standards = _cell_tokens(j["standard"])
-        if not standards:
-            problems.append(
-                f"charter: `{j['judge']}` names no standard — the invocation's "
-                f"`standard.name` would have no source (contract §3)"
-            )
-        problems.extend(
-            f"charter: `{j['judge']}` judges against `{name}`, but "
-            f"reference/{name}.md does not exist — a standard nothing can read is a "
-            f"lane with no rubric"
-            for name in standards
-            if not (REPO / "reference" / f"{name}.md").is_file()
-        )
+        problems.extend(_standard_problems(j["judge"], j["standard"]))
 
     roster = {j["judge"] for j in judges}
     problems.extend(
