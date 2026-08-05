@@ -102,6 +102,49 @@ def test_documents_must_agree_about_the_artifact():
         _has(failures, "judged a different artifact")
 
 
+# ── merging across lanes ──────────────────────────────────────────────────────
+def test_two_lanes_on_one_locus_become_one_finding():
+    a = _doc("code-auditor", [_finding("critical", path="src/a.py", line=10)])
+    b = _doc("operability-auditor", [_finding("important", path="src/a.py", line=10)])
+    merged = report.flatten([a, b])
+    assert len(merged) == 1
+    assert merged[0]["tier"] == "critical", "the most severe tier survives"
+    assert merged[0]["judges"] == ["code-auditor", "operability-auditor"]
+
+
+def test_merge_keeps_the_other_lanes_recommendation():
+    a = _doc("code-auditor", [_finding("important", path="a.py", recommendation="do X")])
+    b = _doc("test-auditor", [_finding("important", path="a.py", recommendation="do Y")])
+    merged = report.flatten([a, b])[0]
+    assert merged["recommendation"] in ("do X", "do Y")
+    assert merged["also_recommended"], "the losing lane's advice is not discarded"
+
+
+def test_merge_prefers_the_anchored_finding_among_equals():
+    plain = _finding("important", path="a.py")
+    anchored = _finding("important", path="a.py")
+    anchored["anchor"] = "a checkable fact"
+    merged = report.flatten([_doc("x-auditor", [plain]), _doc("y-auditor", [anchored])])[0]
+    assert merged.get("anchor") == "a checkable fact"
+
+
+def test_different_lines_are_never_merged():
+    a = _doc("code-auditor", [_finding(path="a.py", line=10)])
+    b = _doc("test-auditor", [_finding(path="a.py", line=11)])
+    assert len(report.flatten([a, b])) == 2
+
+
+def test_document_loci_are_never_merged():
+    """A section name is too coarse to prove two lanes mean the same defect."""
+    def mk(judge):
+        return _doc(judge, [{
+            "dimension": "fit", "tier": "important", "summary": f"{judge} says so",
+            "locus": {"section": "Rollback"}, "basis": "inferred",
+        }])
+
+    assert len(report.flatten([mk("a-auditor"), mk("b-auditor")])) == 2
+
+
 # ── ordering ──────────────────────────────────────────────────────────────────
 def test_flatten_orders_by_tier_then_judge_then_locus():
     docs = [
@@ -130,7 +173,11 @@ def test_ordering_does_not_depend_on_input_order():
 
 
 def test_counts_covers_every_tier():
-    findings = report.flatten([_doc(findings=[_finding("critical"), _finding("track")])])
+    # Distinct loci: same-locus findings now merge, which is a different test.
+    findings = report.flatten([_doc(findings=[
+        _finding("critical", path="a.py", line=1),
+        _finding("track", path="b.py", line=2),
+    ])])
     assert report.counts(findings) == {"critical": 1, "important": 0, "track": 1}
 
 
@@ -227,6 +274,20 @@ def test_pr_comments_anchor_only_to_lines_the_diff_contains():
         assert len(payload["comments"]) == 1
         assert payload["comments"][0]["line"] == 10
         assert "src/a.py:17" in payload["summary"]
+
+
+def test_track_findings_never_post_inline():
+    """A tier contradicting its own channel: `track` means revisit later, an
+    inline comment demands attention on that line now."""
+    with tempfile.TemporaryDirectory() as tmp:
+        base, head = _repo_with_diff(tmp)
+        doc = _doc(findings=[
+            _finding("track", path="src/a.py", line=10),
+            _finding("important", path="src/a.py", line=10, judge_dim="other"),
+        ])
+        doc["artifact"] = {"kind": "changeset", "base": base, "head": head, "root": tmp}
+        payload = json.loads(report.render_pr_comments([doc], [], []))
+        assert all("TRACK" not in c["body"] for c in payload["comments"])
 
 
 def test_a_finding_about_an_unchanged_file_rides_in_the_summary():
