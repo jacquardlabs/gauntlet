@@ -142,3 +142,9 @@ trade.
 - `docs/findings-contract.md` §3 — requires that registered names and declared mounts
   exist; the mount enum itself lives in `scripts/schema.py` and is imported, never
   restated.
+- `scripts/dispatch.py` — reads this roster at runtime to select judges and resolve each
+  Standard cell into a citable `standard`. Its `PATH_SIGNALS` table is keyed by
+  registered judge name so it joins to the roster rather than to prose, and
+  `tests/test_dispatch.py` fails if a key is not a registered judge. A judge with no rule
+  there runs unconditionally — the safe default is to dispatch a lane and let it
+  self-skip, never to drop one because nobody wrote its rule.
