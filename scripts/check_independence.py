@@ -215,6 +215,32 @@ def scan(rel: str, text: str) -> List[str]:
     return problems
 
 
+def unregistered_agents(
+    judges: List[Dict[str, str]], agents_dir: Optional[Path] = None
+) -> List[str]:
+    """Agent files that ship but appear on no charter row.
+
+    The mirror of the missing-file check, and the one that actually matters at
+    runtime: a file in `agents/` is dispatchable the moment the plugin is
+    installed, whether or not anything governs it. Unregistered means no lane,
+    no declared mount, and no anchor — so its criticals could never be demoted
+    by the ingest rule that assumes an anchor requirement exists.
+    """
+    if agents_dir is None:
+        agents_dir = REPO / "agents"
+    if not agents_dir.is_dir():
+        return []
+    registered = {j["path"] for j in judges}
+    return [
+        f"{rel}: ships in agents/ but is registered on no charter row — an "
+        f"unregistered judge is dispatchable but ungoverned (no lane, no mount, "
+        f"no anchor)"
+        for path in sorted(agents_dir.glob("*.md"))
+        for rel in [f"agents/{path.name}"]
+        if rel not in registered
+    ]
+
+
 def surface_paths(judges: Optional[List[Dict[str, str]]] = None) -> List[Path]:
     """Every guarded file: exactly the charter's registered judges."""
     if judges is None:
@@ -230,6 +256,7 @@ def main() -> int:
     judges, _ = parse_charter(text)
 
     problems = charter_problems(text)
+    problems.extend(unregistered_agents(judges))
     for j in judges:
         path = REPO / j["path"]
         if not path.is_file():

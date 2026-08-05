@@ -28,17 +28,19 @@ Standing up (2026-08-04). Contract first, then the charter, then the fleet:
 | Piece | Where | State |
 |---|---|---|
 | Findings contract | `docs/findings-contract.md`, `scripts/schema.py` | v1 |
-| Charter — roster, mounts, anchors | `reference/charter.md` | rules set, roster empty |
+| Charter — roster, mounts, anchors | `reference/charter.md` | 1 judge registered |
 | Independence check | `scripts/check_independence.py` | enforced in CI |
-| The judges | [studious](https://github.com/jacquardlabs/studious) `agents/` | not yet migrated (#2) |
+| Plugin manifest | `.claude-plugin/plugin.json` | v0.1.0, unreleased |
+| The judges | `agents/` | security lane migrated; 20 to go (#2) |
 
 Local checks, all stdlib:
 
 ```bash
 for t in tests/test_*.py; do python3 "$t"; done
 python3 scripts/check_independence.py
+python3 scripts/validate_plugin.py
 uv run --no-project --with ruff==0.16.0 ruff check scripts tests
 ```
 
-This repo reclaims the name of an earlier, unrelated gauntlet project (remote deleted;
-sole local copy archived at `~/Projects/gauntlet-v1-archive`).
+This repo reclaims the name of an earlier, unrelated Jacquard Labs project whose remote
+was retired.

@@ -12,20 +12,10 @@ Matched to the sibling repos (studious, viva), with one deliberate difference:
 | Delete `main` | blocked | |
 | Pull request required | yes, 0 approvals | A solo repo still gets the PR surface — CI, diff, discussion — without a second person to wait for. |
 | Branches up to date before merge | yes | Stacked PRs rebase onto `main` as each lands. |
-| **Status checks required** | **pending — see below** | **The deliberate difference.** studious and viva have branch protection but do not require checks, so a red PR is mergeable there. Here the checks *are* the product's own discipline; a fleet whose independence check is advisory is a fleet with no independence check. |
+| **Status checks required** | **yes — all eight** | **The deliberate difference.** studious and viva have branch protection but do not require checks, so a red PR is mergeable there. Here the checks *are* the product's own discipline; a fleet whose independence check is advisory is a fleet with no independence check. |
 
-### Branch protection is not applied yet
-
-GitHub refuses branch protection on a **private** repo outside a paid plan, and
-`jacquardlabs` is a personal account: studious and viva have protection only because
-they are public. So this table describes the intended state, and the rows above the
-divider are applied while protection itself is not. Two ways to close it — make this
-repo public (free, matches the siblings, and is where #6 is headed anyway) or pay for
-Pro.
-
-Required contexts, once it can be applied — matching the CI job names exactly, because
-renaming a job without updating the protection leaves a context that never reports and
-wedges every PR:
+Required contexts, matching the CI job names exactly — renaming a job without updating
+the protection leaves a context that never reports, and wedges every PR:
 
 - `unit tests (Python 3.9)` … `unit tests (Python 3.14)` — one per matrix leg, six today
 - `judge independence`
@@ -46,6 +36,7 @@ The full CI suite, all stdlib except the linters:
 ```bash
 for t in tests/test_*.py; do python3 "$t"; done
 python3 scripts/check_independence.py
+python3 scripts/validate_plugin.py
 uv run --no-project --with ruff==0.16.0 ruff check scripts tests
 uv run --no-project --with vermin==1.8.0 vermin --no-tips -t=3.9- scripts/
 ```
