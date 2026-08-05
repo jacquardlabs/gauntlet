@@ -276,6 +276,51 @@ def test_pr_comments_anchor_only_to_lines_the_diff_contains():
         assert "src/a.py:17" in payload["summary"]
 
 
+def test_comment_leads_with_the_claim_then_the_fix():
+    f = dict(_finding("important", path="a.py"), recommendation="do the thing")
+    f["_judge"] = "code-auditor"
+    body = report._comment_body(f)
+    assert body.startswith("**a important thing**"), "the claim leads, not the metadata"
+    visible = body.split("<details>")[0]
+    assert "do the thing" in visible, "the fix is visible without clicking"
+
+
+def test_the_anchor_reaches_the_reader():
+    """Regression: the renderer used to drop `anchor` entirely, leaving a
+    merge-blocking verdict with its evidence invisible."""
+    f = dict(_finding("critical", path="a.py"), _judge="security-auditor")
+    body = report._comment_body(f)
+    assert "**Anchor.**" in body
+    assert f["anchor"] in body
+
+
+def test_long_evidence_is_collapsed_not_deleted():
+    f = dict(_finding("important", path="a.py"), _judge="x-auditor",
+             failure_scenario="a" * 400)
+    body = report._comment_body(f)
+    assert "<details>" in body
+    assert "a" * 400 in body, "collapsed, never dropped"
+    assert "a" * 400 not in body.split("<details>")[0]
+
+
+def test_grounds_and_lanes_ride_on_the_disclosure_line():
+    f = dict(_finding("important", path="a.py"), _judge="code-auditor",
+             judges=["code-auditor", "test-auditor"], level="low", basis="taste",
+             failure_scenario="something breaks")
+    body = report._comment_body(f)
+    caption = body.split("<summary>")[1].split("</summary>")[0]
+    assert "code-auditor + test-auditor" in caption
+    assert "taste/low" in caption and "important" in caption
+
+
+def test_a_finding_with_no_evidence_needs_no_disclosure():
+    f = {"dimension": "d", "tier": "track", "summary": "small thing",
+         "locus": {"path": "a.py", "line": 1}, "basis": "taste", "_judge": "x-auditor"}
+    body = report._comment_body(f)
+    assert "<details>" not in body
+    assert "_x-auditor · track" in body
+
+
 def test_track_findings_never_post_inline():
     """A tier contradicting its own channel: `track` means revisit later, an
     inline comment demands attention on that line now."""
