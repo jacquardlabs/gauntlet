@@ -23,10 +23,22 @@ Two consumers, by design:
 
 ## Status
 
-Standing up (2026-08-04). Contract first: `docs/findings-contract.md` versions the
-findings/receipts/invocation shape **before** any fleet migrates. The fleet itself —
-21 review/audit agents — lives in [studious](https://github.com/jacquardlabs/studious)
-and moves only after the contract reaches v1.
+Standing up (2026-08-04). Contract first, then the charter, then the fleet:
+
+| Piece | Where | State |
+|---|---|---|
+| Findings contract | `docs/findings-contract.md`, `scripts/schema.py` | v1 |
+| Charter — roster, mounts, anchors | `reference/charter.md` | rules set, roster empty |
+| Independence check | `scripts/check_independence.py` | enforced in CI |
+| The judges | [studious](https://github.com/jacquardlabs/studious) `agents/` | not yet migrated (#2) |
+
+Local checks, all stdlib:
+
+```bash
+for t in tests/test_*.py; do python3 "$t"; done
+python3 scripts/check_independence.py
+uv run --no-project --with ruff==0.16.0 ruff check scripts tests
+```
 
 This repo reclaims the name of an earlier, unrelated gauntlet project (remote deleted;
 sole local copy archived at `~/Projects/gauntlet-v1-archive`).
