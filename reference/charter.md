@@ -46,6 +46,9 @@ The roster. Columns are load-bearing:
 | `code-auditor` | code quality | `acceptance` | `idioms/` | `agents/code-auditor.md` |
 | `test-auditor` | test adequacy | `acceptance` | (inline) | `agents/test-auditor.md` |
 | `architecture-auditor` | structural fit | `acceptance` | (inline) | `agents/architecture-auditor.md` |
+| `doc-auditor` | documentation | `acceptance` | (inline) | `agents/doc-auditor.md` |
+| `frontend-reviewer` | frontend quality | `acceptance` | (inline) | `agents/frontend-reviewer.md` |
+| `ux-reviewer` | user experience | `acceptance` | (inline) | `agents/ux-reviewer.md` |
 
 The rest of the fleet migrates from studious under issue #2, in the cohorts recorded
 there. A judge is registered here in the same change that adds its file; a row without a
@@ -101,6 +104,9 @@ needs a registered judge.
 | `code-auditor` | a behavior delta: the input, the code path at `file:line`, and the wrong output or crash it produces |
 | `test-auditor` | a named test or command whose result the artifact changes, or a load-bearing behavior with no test at all, named |
 | `architecture-auditor` | the contract that broke and the downstream consumer that relies on it, named by path |
+| `doc-auditor` | a command or path the docs state, quoted, that does not exist or does not work as written |
+| `frontend-reviewer` | a reproducible broken flow: the steps, the expected result, the observed one |
+| `ux-reviewer` | a reproducible broken flow: the steps, the expected result, the observed one |
 
 ## What migration must strip
 
