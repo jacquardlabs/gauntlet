@@ -12,6 +12,7 @@ Self-running: `python3 tests/test_independence.py` prints OK.
 import json
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -264,6 +265,26 @@ def test_every_judge_output_template_matches_the_contract():
             assert offered == set(enum), (
                 f"{j['judge']} offers {field} values {offered}, contract has {set(enum)}"
             )
+
+
+def test_unregistered_agent_file_rejected():
+    judges, _ = check.parse_charter(_charter(ROW, ANCHOR))
+    with tempfile.TemporaryDirectory() as tmp:
+        agents = Path(tmp)
+        (agents / "security-auditor.md").write_text(CLEAN_JUDGE)
+        assert check.unregistered_agents(judges, agents) == []
+        (agents / "rogue-auditor.md").write_text(CLEAN_JUDGE)
+        _has(check.unregistered_agents(judges, agents), "registered on no charter row")
+
+
+def test_no_agents_directory_is_not_a_violation():
+    with tempfile.TemporaryDirectory() as tmp:
+        assert check.unregistered_agents([], Path(tmp) / "absent") == []
+
+
+def test_real_agents_directory_is_fully_registered():
+    judges, _ = check.parse_charter((REPO / "reference/charter.md").read_text())
+    assert check.unregistered_agents(judges) == []
 
 
 def test_surface_is_derived_from_the_roster():
