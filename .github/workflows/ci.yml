@@ -7,6 +7,7 @@ on:
 
 jobs:
   tests:
+    name: unit tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -27,6 +28,7 @@ jobs:
           done
 
   independence:
+    name: judge independence
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,9 +39,12 @@ jobs:
         run: python3 scripts/check_independence.py
 
   lint:
+    name: ruff + version floor
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - name: Ruff
         run: uv run --no-project --with ruff==0.16.0 ruff check scripts tests
+      - name: Runtime version floor for shipped scripts
+        run: uv run --no-project --with vermin==1.8.0 vermin --no-tips -t=3.9- scripts/
