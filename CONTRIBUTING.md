@@ -29,7 +29,6 @@ The full CI suite, all stdlib except the linters:
 ```bash
 for t in tests/test_*.py; do python3 "$t"; done
 python3 scripts/check_independence.py
-python3 scripts/validate_plugin.py
 uv run --no-project --with ruff==0.16.0 ruff check scripts tests
 uv run --no-project --with vermin==1.8.0 vermin --no-tips -t=3.9- scripts/
 ```
