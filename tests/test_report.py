@@ -169,25 +169,91 @@ def test_empty_findings_still_renders_coverage():
     assert "Checked both files." in out
 
 
+# ── diff anchoring ────────────────────────────────────────────────────────────
+def _repo_with_diff(tmp):
+    """A throwaway repo whose HEAD diff touches src/a.py line 10 only."""
+
+    def run(*args):
+        return subprocess.run(args, cwd=tmp, capture_output=True, check=True)
+
+    def sha():
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=tmp, capture_output=True, text=True
+        ).stdout.strip()
+
+    run("git", "init", "-q")
+    run("git", "config", "user.email", "t@t")
+    run("git", "config", "user.name", "t")
+    src = Path(tmp) / "src"
+    src.mkdir()
+    (src / "a.py").write_text("\n".join(f"line {i}" for i in range(1, 21)) + "\n")
+    (Path(tmp) / "untouched.md").write_text("stable\n" * 5)
+    run("git", "add", "-A")
+    run("git", "commit", "-qm", "base")
+    base = sha()
+
+    lines = (src / "a.py").read_text().splitlines()
+    lines[9] = "line 10 CHANGED"
+    (src / "a.py").write_text("\n".join(lines) + "\n")
+    run("git", "commit", "-aqm", "head")
+    return base, sha()
+
+
+def test_diff_lines_reports_only_changed_lines():
+    with tempfile.TemporaryDirectory() as tmp:
+        base, head = _repo_with_diff(tmp)
+        valid = report.diff_lines(base, head, tmp)
+        assert valid["src/a.py"] == {10}
+        assert "untouched.md" not in valid
+
+
+def test_diff_lines_is_empty_when_git_cannot_run():
+    """Empty means anchor nothing, never anchor everything — a bad guess here
+    422s the entire review, losing every finding rather than one."""
+    with tempfile.TemporaryDirectory() as tmp:
+        assert report.diff_lines("nope", "alsonope", tmp) == {}
+
+
 # ── pr comments ───────────────────────────────────────────────────────────────
-def test_pr_comments_anchor_to_path_and_line():
-    payload = json.loads(report.render_pr_comments(
-        [_doc(findings=[_finding("critical")])], [], []))
-    assert len(payload["comments"]) == 1
-    comment = payload["comments"][0]
-    assert comment["path"] == "src/a.py" and comment["line"] == 10
-    assert "CRITICAL" in comment["body"] and "security-auditor" in comment["body"]
+def test_pr_comments_anchor_only_to_lines_the_diff_contains():
+    with tempfile.TemporaryDirectory() as tmp:
+        base, head = _repo_with_diff(tmp)
+        artifact = {"kind": "changeset", "base": base, "head": head, "root": tmp}
+        on_diff = _finding("critical", path="src/a.py", line=10)
+        off_diff = _finding("critical", path="src/a.py", line=17)
+        doc = _doc(findings=[on_diff, off_diff])
+        doc["artifact"] = artifact
+        payload = json.loads(report.render_pr_comments([doc], [], []))
+        assert len(payload["comments"]) == 1
+        assert payload["comments"][0]["line"] == 10
+        assert "src/a.py:17" in payload["summary"]
+
+
+def test_a_finding_about_an_unchanged_file_rides_in_the_summary():
+    """The case that matters: 'you changed X and never updated Y' has no diff
+    line, and is exactly where the highest-tier findings live."""
+    with tempfile.TemporaryDirectory() as tmp:
+        base, head = _repo_with_diff(tmp)
+        doc = _doc(findings=[_finding("critical", path="untouched.md", line=3)])
+        doc["artifact"] = {"kind": "changeset", "base": base, "head": head, "root": tmp}
+        payload = json.loads(report.render_pr_comments([doc], [], []))
+        assert payload["comments"] == []
+        assert "no diff line to anchor to" in payload["summary"]
+        assert "CRITICAL" in payload["summary"]
+        assert "untouched.md:3" in payload["summary"]
 
 
 def test_unanchored_findings_ride_in_the_summary_rather_than_vanishing():
     doc = _doc(findings=[{
         "dimension": "fit", "tier": "important", "summary": "brief omits rollback",
         "locus": {"section": "Rollback"}, "basis": "inferred",
+        "recommendation": "name the rollback path",
     }])
     payload = json.loads(report.render_pr_comments([doc], [], []))
     assert payload["comments"] == []
-    assert "Not anchored to a line" in payload["summary"]
+    assert "no diff line to anchor to" in payload["summary"]
     assert "brief omits rollback" in payload["summary"]
+    assert "name the rollback path" in payload["summary"]
 
 
 def test_pr_summary_carries_failures_notes_and_coverage():
