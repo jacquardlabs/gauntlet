@@ -33,6 +33,7 @@ The roster. Columns are load-bearing:
   what was produced), or both. A consumer never requests an undeclared mount. The enum
   is the contract's, imported from `scripts/schema.py` — not restated here.
 - **Standard** — what it judges against, matching `standard.name` in the invocation.
+  Either a rubric in `reference/` or the literal `(inline)`; see "Two kinds of standard".
 - **Backed by** — the agent file.
 
 | Judge | Lane | Mounts | Standard | Backed by |
@@ -45,8 +46,8 @@ The roster. Columns are load-bearing:
 
 The rest of the fleet migrates from studious under issue #2, in the cohorts recorded
 there. A judge is registered here in the same change that adds its file; a row without a
-file, a file without a row, or a standard with no `reference/<name>.md` all fail the
-check.
+file, a file without a row, or a standard that resolves to nothing all fail the check —
+see "Two kinds of standard" for what a Standard cell may resolve to.
 
 **Why `security-auditor` declares only `acceptance`.** Mounts are claims about where a
 judge's standard applies, not about ambition. The security checklist grades traced
@@ -54,6 +55,30 @@ source-to-sink paths in real code — at intake there is no code to trace, so an
 intake-mounted run would produce inferred findings dressed as sourced ones. A lane earns
 `intake` by having a standard that reads a proposal; the product lane will, this one
 does not.
+
+## Two kinds of standard
+
+A judge's standard is one of two things, and conflating them is what made this rule
+briefly wrong (#14).
+
+**Lookup data** is the specifics a capable model consults but would not recall verbatim:
+injection sinks by language, per-tool defaults, license families, timeout defaults per
+library, contrast ratios. It belongs in a file, because it is long, it dates, and a
+consuming project may legitimately want a different one. Registered as `` `name` ``
+(→ `reference/name.md`) or `` `name/` `` (→ `reference/name/`, at least one entry, for
+lookup data that varies by dimension — the code lane's per-language idioms).
+
+**A judgment rubric** is the lane's own reasoning: what counts as a structural fault,
+what makes a test worth having. It cannot be extracted without splitting a judge from
+its own identity and leaving both halves thinner — the file becomes prose nobody
+consults, and the judge becomes a pointer to it. Registered as `(inline)`: the agent
+file is the rubric, `standard.name` echoes the judge name, and `version` is the
+plugin's, so a finding still cites something a reader can retrieve at a version.
+
+The test is not "does this lane have a checklist today." It is **would a consuming
+project ever swap this for its own?** Swap in a different security checklist, yes.
+Swap in a different definition of structural fault while keeping the architecture
+judge, no — that is a different judge.
 
 ## Anchors — what a critical must cite
 

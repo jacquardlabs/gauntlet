@@ -133,6 +133,61 @@ def test_standard_without_a_rubric_file_rejected():
     )
 
 
+# ── the two kinds of standard (#14) ───────────────────────────────────────────
+def test_inline_standard_needs_no_file():
+    row = ROW.replace("`security-checklist`", "(inline)")
+    assert check.charter_problems(_charter(row, ANCHOR)) == []
+
+
+def test_inline_plus_a_file_rejected():
+    row = ROW.replace("`security-checklist`", "(inline), `security-checklist`")
+    _has(check.charter_problems(_charter(row, ANCHOR)), "not two")
+
+
+def test_directory_standard_accepted_when_populated():
+    row = ROW.replace("`security-checklist`", "`idioms/`")
+    with tempfile.TemporaryDirectory() as tmp:
+        idioms = Path(tmp) / "reference" / "idioms"
+        idioms.mkdir(parents=True)
+        (idioms / "python.md").write_text("# idioms")
+        real, check.REPO = check.REPO, Path(tmp)
+        try:
+            assert check.charter_problems(_charter(row, ANCHOR)) == []
+        finally:
+            check.REPO = real
+
+
+def test_two_rubric_files_rejected():
+    row = ROW.replace("`security-checklist`", "`security-checklist`, `idioms/`")
+    _has(check.charter_problems(_charter(row, ANCHOR)), "not two")
+
+
+def test_standard_cannot_escape_reference():
+    for escape in ("../../etc/passwd", "/etc/passwd"):
+        row = ROW.replace("`security-checklist`", f"`{escape}`")
+        _has(check.charter_problems(_charter(row, ANCHOR)), "escapes reference/")
+
+
+def test_inline_is_not_matched_inside_a_parenthetical():
+    # The token parse must not fire on prose that merely mentions the word.
+    row = ROW.replace(
+        "`security-checklist`", "`security-checklist` (inlined rules apply)"
+    )
+    assert check.charter_problems(_charter(row, ANCHOR)) == []
+
+
+def test_directory_standard_rejected_when_missing_or_empty():
+    row = ROW.replace("`security-checklist`", "`idioms/`")
+    with tempfile.TemporaryDirectory() as tmp:
+        real, check.REPO = check.REPO, Path(tmp)
+        try:
+            _has(check.charter_problems(_charter(row, ANCHOR)), "is not a directory")
+            (Path(tmp) / "reference" / "idioms").mkdir(parents=True)
+            _has(check.charter_problems(_charter(row, ANCHOR)), "holds no rubric files")
+        finally:
+            check.REPO = real
+
+
 def test_missing_anchor_row_rejected():
     _has(check.charter_problems(_charter(ROW)), "has no anchor row")
 
