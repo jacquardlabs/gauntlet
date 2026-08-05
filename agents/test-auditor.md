@@ -109,7 +109,7 @@ prose around it, no code fence. It is the findings document from
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "the behavior that could break with nothing to catch it",
-      "recommendation": "what to test and where the test belongs",
+      "recommendation": "the action, imperative, ≤25 words — what to test and where the test belongs",
       "receipts": ["sha256:… — cite the run that proves the claim, when one exists"]
     }
   ],

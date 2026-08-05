@@ -315,6 +315,12 @@ def test_every_judge_output_template_matches_the_contract():
         assert set(doc["findings"][0]) <= finding_fields, (
             f"{j['judge']} template has a finding field the contract does not define"
         )
+        rec = doc["findings"][0].get("recommendation", "")
+        assert "≤25 words" in rec, (
+            f"{j['judge']}'s template must state the recommendation cap — a field "
+            f"with no stated cap drifts (measured: summary caps at 15 and lands at "
+            f"11; recommendation capped at nothing landed at 42)"
+        )
         for enum, field in ((schema.TIERS, "tier"), (schema.BASES, "basis")):
             offered = {v.strip() for v in doc["findings"][0][field].split("|")}
             assert offered == set(enum), (

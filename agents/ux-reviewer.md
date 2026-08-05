@@ -122,7 +122,7 @@ prose around it, no code fence. It is the findings document from
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "what the user sees or cannot do",
-      "recommendation": "the concrete value or pattern to use instead",
+      "recommendation": "the action, imperative, ≤25 words — the value or pattern to use instead",
       "receipts": ["sha256:… — only if the invocation carried receipts_path"]
     }
   ],

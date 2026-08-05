@@ -121,7 +121,7 @@ prose around it, no code fence. It is the findings document from
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "concrete interaction, then the wrong render, wrong data, or dead end",
-      "recommendation": "concrete direction",
+      "recommendation": "the action, imperative, ≤25 words — not why it matters",
       "receipts": ["sha256:… — only if the invocation carried receipts_path"]
     }
   ],
