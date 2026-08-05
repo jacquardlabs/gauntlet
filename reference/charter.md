@@ -148,6 +148,8 @@ trade.
 - `docs/findings-contract.md` §3 — requires that registered names and declared mounts
   exist; the mount enum itself lives in `scripts/schema.py` and is imported, never
   restated.
+- `README.md` — lists the lanes for a reader, which duplicates roster data;
+  `tests/test_independence.py` fails if the two disagree in either direction.
 - `scripts/dispatch.py` — reads this roster at runtime to select judges and resolve each
   Standard cell into a citable `standard`. Its `PATH_SIGNALS` table is keyed by
   registered judge name so it joins to the roster rather than to prose, and

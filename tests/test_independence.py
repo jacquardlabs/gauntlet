@@ -342,6 +342,18 @@ def test_real_agents_directory_is_fully_registered():
     assert check.unregistered_agents(judges) == []
 
 
+def test_readme_lane_table_matches_the_roster():
+    """The README lists the lanes for a reader, which duplicates roster data —
+    the drift this whole file exists to prevent, one document over."""
+    judges, _ = check.parse_charter((REPO / "reference/charter.md").read_text())
+    registered = {j["judge"] for j in judges}
+    named = set(
+        re.findall(r"`([a-z][a-z-]*(?:auditor|reviewer))`", (REPO / "README.md").read_text())
+    )
+    assert registered - named == set(), f"README omits {registered - named}"
+    assert named - registered == set(), f"README names unregistered {named - registered}"
+
+
 def test_surface_is_derived_from_the_roster():
     judges, _ = check.parse_charter(_charter(ROW, ANCHOR))
     paths = check.surface_paths(judges)
