@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 """Unit tests for scripts/check_independence.py.
 
-The real roster is empty until the fleet migrates (#2), so `main()` passes
-vacuously. These fixtures are what prove the check has teeth — including
-against the actual contamination the studious fleet carries today: a `Write`
-tool in the periodic reviewers, and ~20 `/review` / `/retro` / `/setup`
-mentions.
+Two halves: fixtures that prove each rule has teeth — including against the
+actual contamination the studious fleet carries today, a `Write` tool in the
+periodic reviewers and ~30 door references — and a pass over the real roster,
+so a migrated judge is held to the same rules in the same suite that defines
+them.
 
 Self-running: `python3 tests/test_independence.py` prints OK.
 """
+import json
+import re
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
-import check_independence as check
-import schema
+REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO / "scripts"))
+import check_independence as check  # noqa: E402 — sys.path must be set first
+import schema  # noqa: E402
 
 CLEAN_JUDGE = """---
 name: security-auditor
@@ -60,12 +63,23 @@ def test_empty_roster_parses_clean():
     assert check.charter_problems(_charter()) == []
 
 
-def test_real_charter_parses_and_passes():
-    text = (Path(__file__).resolve().parent.parent / "reference/charter.md").read_text()
-    judges, anchors = check.parse_charter(text)
-    assert judges == [], "roster is empty until #2 migrates the fleet"
-    assert anchors == {}
+def test_real_charter_is_internally_consistent():
+    text = (REPO / "reference/charter.md").read_text()
     assert check.charter_problems(text) == []
+
+
+def test_every_registered_judge_exists_and_is_clean():
+    """The real roster, held to the same rules as the fixtures.
+
+    `main()` covers this in CI, but only as a pass/fail line. Asserting it here
+    means a judge that acquires a Write tool or a door reference fails in the
+    same suite that defines what those rules mean.
+    """
+    judges, _ = check.parse_charter((REPO / "reference/charter.md").read_text())
+    for j in judges:
+        path = REPO / j["path"]
+        assert path.is_file(), f"{j['judge']} registered as {j['path']}, which is missing"
+        assert check.scan(j["path"], path.read_text()) == []
 
 
 def test_roster_row_parses_every_column():
@@ -108,6 +122,14 @@ def test_missing_mount_rejected():
 def test_missing_standard_rejected():
     row = ROW.replace("`security-checklist`", "the usual")
     _has(check.charter_problems(_charter(row, ANCHOR)), "names no standard")
+
+
+def test_standard_without_a_rubric_file_rejected():
+    row = ROW.replace("`security-checklist`", "`vibes`")
+    _has(
+        check.charter_problems(_charter(row, ANCHOR)),
+        "reference/vibes.md does not exist",
+    )
 
 
 def test_missing_anchor_row_rejected():
@@ -195,6 +217,53 @@ def test_problems_carry_line_numbers():
     text = CLEAN_JUDGE + "\nRead PLAN.md.\n"
     problem = check.scan("agents/x.md", text)[0]
     assert problem.startswith("agents/x.md:"), problem
+
+
+def test_every_judge_output_template_matches_the_contract():
+    """A judge's JSON template is its half of the contract; drift here is drift
+    the validators only catch at runtime, on a real dispatch, in a consumer.
+
+    The template's placeholders are all strings, so it parses as JSON and its
+    key set can be compared directly against what §4 requires.
+    """
+    required_top = {
+        "contract_version",
+        "judge",
+        "mount",
+        "artifact",
+        "standard",
+        "findings",
+        "coverage",
+    }
+    finding_fields = {
+        "dimension",
+        "tier",
+        "summary",
+        "locus",
+        "anchor",
+        "basis",
+        "level",
+        "failure_scenario",
+        "recommendation",
+        "receipts",
+    }
+    judges, _ = check.parse_charter((REPO / "reference/charter.md").read_text())
+    for j in judges:
+        text = (REPO / j["path"]).read_text()
+        blocks = re.findall(r"```json\n(.*?)```", text, re.DOTALL)
+        assert blocks, f"{j['judge']} documents no JSON output template"
+        doc = json.loads(blocks[-1])
+        assert set(doc) == required_top, f"{j['judge']} template keys: {set(doc)}"
+        assert doc["contract_version"] == schema.CONTRACT_VERSION
+        assert doc["judge"] == j["judge"]
+        assert set(doc["findings"][0]) <= finding_fields, (
+            f"{j['judge']} template has a finding field the contract does not define"
+        )
+        for enum, field in ((schema.TIERS, "tier"), (schema.BASES, "basis")):
+            offered = {v.strip() for v in doc["findings"][0][field].split("|")}
+            assert offered == set(enum), (
+                f"{j['judge']} offers {field} values {offered}, contract has {set(enum)}"
+            )
 
 
 def test_surface_is_derived_from_the_roster():

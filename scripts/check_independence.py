@@ -157,11 +157,19 @@ def charter_problems(text: str) -> List[str]:
             for mount in mounts
             if mount not in schema.MOUNTS
         )
-        if not _cell_tokens(j["standard"]):
+        standards = _cell_tokens(j["standard"])
+        if not standards:
             problems.append(
                 f"charter: `{j['judge']}` names no standard — the invocation's "
                 f"`standard.name` would have no source (contract §3)"
             )
+        problems.extend(
+            f"charter: `{j['judge']}` judges against `{name}`, but "
+            f"reference/{name}.md does not exist — a standard nothing can read is a "
+            f"lane with no rubric"
+            for name in standards
+            if not (REPO / "reference" / f"{name}.md").is_file()
+        )
 
     roster = {j["judge"] for j in judges}
     problems.extend(
@@ -245,8 +253,9 @@ def main() -> int:
             "tests/test_independence.py is what proves the check has teeth."
         )
         return 0
+    plural = "judge" if len(judges) == 1 else "judges"
     print(
-        f"Independence check passed: {len(judges)} judges, derived from "
+        f"Independence check passed: {len(judges)} {plural}, derived from "
         f"reference/charter.md — none produces, routes, or requires a producer artifact."
     )
     return 0
