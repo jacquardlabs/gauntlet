@@ -49,6 +49,11 @@ uv run --no-project --with vermin==1.8.0 vermin --no-tips -t=3.9- scripts/
   matrix covers.
 - **Ruff's rule set is pinned explicitly** in `pyproject.toml`, not extended from the
   defaults — a floating rule set turns a pinned linter into an unpinned one.
+- **Never edit the version in `.claude-plugin/plugin.json` by hand.** CI bumps it on
+  merge to `main` via semantic-release, tags the commit, publishes a GitHub release, and
+  pings the marketplace to re-pin. The PR title is what drives the bump — a title that
+  is not a Conventional Commit produces no release rather than an error, which is the
+  quiet failure worth knowing about.
 - **Register a judge in `reference/charter.md` first**, then add its file. The check
   derives its surface from the charter, so an unregistered agent file fails and a
   registered-but-missing file fails.
