@@ -28,10 +28,10 @@ Standing up (2026-08-04). Contract first, then the charter, then the fleet:
 | Piece | Where | State |
 |---|---|---|
 | Findings contract | `docs/findings-contract.md`, `scripts/schema.py` | v1 |
-| Charter — roster, mounts, anchors | `reference/charter.md` | 3 judges registered |
+| Charter — roster, mounts, anchors | `reference/charter.md` | 5 judges registered |
 | Independence check | `scripts/check_independence.py` | enforced in CI |
 | Plugin manifest | `.claude-plugin/plugin.json` | v0.1.0, unreleased |
-| The judges | `agents/` | security, infrastructure, operability; 18 to go (#2) |
+| The judges | `agents/` | cohort A complete — 5 lanes; 16 to go (#2) |
 
 Local checks, all stdlib:
 
