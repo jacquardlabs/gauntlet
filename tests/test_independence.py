@@ -157,6 +157,25 @@ def test_directory_standard_accepted_when_populated():
             check.REPO = real
 
 
+def test_two_rubric_files_rejected():
+    row = ROW.replace("`security-checklist`", "`security-checklist`, `idioms/`")
+    _has(check.charter_problems(_charter(row, ANCHOR)), "not two")
+
+
+def test_standard_cannot_escape_reference():
+    for escape in ("../../etc/passwd", "/etc/passwd"):
+        row = ROW.replace("`security-checklist`", f"`{escape}`")
+        _has(check.charter_problems(_charter(row, ANCHOR)), "escapes reference/")
+
+
+def test_inline_is_not_matched_inside_a_parenthetical():
+    # The token parse must not fire on prose that merely mentions the word.
+    row = ROW.replace(
+        "`security-checklist`", "`security-checklist` (inlined rules apply)"
+    )
+    assert check.charter_problems(_charter(row, ANCHOR)) == []
+
+
 def test_directory_standard_rejected_when_missing_or_empty():
     row = ROW.replace("`security-checklist`", "`idioms/`")
     with tempfile.TemporaryDirectory() as tmp:

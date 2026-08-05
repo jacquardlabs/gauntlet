@@ -152,8 +152,13 @@ def _standard_problems(judge: str, cell: str) -> List[str]:
       splits a judge from its own identity and leaves both halves thinner.
     """
     problems: List[str] = []
-    inline = INLINE_STANDARD in cell
-    named = [t for t in _cell_tokens(cell) if t != INLINE_STANDARD]
+    tokens = _cell_tokens(cell)
+    # `(inline)` is legal bare or backticked, and both go through the same token
+    # parse — a raw substring test would also match a Standard cell that merely
+    # mentioned the word in a parenthetical.
+    bare = cell.replace("`", " ").replace(",", " ").split()
+    inline = INLINE_STANDARD in tokens or INLINE_STANDARD in bare
+    named = [t for t in tokens if t != INLINE_STANDARD]
 
     if inline and named:
         return [
@@ -166,9 +171,22 @@ def _standard_problems(judge: str, cell: str) -> List[str]:
             f"would have no source (contract §3). Use {INLINE_STANDARD} when the "
             f"judge's own prompt is the rubric"
         ]
+    if len(named) > 1:
+        # The invocation carries one `standard.name`, so a second rubric leaves the
+        # consumer nothing defined to send.
+        return [
+            f"charter: `{judge}` names {len(named)} rubrics "
+            f"({', '.join(named)}) — a lane judges against one standard, not two"
+        ]
 
     for name in named:
-        if name.endswith("/"):
+        # A charter row is repo data, but the token reaches the filesystem: keep it
+        # inside reference/ rather than trusting it to be well-behaved.
+        if name.startswith("/") or ".." in Path(name).parts:
+            problems.append(
+                f"charter: `{judge}` judges against `{name}`, which escapes reference/"
+            )
+        elif name.endswith("/"):
             directory = REPO / "reference" / name.rstrip("/")
             if not directory.is_dir():
                 problems.append(

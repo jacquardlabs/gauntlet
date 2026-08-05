@@ -46,8 +46,8 @@ The roster. Columns are load-bearing:
 
 The rest of the fleet migrates from studious under issue #2, in the cohorts recorded
 there. A judge is registered here in the same change that adds its file; a row without a
-file, a file without a row, or a standard with no `reference/<name>.md` all fail the
-check.
+file, a file without a row, or a standard that resolves to nothing all fail the check —
+see "Two kinds of standard" for what a Standard cell may resolve to.
 
 **Why `security-auditor` declares only `acceptance`.** Mounts are claims about where a
 judge's standard applies, not about ambition. The security checklist grades traced
