@@ -44,6 +44,16 @@ PATH_SIGNALS: Dict[str, List[str]] = {
         r"(^|/)poetry\.lock$", r"(^|/)go\.(mod|sum)$", r"(^|/)Gemfile(\.lock)?$",
         r"(^|/)Cargo\.(toml|lock)$",
     ],
+    "frontend-reviewer": [
+        r"\.(tsx|jsx|vue|svelte|astro|js|ts|mjs|cjs)$",
+        r"(^|/)(components|pages|routes|layouts|features|views)/",
+        r"(^|/)package\.json$",
+    ],
+    "ux-reviewer": [
+        r"\.(tsx|jsx|vue|svelte|astro|html|hbs|erb)$",
+        r"\.(css|scss|sass|less)$",
+        r"(^|/)(components|pages|layouts|templates|views|styles)/",
+    ],
     "accessibility-auditor": [
         r"\.(tsx|jsx|vue|svelte|html|hbs|erb|css|scss|sass|less)$",
         r"(^|/)(components|pages|layouts|templates|views|styles)/",
