@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
-import schema  # noqa: E402
+import schema
 
 
 def _invocation():
@@ -124,7 +124,7 @@ def test_document_locus_variants():
     doc = _findings_doc()
     doc["findings"][0]["locus"] = {"section": "Rollback plan"}
     schema.validate_findings(doc)
-    doc["findings"][0]["locus"] = {"section": "Options", "cell": "Auth0 × cost"}
+    doc["findings"][0]["locus"] = {"section": "Options", "cell": "cost:Auth0"}
     schema.validate_findings(doc)
 
 

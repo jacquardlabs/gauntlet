@@ -14,7 +14,7 @@ the enforced rules.
 """
 from __future__ import annotations
 
-from typing import List, Optional, Tuple, TypedDict
+from typing import List, Tuple, TypedDict
 
 CONTRACT_VERSION = 1
 TIERS = ("critical", "important", "track")
