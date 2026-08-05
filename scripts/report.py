@@ -9,9 +9,9 @@ whether a finding is right, only where it belongs and how it reads.
 Two renderings:
 
 - `markdown` (default) — the report a human reads in a terminal.
-- `pr-comments` — JSON a consumer can post as PR review comments: one entry per
-  finding that carries a `path`, plus a summary body. Emitting is not posting;
-  the consumer still asks first.
+- `pr-comments` — JSON a consumer can post as PR review comments, split into the
+  findings that can anchor to a diff line and those that cannot. Emitting is not
+  posting; the consumer still asks first.
 
 Standard library only, 3.9-compatible: this ships to consuming projects.
 """
@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -206,16 +208,64 @@ def render_markdown(
     return "\n".join(lines).rstrip() + "\n"
 
 
+def diff_lines(base: str, head: str, root: Optional[str] = None) -> Dict[str, set]:
+    """Right-side line numbers present in the diff, per path.
+
+    The reviews API rejects a comment on a line the diff does not contain, and it
+    rejects the *whole review* — so one un-anchorable finding loses every finding.
+    Returns an empty mapping if git cannot be run, which the caller treats as
+    "anchor nothing" rather than "anchor everything".
+    """
+    try:
+        diff = subprocess.run(
+            ["git", "diff", "-U0", f"{base}..{head}"],
+            cwd=root or None, capture_output=True, text=True, check=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return {}
+
+    valid: Dict[str, set] = {}
+    current = None
+    for line in diff.splitlines():
+        if line.startswith("+++ b/"):
+            current = line[6:]
+            valid.setdefault(current, set())
+        elif line.startswith("@@") and current:
+            match = re.search(r"\+(\d+)(?:,(\d+))?", line)
+            if match:
+                start = int(match.group(1))
+                count = int(match.group(2) or 1)
+                valid[current].update(range(start, start + count))
+    return valid
+
+
 def render_pr_comments(
     documents: List[dict], notes: List[str], failures: List[str]
 ) -> str:
-    """One comment per locatable finding, plus a summary body.
+    """Anchorable findings as comments; everything else in the summary body.
 
-    Findings with no `path` cannot be anchored to a diff line; they ride in the
-    summary instead of being dropped.
+    A finding anchors only when its locus names a path *and* a line the diff
+    actually contains. Two ways to miss: a document locus with no path at all,
+    and — the one that matters — a finding about a line that did not change.
+
+    That second case is not an edge. "You changed X and never updated Y" is the
+    shape of the most valuable findings a review produces: an undocumented status
+    code in a versioned contract, an architecture doc the change falsified, a
+    known-problems entry it silently resolved. None of those have a diff line,
+    and on this tool's first real PR run all three were criticals. So the summary
+    leads with them rather than trailing them.
     """
     findings = flatten(documents)
     tally = counts(findings)
+    anchorable = (
+        diff_lines(
+            documents[0]["artifact"].get("base", ""),
+            documents[0]["artifact"].get("head", ""),
+            documents[0]["artifact"].get("root"),
+        )
+        if documents and documents[0]["artifact"].get("kind") == "changeset"
+        else {}
+    )
     comments = []
     unanchored = []
 
@@ -227,13 +277,12 @@ def render_pr_comments(
             if f.get(key):
                 body += f"\n\n**{label}.** {f[key]}"
         body += f"\n\n_Grounds: {_grounds(f)}_"
-        if "path" in f["locus"]:
-            comment = {"path": f["locus"]["path"], "body": body}
-            if "line" in f["locus"]:
-                comment["line"] = f["locus"]["line"]
-            comments.append(comment)
+        locus = f["locus"]
+        line = locus.get("line")
+        if line is not None and line in anchorable.get(locus.get("path", ""), set()):
+            comments.append({"path": locus["path"], "line": line, "body": body})
         else:
-            unanchored.append(f"- {_locus(f['locus'])} — {f['summary']}")
+            unanchored.append(f)
 
     summary = [
         f"**Gauntlet** — {tally['critical']} critical · {tally['important']} important · "
@@ -245,7 +294,18 @@ def render_pr_comments(
             + "\n".join(f"- {failure}" for failure in failures)
         )
     if unanchored:
-        summary.append("\n**Not anchored to a line:**\n" + "\n".join(unanchored))
+        # Most severe first: these are the findings a reader would otherwise never
+        # see, since nothing in the diff carries them.
+        summary.append(
+            "\n**Findings with no diff line to anchor to** — mostly about what this "
+            "change did *not* update:\n"
+            + "\n\n".join(
+                f"- `{_locus(f['locus'])}` **{f['tier'].upper()} · {f['_judge']}** — "
+                f"{f['summary']}"
+                + (f"\n\n  {f['recommendation']}" if f.get("recommendation") else "")
+                for f in unanchored
+            )
+        )
     if notes:
         summary.append(
             "\n**Recorded differently than claimed:**\n"

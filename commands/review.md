@@ -27,21 +27,31 @@ HEAD=$(git rev-parse HEAD)
 gh pr view <n> --json baseRefOid,headRefOid,url,files
 ```
 
-Use `baseRefOid` as `base` and `headRefOid` as `head`. If `gh` fails (wrong account,
-no remote), say so and stop — do not silently fall back to the local branch, which
-would judge a different artifact than the one asked for.
+Use `baseRefOid` as `base` and `headRefOid` as `head`. If `gh` fails (wrong account, no
+remote), say so and stop — do not silently fall back to the local branch, which would
+judge a different artifact than the one asked for.
 
-**Fetch the shas before anything reads them.** A PR's head may be on a fork or a branch
-this clone has never seen, and `git diff` against a sha you do not have fails — or worse,
-a judge falls back to the working tree and reports on code that is not under review:
+**Then read the PR's tree from a worktree — never `gh pr checkout`.**
 
 ```bash
-gh pr checkout <n>   # or: git fetch origin pull/<n>/head
+git fetch origin pull/<n>/head
+git worktree add --detach <tmp>/tree <head-sha>
 ```
 
-Report the artifact and the file count before dispatching anything, and say which tree
-the judges will read. The code lane's idiom linter runs against the working tree, so a
-PR review whose head was never checked out would lint the wrong code.
+Two reasons, and the second is not politeness. `gh pr checkout` switches the human's
+working tree and refuses outright when they have conflicting local changes — on this
+tool's first real run, the target repo was mid-work on another branch. And a judge must
+read the tree it is judging: the code lane's idiom linter runs against the working
+directory, so reviewing a PR whose head was never checked out lints code that is not
+under review.
+
+Pass the worktree as `--root` to the dispatcher, so every judge's `artifact.root` points
+at it. Remove it when you are done (`git worktree remove --force <tmp>/tree`), even if
+the run failed.
+
+Get the changed paths (`git diff --name-only $BASE..$HEAD`, or the PR's `files`). Report
+the artifact and the file count before dispatching anything, and say which tree the
+judges are reading.
 
 ## 2. Build the invocations
 
@@ -110,9 +120,17 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/report.py" --findings <tmp>/findings \
   --format pr-comments > <tmp>/review.json
 ```
 
-Show the human how many comments would post and to which files, then ask. `gh pr review`
-cannot post per-file comments — it has no such flag — so on an explicit yes, post through
-the reviews API, which takes the emitted shape directly:
+`report.py` splits the findings itself: those whose locus lands on a line the diff
+actually contains become `comments[]`, and the rest ride in `summary`, most severe first.
+That split is not cosmetic — **the reviews API rejects the entire review if any one
+comment names a line outside the diff**, so an unfiltered payload loses every finding
+rather than one. Expect the un-anchorable set to hold your best findings: "you changed X
+and never updated Y" is inherently about lines that did not change.
+
+Show the human how many comments would post and to which files, name how many are riding
+in the summary instead, then ask. `gh pr review` cannot post per-file comments — it has
+no such flag — so on an explicit yes, post through the reviews API, which takes the
+emitted shape directly:
 
 ```bash
 python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); json.dump({"event":"COMMENT","body":d["summary"],"comments":d["comments"]}, sys.stdout)' <tmp>/review.json \
