@@ -190,6 +190,51 @@ def counts(findings: List[dict]) -> Dict[str, int]:
     return {tier: tallied[tier] for tier in schema.TIERS}
 
 
+def _comment_body(finding: dict) -> str:
+    """One finding as a PR comment: the claim and the fix, evidence collapsed.
+
+    A margin note is not a report. The reader has the code on screen and wants
+    two things by default — what is wrong and what to do — so those are the only
+    lines that render open. The failure scenario runs ~94 words and the anchor
+    ~103; both earn that length exactly when a reader disagrees, which is when
+    they open the disclosure, and cost attention every other time.
+
+    The anchor belongs here in particular. It is the checkable fact that earns a
+    critical its tier, and this renderer used to drop it entirely — leaving the
+    reader the verdict without the evidence for it.
+    """
+    judges = " + ".join(finding.get("judges") or [finding["_judge"]])
+    lines = [f"**{finding['summary']}**"]
+
+    if finding.get("recommendation"):
+        lines.append(f"\n→ {finding['recommendation']}")
+
+    detail = []
+    if finding.get("anchor"):
+        detail.append(f"**Anchor.** {finding['anchor']}")
+    if finding.get("failure_scenario"):
+        detail.append(f"**Fails when.** {finding['failure_scenario']}")
+    detail.extend(
+        f"**Also suggested.** {extra}"
+        for extra in finding.get("also_recommended", [])
+    )
+    if finding.get("receipts"):
+        detail.append("**Receipts.** " + ", ".join(f"`{r}`" for r in finding["receipts"]))
+
+    caption = (
+        f"{judges} · {finding['tier']} · {finding['dimension']} · {_grounds(finding)}"
+    )
+    if detail:
+        lines.append(
+            f"\n<details><summary>{caption}</summary>\n\n"
+            + "\n\n".join(detail)
+            + "\n</details>"
+        )
+    else:
+        lines.append(f"\n_{caption}_")
+    return "\n".join(lines)
+
+
 def _attribution(finding: dict) -> str:
     """Which lane(s) raised this — plural when they converged on one locus."""
     judges = finding.get("judges") or [finding["_judge"]]
@@ -335,14 +380,7 @@ def render_pr_comments(
     unanchored = []
 
     for f in findings:
-        judges = " + ".join(f.get("judges") or [f["_judge"]])
-        body = f"**{f['tier'].upper()} · {judges} · {f['dimension']}** — {f['summary']}"
-        for label, key in (("Fails when", "failure_scenario"), ("Do", "recommendation")):
-            if f.get(key):
-                body += f"\n\n**{label}.** {f[key]}"
-        body += f"\n\n_Grounds: {_grounds(f)}_"
-        for extra in f.get("also_recommended", []):
-            body += f"\n\n**Also.** {extra}"
+        body = _comment_body(f)
         locus = f["locus"]
         line = locus.get("line")
         # `track` means "revisit later"; an inline comment demands attention on
