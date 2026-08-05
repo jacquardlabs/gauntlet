@@ -139,7 +139,7 @@ prose around it, no code fence. It is the findings document from
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "concrete input or state, then the wrong outcome",
-      "recommendation": "concrete direction, with a rotation note for exposed secrets",
+      "recommendation": "the action, imperative, ≤25 words — rotation note first for an exposed secret",
       "receipts": ["sha256:… — only if the invocation carried receipts_path"]
     }
   ],

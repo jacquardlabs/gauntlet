@@ -135,7 +135,7 @@ prose around it, no code fence. It is the findings document from
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "how the vulnerable or malicious code is reached, and what it costs",
-      "recommendation": "concrete direction — the version to move to, or the package to drop",
+      "recommendation": "the action, imperative, ≤25 words — the version to move to, or the package to drop",
       "receipts": ["sha256:… — only if the invocation carried receipts_path"]
     }
   ],

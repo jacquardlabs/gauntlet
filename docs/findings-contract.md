@@ -105,7 +105,7 @@ Each entry in `findings`:
 | `basis` | yes | `sourced` \| `inferred` \| `taste` — grounds classing, aligned with viva's `Annotation.basis` and extended per viva#175. `sourced` cites a receipt or an anchor a reader can check; `inferred` is reasoned from the artifact without a direct citation; `taste` is labeled preference. **A `taste` finding never ranks above `track`.** Replaces the old Confirmed/Potential vocabulary — one confidence grammar across gauntlet and viva, never numeric. |
 | `level` | no | `high` \| `medium` \| `low` — strength within the basis, viva's `Annotation.level`. |
 | `failure_scenario` | no | Concrete inputs/state → wrong outcome. Expected on `critical` and `important` code findings. |
-| `recommendation` | no | Concrete direction. Advisory, never a patch — judges do not produce. |
+| `recommendation` | no | The action to take, imperative, **25 words or fewer**. Advisory, never a patch — judges do not produce. Why it matters belongs in `failure_scenario`: a recommendation that argues for itself is two fields in one, and the argument is what makes it unreadable in a PR margin. |
 | `receipts` | no | List of `outputDigest` strings citing records in the evidence log (§7). Only valid when the invocation carried `receipts_path`. |
 
 Compact example:
