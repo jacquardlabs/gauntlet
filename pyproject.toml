@@ -5,6 +5,20 @@ description = "Independent judges for pre-delivery artifacts — findings with r
 requires-python = ">=3.9"
 dependencies = []
 
+[tool.semantic_release]
+# The version lives in the plugin manifest and is bumped by CI on merge to main —
+# never edit it by hand. Conventional Commits drive the bump, which is why the PR
+# title matters: a non-conforming one produces no release rather than an error.
+version_variables = [".claude-plugin/plugin.json:version"]
+tag_format = "v{version}"
+commit_message = "chore(release): v{version} [skip ci]"
+major_on_zero = false
+build_command = ""
+upload_to_vcs_release = true
+
+[tool.semantic_release.branches.main]
+match = "main"
+
 [tool.ruff]
 # 3.9 is the floor, not the target: scripts/ ships to consuming projects and runs
 # on whatever `python3` is there.
