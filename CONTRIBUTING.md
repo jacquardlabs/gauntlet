@@ -27,10 +27,14 @@ Required contexts, once it can be applied — matching the CI job names exactly,
 renaming a job without updating the protection leaves a context that never reports and
 wedges every PR:
 
-- `unit tests (Python 3.9)`
-- `unit tests (Python 3.13)`
+- `unit tests (Python 3.9)` … `unit tests (Python 3.14)` — one per matrix leg, six today
 - `judge independence`
 - `ruff + version floor`
+
+The matrix is contiguous from the floor to the current release, not a sample of the
+ends: a stdlib removal can land in a middle version, and a leg costs ~15s. Adding a
+Python version therefore adds a required context — update the protection in the same
+change.
 
 Alongside them: strict (branches up to date), no force push, no deletion, PR required
 at 0 approvals, conversation resolution required.

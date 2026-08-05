@@ -12,9 +12,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 3.9 is the floor: these scripts ship to consuming projects and run on
-        # whatever `python3` is there, which on stock macOS is 3.9.
-        python-version: ['3.9', '3.13']
+        # Contiguous, floor to current: 3.9 because these scripts ship to
+        # consuming projects and run on whatever `python3` is there (stock macOS
+        # is 3.9.6), through 3.14. Sampling only the ends would miss a stdlib
+        # removal that lands in a middle version, and each leg costs ~15s.
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
