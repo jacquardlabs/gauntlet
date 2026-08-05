@@ -1,0 +1,304 @@
+#!/usr/bin/env python3
+"""Compile judges' findings documents into one report.
+
+The bookkeeping half of a consumer: read each judge's findings document,
+validate it at the boundary, apply the ingest rules, order the result, and
+render it. Prompts carry judgment; this file carries none — it never decides
+whether a finding is right, only where it belongs and how it reads.
+
+Two renderings:
+
+- `markdown` (default) — the report a human reads in a terminal.
+- `pr-comments` — JSON a consumer can post as PR review comments: one entry per
+  finding that carries a `path`, plus a summary body. Emitting is not posting;
+  the consumer still asks first.
+
+Standard library only, 3.9-compatible: this ships to consuming projects.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from collections import Counter
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import schema
+
+#: Most severe first. The contract's ladder, used for ordering only.
+TIER_ORDER = {tier: i for i, tier in enumerate(schema.TIERS)}
+
+TIER_LABEL = {
+    "critical": "Critical — blocks the stamp",
+    "important": "Important — fix this cycle",
+    "track": "Track — log and revisit",
+}
+
+
+def load(
+    directory: Path, expected: Optional[List[str]] = None
+) -> Tuple[List[dict], List[str], List[str]]:
+    """Read every findings document in `directory`.
+
+    Returns the normalized documents, the ingest notes they produced, and the
+    load failures. A malformed document is reported, never silently dropped:
+    a judge whose output could not be read is not a judge that found nothing.
+
+    `expected` is the roster the caller dispatched. Without it this function can
+    only see documents that exist, so a judge that died before writing anything
+    is invisible — the report would simply not mention that lane, which reads
+    exactly like a lane with no findings. With it, absence is a failure like any
+    other.
+
+    Documents are also held to agreeing about the artifact. A directory reused
+    across runs, or one judge re-dispatched after a new commit, otherwise yields
+    a report titled with one span while carrying findings graded against
+    another — and PR comments anchored to lines that moved.
+    """
+    documents: List[dict] = []
+    notes: List[str] = []
+    failures: List[str] = []
+
+    for path in sorted(directory.glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            # ValueError, not json.JSONDecodeError: a reply truncated mid-multibyte
+            # raises UnicodeDecodeError, which is a ValueError and was escaping this
+            # handler — taking every other lane's findings down with it, which is the
+            # one failure mode this function exists to prevent. JSONDecodeError is
+            # itself a ValueError, so the wider tuple loses nothing.
+            failures.append(f"{path.name}: could not be read as JSON — {exc}")
+            continue
+        try:
+            schema.validate_findings(data)
+        except ValueError as exc:
+            failures.append(f"{path.name}: does not satisfy the findings contract — {exc}")
+            continue
+        normalized, doc_notes = schema.normalize_findings(data)
+        if documents and normalized["artifact"] != documents[0]["artifact"]:
+            failures.append(
+                f"{path.name}: judged a different artifact than "
+                f"{documents[0]['judge']} did — {_artifact_id(normalized['artifact'])} "
+                f"vs {_artifact_id(documents[0]['artifact'])}"
+            )
+            continue
+        documents.append(normalized)
+        notes.extend(f"{normalized['judge']}: {note}" for note in doc_notes)
+
+    reported = {doc["judge"] for doc in documents}
+    failures.extend(
+        f"{judge}: dispatched but wrote no findings document"
+        for judge in sorted(set(expected or []) - reported)
+    )
+
+    return documents, notes, failures
+
+
+def _artifact_id(artifact: dict) -> str:
+    if artifact.get("kind") == "changeset":
+        return f"{artifact.get('base', '?')[:12]}..{artifact.get('head', '?')[:12]}"
+    return artifact.get("path", "?")
+
+
+def flatten(documents: List[dict]) -> List[dict]:
+    """Every finding, tagged with its judge, most severe first.
+
+    Within a tier, order is by judge then by locus, so two runs over the same
+    artifact read the same way — a report whose order churns cannot be diffed.
+    """
+    findings = [
+        {**finding, "_judge": doc["judge"]}
+        for doc in documents
+        for finding in doc["findings"]
+    ]
+    return sorted(
+        findings,
+        key=lambda f: (
+            TIER_ORDER.get(f["tier"], len(TIER_ORDER)),
+            f["_judge"],
+            f["locus"].get("path", f["locus"].get("section", "")),
+            f["locus"].get("line", 0),
+        ),
+    )
+
+
+def counts(findings: List[dict]) -> Dict[str, int]:
+    """Per-tier tally, zero-filled — the renderers index every tier unconditionally."""
+    tallied = Counter(f["tier"] for f in findings)
+    return {tier: tallied[tier] for tier in schema.TIERS}
+
+
+def _grounds(finding: dict) -> str:
+    """How the finding is grounded — the contract's basis, refined by level."""
+    return finding["basis"] + (f"/{finding['level']}" if "level" in finding else "")
+
+
+def _locus(locus: dict) -> str:
+    if "path" in locus:
+        return f"{locus['path']}:{locus['line']}" if "line" in locus else locus["path"]
+    parts = [locus[k] for k in ("section", "cell") if k in locus]
+    return " · ".join(parts)
+
+
+def _describe_artifact(documents: List[dict]) -> str:
+    if not documents:
+        return "no artifact"
+    artifact = documents[0]["artifact"]
+    if artifact.get("kind") == "changeset":
+        span = f"{artifact.get('base', '?')[:12]}..{artifact.get('head', '?')[:12]}"
+        return f"{artifact.get('pr') or 'changeset'} {span}"
+    return artifact.get("path", "document")
+
+
+def render_markdown(
+    documents: List[dict], notes: List[str], failures: List[str]
+) -> str:
+    findings = flatten(documents)
+    tally = counts(findings)
+    judges = ", ".join(sorted(d["judge"] for d in documents)) or "none"
+
+    lines = [
+        f"# Gauntlet — {_describe_artifact(documents)}",
+        "",
+        f"{tally['critical']} critical · {tally['important']} important · "
+        f"{tally['track']} track — from {len(documents)} judges: {judges}",
+        "",
+    ]
+
+    if failures:
+        lines += ["## Judges that did not report", ""]
+        lines += [f"- {failure}" for failure in failures]
+        lines += ["", "These lanes are unjudged. Absence of findings here is not a clean result.", ""]
+
+    for tier in schema.TIERS:
+        in_tier = [f for f in findings if f["tier"] == tier]
+        if not in_tier:
+            continue
+        lines += [f"## {TIER_LABEL[tier]}", ""]
+        for f in in_tier:
+            grounds = _grounds(f)
+            lines.append(
+                f"### {f['summary']}\n\n"
+                f"`{f['_judge']}` · {f['dimension']} · {_locus(f['locus'])} · {grounds}"
+            )
+            for label, key in (
+                ("Anchor", "anchor"),
+                ("Fails when", "failure_scenario"),
+                ("Do", "recommendation"),
+            ):
+                if f.get(key):
+                    lines.append(f"\n**{label}.** {f[key]}")
+            if f.get("receipts"):
+                lines.append("\n**Receipts.** " + ", ".join(f"`{r}`" for r in f["receipts"]))
+            lines.append("")
+
+    if notes:
+        lines += ["## Recorded differently than claimed", ""]
+        lines += [f"- {note}" for note in notes]
+        lines += [""]
+
+    lines += ["## Coverage", ""]
+    lines += [f"**{doc['judge']}** — {doc['coverage']}\n" for doc in sorted(documents, key=lambda d: d["judge"])]
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_pr_comments(
+    documents: List[dict], notes: List[str], failures: List[str]
+) -> str:
+    """One comment per locatable finding, plus a summary body.
+
+    Findings with no `path` cannot be anchored to a diff line; they ride in the
+    summary instead of being dropped.
+    """
+    findings = flatten(documents)
+    tally = counts(findings)
+    comments = []
+    unanchored = []
+
+    for f in findings:
+        body = (
+            f"**{f['tier'].upper()} · {f['_judge']} · {f['dimension']}** — {f['summary']}"
+        )
+        for label, key in (("Fails when", "failure_scenario"), ("Do", "recommendation")):
+            if f.get(key):
+                body += f"\n\n**{label}.** {f[key]}"
+        body += f"\n\n_Grounds: {_grounds(f)}_"
+        if "path" in f["locus"]:
+            comment = {"path": f["locus"]["path"], "body": body}
+            if "line" in f["locus"]:
+                comment["line"] = f["locus"]["line"]
+            comments.append(comment)
+        else:
+            unanchored.append(f"- {_locus(f['locus'])} — {f['summary']}")
+
+    summary = [
+        f"**Gauntlet** — {tally['critical']} critical · {tally['important']} important · "
+        f"{tally['track']} track, from {len(documents)} judges.",
+    ]
+    if failures:
+        summary.append(
+            "\n**Lanes that did not report** (unjudged, not clean):\n"
+            + "\n".join(f"- {failure}" for failure in failures)
+        )
+    if unanchored:
+        summary.append("\n**Not anchored to a line:**\n" + "\n".join(unanchored))
+    if notes:
+        summary.append(
+            "\n**Recorded differently than claimed:**\n"
+            + "\n".join(f"- {note}" for note in notes)
+        )
+    summary.append(
+        "\n**Coverage**\n"
+        + "\n".join(f"- **{d['judge']}** — {d['coverage']}" for d in sorted(documents, key=lambda d: d["judge"]))
+    )
+
+    return json.dumps(
+        {"summary": "\n".join(summary), "comments": comments}, indent=2
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--findings",
+        required=True,
+        help="Directory of findings documents, one JSON file per judge",
+    )
+    parser.add_argument(
+        "--format", choices=("markdown", "pr-comments"), default="markdown"
+    )
+    parser.add_argument(
+        "--expect",
+        default="",
+        help=(
+            "Comma-separated judges the caller dispatched. Any that wrote no "
+            "document are reported as lanes that did not report."
+        ),
+    )
+    args = parser.parse_args()
+
+    directory = Path(args.findings)
+    if not directory.is_dir():
+        print(f"gauntlet: not a directory: {directory}", file=sys.stderr)
+        return 1
+
+    expected = [j.strip() for j in args.expect.split(",") if j.strip()]
+    documents, notes, failures = load(directory, expected)
+    if not documents and not failures:
+        print(f"gauntlet: no findings documents in {directory}", file=sys.stderr)
+        return 1
+
+    render = render_markdown if args.format == "markdown" else render_pr_comments
+    print(render(documents, notes, failures))
+    # A judge that could not be read leaves a lane unjudged, which the report
+    # says out loud — and says again here, so a caller that only checks the exit
+    # code cannot mistake a partial run for a complete one.
+    return 1 if failures else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

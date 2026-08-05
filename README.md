@@ -18,8 +18,8 @@ Two consumers, by design:
 - **[viva](https://github.com/jacquardlabs/viva)** — type bundles name gauntlet checkers
   per document type (design doc, packet, brief, trade study) through the findings
   contract.
-- **Bare Claude Code** — install the plugin and run the fleet against a changeset
-  directly.
+- **Bare Claude Code** — `/gauntlet:review` dispatches the lanes a changeset touches,
+  compiles the findings, and posts them to a PR on your say-so.
 
 ## Status
 
@@ -31,6 +31,7 @@ Standing up (2026-08-04). Contract first, then the charter, then the fleet:
 | Charter — roster, mounts, anchors | `reference/charter.md` | 8 judges registered |
 | Independence check | `scripts/check_independence.py` | enforced in CI |
 | Plugin manifest | `.claude-plugin/plugin.json` | v0.1.0, unreleased |
+| Consumer | `commands/review.md`, `scripts/dispatch.py`, `scripts/report.py` | changeset and PR review |
 | The judges | `agents/` | 8 lanes — the set a code review needs; 13 to go (#2) |
 
 Local checks, all stdlib:
