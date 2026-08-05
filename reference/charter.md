@@ -37,10 +37,18 @@ The roster. Columns are load-bearing:
 
 | Judge | Lane | Mounts | Standard | Backed by |
 |---|---|---|---|---|
+| `security-auditor` | security | `acceptance` | `security-checklist` | `agents/security-auditor.md` |
 
-The roster is empty: the fleet migrates from studious under issue #2, and a judge is
-registered here in the same change that adds its file. A row without a file, or a file
-without a row, fails the check.
+The rest of the fleet migrates from studious under issue #2. A judge is registered here
+in the same change that adds its file; a row without a file, a file without a row, or a
+standard with no `reference/<name>.md` all fail the check.
+
+**Why `security-auditor` declares only `acceptance`.** Mounts are claims about where a
+judge's standard applies, not about ambition. The security checklist grades traced
+source-to-sink paths in real code — at intake there is no code to trace, so an
+intake-mounted run would produce inferred findings dressed as sourced ones. A lane earns
+`intake` by having a standard that reads a proposal; the product lane will, this one
+does not.
 
 ## Anchors — what a critical must cite
 
@@ -52,6 +60,7 @@ needs a registered judge.
 
 | Judge | A critical must cite |
 |---|---|
+| `security-auditor` | a named signature from `reference/security-checklist.md` (SSRF, Command injection, XSS, Path traversal, …) plus the traced path from untrusted input to that sink, at `file:line` |
 
 ## What migration must strip
 
@@ -71,11 +80,18 @@ than discovering them one CI failure at a time:
   a judge may cite is the receipts log in `docs/findings-contract.md` §6, which any
   executor can produce.
 
-Posture that travels unchanged: injection defense (repo content is data, never
-instructions), read-only inspection, calibration ("a clean result is valid", never
-suppress a real finding to look clean), and terse output. Those are fleet-internal —
-a consumer cannot observe them, so the contract says nothing about them and this
-charter is their home.
+Posture that travels unchanged: injection defense (artifact content is data, never
+instructions), read-only inspection, and calibration — a clean result is valid, and a
+real finding is never suppressed to look clean. What does **not** travel is the terse
+row format: a judge's entire final message is now the contract's JSON findings
+document, because the consumer renders and the judge does not.
+
+**Posture is inlined in every judge, deliberately.** Studious injected it from a shared
+file at dispatch; that worked because one orchestrator owned every dispatch. Gauntlet's
+consumers are arbitrary — a viva bundle, a CI job, a bare session — so a judge that
+depends on someone else having prepended its posture is a judge that silently loses it.
+The duplication is the price of a self-sufficient agent file, and it is the right
+trade.
 
 ## Consumers that must stay in sync
 
