@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.1.3 (2026-08-05)
+
+### Bug Fixes
+
+- Render a comment for the margin, not a report in it
+  ([#33](https://github.com/jacquardlabs/gauntlet/pull/33),
+  [`7b6bcd4`](https://github.com/jacquardlabs/gauntlet/commit/7b6bcd4824da71262fb29d1d65ee69d04be8bd6b))
+
+
 ## v0.1.2 (2026-08-05)
 
 ### Bug Fixes
