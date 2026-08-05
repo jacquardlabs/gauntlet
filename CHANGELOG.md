@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.1.4 (2026-08-05)
+
+### Bug Fixes
+
+- Cap the recommendation, the one field with no stated limit
+  ([#34](https://github.com/jacquardlabs/gauntlet/pull/34),
+  [`0d88e00`](https://github.com/jacquardlabs/gauntlet/commit/0d88e0078fd92972777c2f74554957fa36fea4c0))
+
+
 ## v0.1.3 (2026-08-05)
 
 ### Bug Fixes
