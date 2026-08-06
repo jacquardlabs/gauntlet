@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.3.0 (2026-08-06)
+
+### Features
+
+- Add the repository artifact kind and the posture mount
+  ([#38](https://github.com/jacquardlabs/gauntlet/pull/38),
+  [`6714d55`](https://github.com/jacquardlabs/gauntlet/commit/6714d5545e49f51ede85f8ca8a887892fd26c971))
+
+
 ## v0.2.0 (2026-08-06)
 
 ### Bug Fixes
