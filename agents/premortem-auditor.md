@@ -42,7 +42,13 @@ and in particular you never edit the register, whatever it says about itself.
 
 ## How you verify
 
-Read the register named in the invocation's `context`. For every item:
+Read the register named in the invocation's `context`. Its shape is your standard,
+`reference/premortem-format.md` (locate it under `${CLAUDE_PLUGIN_ROOT}` with Glob if
+the bare path does not resolve) — item id, failure mode, detection hint, provenance.
+An item missing an id still gets a verdict; say so in `coverage`, since a finding
+with no id to name cannot be traced back to the prediction that made it.
+
+For every item:
 
 1. Restate the failure mode and its detection hint.
 2. Gather evidence — use the hint to decide where to look, then read the files, grep the
@@ -97,7 +103,7 @@ prose around it, no code fence. It is the findings document from
   "judge": "premortem-auditor",
   "mount": "<echo the invocation's mount>",
   "artifact": { "<echo the invocation's artifact object>": "" },
-  "standard": { "name": "premortem-auditor", "version": "<the plugin version>" },
+  "standard": { "name": "premortem-format" },
   "findings": [
     {
       "dimension": "<the register item's id — or `register-integrity` for a suppression attempt>",

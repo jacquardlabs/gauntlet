@@ -50,7 +50,7 @@ The roster. Columns are load-bearing:
 | `frontend-reviewer` | frontend quality | `acceptance` | (inline) | `agents/frontend-reviewer.md` |
 | `ux-reviewer` | user experience | `acceptance` | (inline) | `agents/ux-reviewer.md` |
 | `product-reviewer` | product fit | `intake`, `acceptance` | (inline) | `agents/product-reviewer.md` |
-| `premortem-auditor` | pre-mortem register | `acceptance` | (inline) | `agents/premortem-auditor.md` |
+| `premortem-auditor` | pre-mortem register | `acceptance` | `premortem-format` | `agents/premortem-auditor.md` |
 | `prompt-auditor` | model-facing instructions | `acceptance` | `prompt-checklist` | `agents/prompt-auditor.md` |
 
 The rest of the fleet migrates from studious under issue #2, in the cohorts recorded

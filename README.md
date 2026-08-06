@@ -87,8 +87,14 @@ Fourteen today, each with one concern and its own standard.
 | `ux-reviewer` | hierarchy, spacing, component consistency, interaction clarity, responsive behavior, polish | your DESIGN.md |
 | `doc-auditor` | comments and docstrings, API and type docs, README drift, TODO hygiene | its own prompt |
 | `product-reviewer` | problem validity, principles, journeys, scope, simplicity — then whether what shipped delivers it | your PRODUCT.md |
-| `premortem-auditor` | every failure mode recorded at design time, checked against what was built | your pre-mortem register |
+| `premortem-auditor` | every failure mode recorded at design time, checked against what was built | `premortem-format` |
 | `prompt-auditor` | trigger reliability, instruction conflicts, contract drift, duplication, injection safety, token economy | `prompt-checklist` |
+
+Two lanes need something beyond the code and stay silent without it: `product-reviewer`
+wants your PRODUCT.md, and `premortem-auditor` wants a pre-mortem register — plain
+markdown, three fields, written by whoever you like. Gauntlet never writes one: a judge
+that invents the failure modes and then checks them finds exactly the ones it thought of.
+Keep neither and neither lane is ever dispatched.
 
 `product-reviewer` is the only lane that fires **before** the work as well as after —
 at intake it judges a proposal, at acceptance it judges what shipped. Every other lane

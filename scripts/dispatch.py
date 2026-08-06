@@ -74,6 +74,17 @@ PATH_SIGNALS: Dict[str, List[str]] = {
 }
 
 
+#: Lanes that need an input beyond the artifact, keyed by registered judge name.
+#: Without it the judge can only self-skip, so dispatching it costs a model call to
+#: be told nothing. Matched against the invocation's `context` paths, not the
+#: changed paths — a pre-mortem register is a file that exists, rarely one the
+#: changeset touches.
+CONTEXT_SIGNALS: Dict[str, str] = {
+    "premortem-auditor": r"premortem|pre-mortem",
+    "product-reviewer": r"PRODUCT\.md$",
+}
+
+
 def plugin_version() -> str:
     try:
         return json.loads(MANIFEST.read_text(encoding="utf-8"))["version"]
@@ -97,17 +108,32 @@ def standard_for(judge: str, cell: str) -> dict:
     return {"name": tokens[0].rstrip("/")}
 
 
-def selected(judges: List[dict], paths: List[str], mount: str) -> List[dict]:
-    """The judges to dispatch: every one declaring `mount`, minus those whose
-    path signals none of the changed files match."""
+def selected(
+    judges: List[dict],
+    paths: List[str],
+    mount: str,
+    context: Optional[List[str]] = None,
+) -> List[dict]:
+    """The judges to dispatch.
+
+    Every judge declaring `mount`, minus two exclusions: those whose path signals
+    match nothing in the changeset, and those needing a context input that was not
+    supplied. The second is not an optimization — a lane with no register or no
+    product definition cannot answer its question at all, so dispatching it buys a
+    self-skip at the price of a model call, on every run, forever.
+    """
     chosen = []
     for judge in judges:
+        name = judge["judge"]
         if mount not in charter._cell_tokens(judge["mounts"]):
             continue
-        signals = PATH_SIGNALS.get(judge["judge"])
+        signals = PATH_SIGNALS.get(name)
         if signals and not any(
             re.search(pattern, path) for pattern in signals for path in paths
         ):
+            continue
+        needs = CONTEXT_SIGNALS.get(name)
+        if needs and not any(re.search(needs, c) for c in (context or [])):
             continue
         chosen.append(judge)
     return chosen
@@ -122,7 +148,7 @@ def invocations(
     receipts_path: Optional[str] = None,
 ) -> List[dict]:
     built = []
-    for judge in selected(judges, paths, mount):
+    for judge in selected(judges, paths, mount, context):
         invocation = {
             "contract_version": schema.CONTRACT_VERSION,
             "judge": judge["judge"],
