@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.4.0 (2026-08-06)
+
+### Features
+
+- Migrate the first three posture lanes ([#40](https://github.com/jacquardlabs/gauntlet/pull/40),
+  [`5ebd56e`](https://github.com/jacquardlabs/gauntlet/commit/5ebd56ebfd93c938a85e7432434a8fbd56ac3360))
+
+
 ## v0.3.0 (2026-08-06)
 
 ### Features
