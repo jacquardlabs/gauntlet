@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v0.2.0 (2026-08-06)
+
+### Bug Fixes
+
+- Three defects the new prompt lane found in its own changeset
+  ([#35](https://github.com/jacquardlabs/gauntlet/pull/35),
+  [`6c06b97`](https://github.com/jacquardlabs/gauntlet/commit/6c06b97b5815498cdaa0a4683fb1bd37cbf705c7))
+
+### Features
+
+- Migrate the product, pre-mortem, and prompt lanes
+  ([#35](https://github.com/jacquardlabs/gauntlet/pull/35),
+  [`6c06b97`](https://github.com/jacquardlabs/gauntlet/commit/6c06b97b5815498cdaa0a4683fb1bd37cbf705c7))
+
+- Publish the pre-mortem register format, and dispatch only when its input exists
+  ([#35](https://github.com/jacquardlabs/gauntlet/pull/35),
+  [`6c06b97`](https://github.com/jacquardlabs/gauntlet/commit/6c06b97b5815498cdaa0a4683fb1bd37cbf705c7))
+
+
 ## v0.1.4 (2026-08-05)
 
 ### Bug Fixes
