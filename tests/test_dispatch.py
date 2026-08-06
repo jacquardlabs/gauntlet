@@ -16,6 +16,15 @@ import schema  # noqa: E402
 
 ARTIFACT = {"kind": "changeset", "base": "a1b2c3d4e5f6", "head": "f6e5d4c3b2a1"}
 
+#: Everything an invocation needs except `artifact`, so an artifact built here
+#: is proven to satisfy the contract's validator and not just this test's idea.
+_INVOCATION_SHELL = {
+    "contract_version": schema.CONTRACT_VERSION,
+    "judge": "security-auditor",
+    "mount": "acceptance",
+    "standard": {"name": "security-checklist"},
+}
+
 
 def _judge(name, mounts="`acceptance`", standard="`security-checklist`"):
     return {
@@ -38,6 +47,64 @@ def test_file_standard_keeps_its_own_name():
     assert dispatch.standard_for("security-auditor", "`security-checklist`") == {
         "name": "security-checklist"
     }
+
+
+# ── artifact construction ─────────────────────────────────────────────────────
+def test_build_artifact_changeset():
+    built = dispatch.build_artifact(base="a1b2c3d", head="e4f5a6b", pr="http://pr/1")
+    assert built == {
+        "kind": "changeset", "base": "a1b2c3d", "head": "e4f5a6b", "pr": "http://pr/1"
+    }
+    schema.validate_invocation({**_INVOCATION_SHELL, "artifact": built})
+
+
+def test_build_artifact_repository():
+    built = dispatch.build_artifact(ref="a1b2c3d", root="/srv/repo")
+    assert built == {"kind": "repository", "ref": "a1b2c3d", "root": "/srv/repo"}
+    schema.validate_invocation(
+        {**_INVOCATION_SHELL, "mount": "posture", "artifact": built}
+    )
+
+
+def _build_raises(kwargs, fragment):
+    try:
+        dispatch.build_artifact(**kwargs)
+    except ValueError as exc:
+        assert fragment in str(exc), exc
+        return
+    raise AssertionError(f"expected ValueError containing {fragment!r} for {kwargs}")
+
+
+def test_build_artifact_refuses_a_diff_scoped_posture_run():
+    """A stray --base on a repository run must fail loudly: silently dropping it
+    would let a caller believe a standing review was scoped to a diff."""
+    for kwargs in (
+        {"ref": "a1b2c3d", "base": "e4f5a6b"},
+        {"ref": "a1b2c3d", "head": "e4f5a6b"},
+        {"ref": "a1b2c3d", "pr": "http://pr/1"},
+    ):
+        _build_raises(kwargs, "takes no")
+
+
+def test_build_artifact_needs_base_and_head_without_a_ref():
+    for kwargs in ({}, {"base": "a1b2c3d"}, {"head": "e4f5a6b"}):
+        _build_raises(kwargs, "--base and --head")
+
+
+# ── mount selection ───────────────────────────────────────────────────────────
+def test_posture_and_acceptance_select_disjoint_judges():
+    # Judges with no path or context signal, so this isolates mount filtering.
+    roster = [
+        _judge("code-auditor", mounts="`acceptance`"),
+        _judge("review-security", mounts="`posture`"),
+        _judge("test-auditor", mounts="`acceptance`, `posture`"),
+    ]
+    at_posture = {j["judge"] for j in dispatch.selected(roster, ["a.py"], "posture")}
+    at_acceptance = {
+        j["judge"] for j in dispatch.selected(roster, ["a.py"], "acceptance")
+    }
+    assert at_posture == {"review-security", "test-auditor"}
+    assert at_acceptance == {"code-auditor", "test-auditor"}
 
 
 def test_directory_standard_drops_the_trailing_slash():

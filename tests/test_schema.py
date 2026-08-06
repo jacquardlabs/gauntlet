@@ -91,6 +91,42 @@ def test_invocation_document_artifact():
     schema.validate_invocation(inv)
 
 
+def test_invocation_repository_artifact_at_posture():
+    inv = _invocation()
+    inv["artifact"] = {"kind": "repository", "ref": "a1b2c3d", "root": "/srv/repo"}
+    inv["mount"] = "posture"
+    schema.validate_invocation(inv)
+
+
+#: The required field each artifact kind owns. Keyed by kind so a kind added to
+#: the enum without a branch in `_validate_artifact` fails here rather than
+#: inheriting whatever the previous branch happened to check.
+REQUIRED_BY_KIND = {
+    "changeset": "artifact.base",
+    "document": "artifact.path",
+    "repository": "artifact.ref",
+}
+
+
+def test_every_artifact_kind_validates_its_own_required_field():
+    assert set(REQUIRED_BY_KIND) == set(schema.ARTIFACT_KINDS), (
+        "an artifact kind was added to the enum without deciding what it requires"
+    )
+    for kind, fragment in REQUIRED_BY_KIND.items():
+        inv = _invocation()
+        inv["artifact"] = {"kind": kind}
+        _raises(schema.validate_invocation, inv, fragment)
+
+
+def test_repository_artifact_is_not_validated_as_a_document():
+    """The regression the explicit branches exist for: while `document` was the
+    fall-through, a repository artifact was checked for `path` and a `ref`-only
+    payload was rejected for the wrong reason."""
+    inv = _invocation()
+    inv["artifact"] = {"kind": "repository", "path": "docs/design/auth.md"}
+    _raises(schema.validate_invocation, inv, "artifact.ref")
+
+
 def test_invocation_rejections():
     _raises(schema.validate_invocation, [], "JSON object")
     for mutate, fragment in [

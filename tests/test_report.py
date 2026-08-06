@@ -216,6 +216,29 @@ def test_empty_findings_still_renders_coverage():
     assert "Checked both files." in out
 
 
+def test_markdown_headers_a_posture_run_with_its_ref():
+    """A repository artifact carries no base/head and no path, so the header
+    would have read `?` if it fell through to the document branch."""
+    doc = _doc()
+    doc["mount"] = "posture"
+    doc["artifact"] = {"kind": "repository", "ref": "a1b2c3d4e5f6a7b8"}
+    out = report.render_markdown([doc], [], [])
+    assert "# Gauntlet — repository at a1b2c3d4e5f6" in out
+    assert "?" not in out.splitlines()[0]
+
+
+def test_posture_findings_never_try_to_anchor_to_a_diff():
+    """`render_pr_comments` resolves anchorable lines from base..head; a
+    repository artifact has neither, so every finding rides in the summary
+    rather than being posted against a diff that was never computed."""
+    doc = _doc(findings=[_finding(tier="critical", anchor="a real anchor")])
+    doc["mount"] = "posture"
+    doc["artifact"] = {"kind": "repository", "ref": "a1b2c3d4e5f6"}
+    payload = json.loads(report.render_pr_comments([doc], [], []))
+    assert payload["comments"] == []
+    assert "a critical thing" in payload["summary"]
+
+
 # ── diff anchoring ────────────────────────────────────────────────────────────
 def _repo_with_diff(tmp):
     """A throwaway repo whose HEAD diff touches src/a.py line 10 only."""

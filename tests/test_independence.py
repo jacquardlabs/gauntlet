@@ -106,7 +106,9 @@ def test_both_mounts_declared():
         "| `agents/product-reviewer.md` |\n"
     )
     judges, _ = check.parse_charter(_charter(row))
-    assert check._cell_tokens(judges[0]["mounts"]) == list(schema.MOUNTS)
+    # The tokens the cell declares — not `schema.MOUNTS`, which this once
+    # compared against only because the enum happened to hold exactly these two.
+    assert check._cell_tokens(judges[0]["mounts"]) == ["intake", "acceptance"]
 
 
 # ── charter integrity ─────────────────────────────────────────────────────────

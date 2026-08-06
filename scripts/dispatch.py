@@ -2,8 +2,8 @@
 """Build the invocations a consumer dispatches, from the charter.
 
 The dispatch half of a consumer's bookkeeping, and the counterpart to
-`report.py`. It reads the roster, selects the judges whose lane the changed
-paths could touch, resolves each one's Standard cell into a `standard` object,
+`report.py`. It reads the roster, selects the judges whose lane the paths in
+scope could touch, resolves each one's Standard cell into a `standard` object,
 and **validates every invocation before it leaves** — the contract says both
 validators are called where payloads cross the boundary, and prose cannot call a
 validator.
@@ -108,6 +108,47 @@ def standard_for(judge: str, cell: str) -> dict:
     return {"name": tokens[0].rstrip("/")}
 
 
+def build_artifact(
+    ref: Optional[str] = None,
+    base: Optional[str] = None,
+    head: Optional[str] = None,
+    root: Optional[str] = None,
+    pr: Optional[str] = None,
+) -> dict:
+    """The artifact this run judges: a `repository` when `ref` is given, a
+    `changeset` otherwise (contract §3).
+
+    The two are mutually exclusive rather than merged, because a repository
+    artifact carries no `base` by design — a posture review measures the
+    repository against a standard, never against an earlier revision of itself.
+    Silently ignoring a stray `--base` would let a caller believe it scoped a
+    standing review to a diff.
+    """
+    if ref:
+        conflicting = [
+            flag for flag, value in (("--base", base), ("--head", head), ("--pr", pr))
+            if value
+        ]
+        if conflicting:
+            raise ValueError(
+                "--ref judges a repository at one point in time and takes no "
+                + ", ".join(conflicting)
+            )
+        artifact = {"kind": "repository", "ref": ref}
+    else:
+        if not (base and head):
+            raise ValueError(
+                "a changeset needs --base and --head; pass --ref instead to judge "
+                "a whole repository"
+            )
+        artifact = {"kind": "changeset", "base": base, "head": head}
+        if pr:
+            artifact["pr"] = pr
+    if root:
+        artifact["root"] = root
+    return artifact
+
+
 def selected(
     judges: List[dict],
     paths: List[str],
@@ -167,13 +208,26 @@ def invocations(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--base", required=True, help="Base sha of the changeset")
-    parser.add_argument("--head", required=True, help="Head sha of the changeset")
+    parser.add_argument("--base", help="Base sha of the changeset")
+    parser.add_argument("--head", help="Head sha of the changeset")
     parser.add_argument("--pr", help="Pull-request URL, when the changeset is a PR")
-    parser.add_argument("--root", help="Repo root; defaults to the working directory")
-    parser.add_argument("--mount", default="acceptance", choices=schema.MOUNTS)
     parser.add_argument(
-        "--paths", required=True, help="File holding the changed paths, one per line, or - for stdin"
+        "--ref",
+        help="Judge a whole repository at this sha or ref, instead of a changeset",
+    )
+    parser.add_argument("--root", help="Repo root; defaults to the working directory")
+    parser.add_argument(
+        "--mount",
+        default=None,
+        choices=schema.MOUNTS,
+        help="Defaults to posture with --ref, acceptance otherwise",
+    )
+    parser.add_argument(
+        "--paths",
+        required=True,
+        help="File holding the paths in scope, one per line, or - for stdin. "
+        "For a changeset these are the changed paths; for --ref, the repository's "
+        "tracked files (git ls-files) — path signals scope lanes either way",
     )
     parser.add_argument("--context", default="", help="Comma-separated grounding docs")
     parser.add_argument("--receipts-path", help="Evidence log this run may cite")
@@ -187,23 +241,21 @@ def main() -> int:
         print("gauntlet: the charter registers no judges", file=sys.stderr)
         return 1
 
-    artifact = {"kind": "changeset", "base": args.base, "head": args.head}
-    if args.root:
-        artifact["root"] = args.root
-    if args.pr:
-        artifact["pr"] = args.pr
-
+    mount = args.mount or ("posture" if args.ref else "acceptance")
     context = [c.strip() for c in args.context.split(",") if c.strip()]
     try:
+        artifact = build_artifact(
+            args.ref, args.base, args.head, args.root, args.pr
+        )
         built = invocations(
-            judges, paths, args.mount, artifact, context, args.receipts_path
+            judges, paths, mount, artifact, context, args.receipts_path
         )
     except ValueError as exc:
         print(f"gauntlet: invalid invocation — {exc}", file=sys.stderr)
         return 1
 
     if not built:
-        print("gauntlet: no judge declares this mount", file=sys.stderr)
+        print(f"gauntlet: no judge declares mount {mount!r}", file=sys.stderr)
         return 1
 
     print(json.dumps(built, indent=2))

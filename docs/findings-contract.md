@@ -37,12 +37,18 @@ minimums, until a real second version exists to negotiate with.
   Registered in the charter (`reference/charter.md`, issue #3); this contract refers
   to judges by registered name and does not pin the charter's format.
 - **consumer** — whoever dispatches a judge and ingests its findings document.
-- **artifact** — what is judged: a changeset or a document.
+- **artifact** — what is judged: a changeset, a document, or a repository.
 - **standard** — what it is judged against: a named checklist, rubric, or template
   grammar.
-- **mount** — where in the flow the judge fires: `intake` (pre-commitment, judging a
-  proposal — brief, design doc, plan) or `acceptance` (post-production, judging what
-  was produced — changeset, packet, rendered flows).
+- **mount** — which question the judge is being asked: `intake` (pre-commitment,
+  judging a proposal — brief, design doc, plan), `acceptance` (post-production, judging
+  what was produced — changeset, packet, rendered flows), or `posture` (standing,
+  judging the current state of a whole repository).
+
+  A mount names the **question**, never the schedule. A standing review is often run on
+  a cadence, but cadence is a consumer's business: two consumers running `posture`
+  weekly and quarterly ask the identical question, and a judge cannot tell them apart.
+  Naming this mount after its usual trigger would have put a calendar in a payload.
 - **receipt** — a harness-captured evidence record a finding may cite. Captured by
   the harness, never written by a judge or producer: capturer ≠ claimant stays
   checkable.
@@ -55,20 +61,21 @@ What a consumer hands a judge, as JSON embedded in the dispatch:
 |---|---|---|
 | `contract_version` | yes | Integer, `1`. |
 | `judge` | yes | Registered judge name. |
-| `mount` | yes | `intake` or `acceptance`. Must be a mount the judge's charter entry declares; a consumer never requests an undeclared mount. |
+| `mount` | yes | `intake`, `acceptance`, or `posture`. Must be a mount the judge's charter entry declares; a consumer never requests an undeclared mount. |
 | `artifact` | yes | Object, see below. |
 | `standard` | yes | `{name, version?}` — the rubric or template grammar this run judges against. |
 | `context` | no | Paths the judge reads for project grounding (PRODUCT.md, DESIGN.md, CLAUDE.md). |
 | `receipts_path` | no | Path to the evidence log (§7) this run may cite. Absent means no receipts are citable — findings then cannot carry `receipts`. |
 
-**`artifact`** is one of two kinds:
+**`artifact`** is one of three kinds:
 
 | Kind | Shape | Notes |
 |---|---|---|
 | `changeset` | `{kind: "changeset", base, head, root?, pr?}` | Git shas; `root` defaults to the working directory. `pr` is the pull-request URL when the changeset is a PR — the consumer resolves the PR to `base`/`head` at dispatch and carries the URL through, so the findings document is addressable back to the PR without the invocation in hand. |
 | `document` | `{kind: "document", path}` | Markdown file. Trade-study matrices are documents; the matrix locus lives on the finding (§4). |
+| `repository` | `{kind: "repository", ref, root?}` | A whole repository at one point in time — the artifact a `posture` review judges. `ref` is the sha or ref judged, required so a standing finding is reproducible against the state that produced it; `root` defaults to the working directory. There is deliberately no `base`: a posture review compares the repository to a standard, never to an earlier revision of itself. |
 
-A PR is not a third artifact kind: judges see every PR as an ordinary changeset.
+A PR is not an artifact kind of its own: judges see every PR as an ordinary changeset.
 Posting findings back as PR review comments is a **consumer** feature (issue #7), and
 the shapes here are deliberately sufficient for it — `locus.path`/`locus.line` against
 `artifact.head` is exactly the addressing a PR review comment needs, and `tier`/

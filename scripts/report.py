@@ -100,8 +100,11 @@ def load(
 
 
 def _artifact_id(artifact: dict) -> str:
-    if artifact.get("kind") == "changeset":
+    kind = artifact.get("kind")
+    if kind == "changeset":
         return f"{artifact.get('base', '?')[:12]}..{artifact.get('head', '?')[:12]}"
+    if kind == "repository":
+        return artifact.get("ref", "?")[:12]
     return artifact.get("path", "?")
 
 
@@ -257,9 +260,12 @@ def _describe_artifact(documents: List[dict]) -> str:
     if not documents:
         return "no artifact"
     artifact = documents[0]["artifact"]
-    if artifact.get("kind") == "changeset":
+    kind = artifact.get("kind")
+    if kind == "changeset":
         span = f"{artifact.get('base', '?')[:12]}..{artifact.get('head', '?')[:12]}"
         return f"{artifact.get('pr') or 'changeset'} {span}"
+    if kind == "repository":
+        return f"repository at {artifact.get('ref', '?')[:12]}"
     return artifact.get("path", "document")
 
 
