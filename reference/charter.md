@@ -29,8 +29,9 @@ The roster. Columns are load-bearing:
   (`docs/findings-contract.md` §3).
 - **Lane** — the one concern it owns. One judge, one lane; a judge that finds something
   outside its lane escalates in `coverage`, never hunts.
-- **Mounts** — where it may fire: `intake` (judging a proposal), `acceptance` (judging
-  what was produced), or both. A consumer never requests an undeclared mount. The enum
+- **Mounts** — which question it may be asked: `intake` (judging a proposal),
+  `acceptance` (judging what was produced), `posture` (judging a whole repository as it
+  stands), or any combination. A consumer never requests an undeclared mount. The enum
   is the contract's, imported from `scripts/schema.py` — not restated here.
 - **Standard** — what it judges against, matching `standard.name` in the invocation.
   Either a rubric in `reference/` or the literal `(inline)`; see "Two kinds of standard".
@@ -70,6 +71,20 @@ source-to-sink paths in real code — at intake there is no code to trace, so an
 intake-mounted run would produce inferred findings dressed as sourced ones. A lane earns
 `intake` by having a standard that reads a proposal; the product lane will, this one
 does not.
+
+**Why `posture` is a mount and not a cadence (#13).** The periodic `review-*` family
+asks a third question — not "should this be built" and not "does this deliver", but
+"what is the state of this repository". That is a mount. What it is *not* is a schedule:
+the family was named `periodic` in studious after how it was triggered, and carrying
+that name into a payload would have put a calendar in the contract. Two consumers
+running the same standing review weekly and quarterly ask an identical question, and a
+judge cannot tell them apart — so cadence stays with the consumer that owns the
+scheduling, and the mount names the question.
+
+A `posture` judge reads a `repository` artifact (contract §3) rather than a changeset,
+which is what makes the migration mechanical: the eight studious `review-*` agents lose
+`Write`, their report-writing step becomes the consumer's, and the diff-scoping their
+prompts assume becomes a whole-repo read at one `ref`.
 
 ## Two kinds of standard
 

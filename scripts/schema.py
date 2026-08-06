@@ -20,18 +20,19 @@ CONTRACT_VERSION = 1
 TIERS = ("critical", "important", "track")
 BASES = ("sourced", "inferred", "taste")
 LEVELS = ("high", "medium", "low")
-MOUNTS = ("intake", "acceptance")
-ARTIFACT_KINDS = ("changeset", "document")
+MOUNTS = ("intake", "acceptance", "posture")
+ARTIFACT_KINDS = ("changeset", "document", "repository")
 
 
 # ── Shapes (documentation-only TypedDicts) ────────────────────────────────────
 class Artifact(TypedDict, total=False):
-    kind: str   # required — "changeset" | "document"
+    kind: str   # required — "changeset" | "document" | "repository"
     base: str   # changeset: required — git sha
     head: str   # changeset: required — git sha
-    root: str   # changeset: optional — defaults to the working directory
+    root: str   # changeset, repository: optional — defaults to the working directory
     pr: str     # changeset: optional — pull-request URL, carried through verbatim
     path: str   # document: required — markdown file
+    ref: str    # repository: required — the sha or ref judged, a point in time
 
 
 class Standard(TypedDict, total=False):
@@ -111,16 +112,25 @@ def _require_enum(obj: dict, field: str, allowed: tuple, where: str) -> None:
 
 
 def _validate_artifact(artifact: object, where: str) -> None:
+    """Per-kind required fields. Branches are explicit and exhaustive on
+    purpose: an `else` that assumed the last kind would silently validate any
+    kind added after it against the wrong shape."""
     if not isinstance(artifact, dict):
         raise ValueError(f"{where}.artifact must be an object")
     _require_enum(artifact, "kind", ARTIFACT_KINDS, f"{where}.artifact")
-    if artifact["kind"] == "changeset":
+    kind = artifact["kind"]
+    if kind == "changeset":
         _require_str(artifact, "base", f"{where}.artifact")
         _require_str(artifact, "head", f"{where}.artifact")
         _optional_str(artifact, "root", f"{where}.artifact")
         _optional_str(artifact, "pr", f"{where}.artifact")
-    else:  # document
+    elif kind == "document":
         _require_str(artifact, "path", f"{where}.artifact")
+    elif kind == "repository":
+        _require_str(artifact, "ref", f"{where}.artifact")
+        _optional_str(artifact, "root", f"{where}.artifact")
+    else:  # unreachable while this matches ARTIFACT_KINDS; the guard says so.
+        raise ValueError(f"{where}.artifact.kind {kind!r} has no validation rule")
 
 
 def _validate_standard(standard: object, where: str) -> None:
