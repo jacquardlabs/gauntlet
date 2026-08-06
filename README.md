@@ -71,7 +71,8 @@ why. A Python-only changeset costs eight judges; a `.tsx` and `.css` changeset c
 
 ## The lanes
 
-Fourteen today, each with one concern and its own standard.
+Seventeen today, each with one concern and its own standard. Fourteen judge a
+changeset; three judge a whole repository as it stands (see "Standing reviews" below).
 
 | Judge | Judges | Standard |
 |---|---|---|
@@ -98,11 +99,40 @@ Keep neither and neither lane is ever dispatched.
 
 `product-reviewer` is the only lane that fires **before** the work as well as after —
 at intake it judges a proposal, at acceptance it judges what shipped. Every other lane
-judges the finished thing.
+in that table judges the finished change.
 
 A judge whose lane your change does not touch returns nothing and says so. That is a
 complete result, not a failure — and it is reported, so a lane that never ran can never
 be mistaken for a lane that found nothing.
+
+## Standing reviews
+
+Every lane above judges a change. Three judge the repository itself, at one ref, with no
+diff in sight — which is the only way to reach a defect sitting in code no recent branch
+has touched.
+
+| Judge | Judges | Standard |
+|---|---|---|
+| `security-posture-auditor` | pre-existing vulnerabilities, secrets anywhere in git history, security-config baseline, dependency confusion | `security-checklist` |
+| `codebase-posture-auditor` | debt totals, dead code, dependency health, test health, interface consistency — as aggregates and direction | `idioms/<language>` |
+| `architecture-posture-auditor` | boundaries, complexity distribution, evolution readiness, data layer — against what the code actually does | its own prompt |
+
+These answer a third question. `intake` asks whether a thing should be built and
+`acceptance` asks whether what shipped delivers; **`posture` asks what state the
+repository is in**. The mount is named for the question, not for a schedule — run them
+weekly or once a quarter, the question is identical and the cadence is yours.
+
+They read a whole repository at a `ref` rather than a changeset, so they cost more than
+a review and are worth running on a trunk, not a branch:
+
+```text
+git ls-files | python3 scripts/dispatch.py --ref HEAD --paths -
+```
+
+**Trend needs your help.** These lanes report direction — debt up, coupling down — only
+when the dispatch passes prior findings as context. Gauntlet never reads a report store,
+because judges do not write and the consumer decides where findings live. With nothing
+passed, a run is a baseline and says so.
 
 ## How to read a finding
 
