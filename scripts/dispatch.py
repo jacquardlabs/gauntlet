@@ -54,10 +54,18 @@ PATH_SIGNALS: Dict[str, List[str]] = {
         r"\.(css|scss|sass|less)$",
         r"(^|/)(components|pages|layouts|templates|views|styles)/",
     ],
+    # Kept in step with reference/prompt-checklist.md's own signature table —
+    # the lane it gates is the one that reads that table, so a signal list
+    # narrower than the standard drops the lane instead of running it.
     "prompt-auditor": [
-        r"(^|/)(agents|prompts|skills|commands)/",
-        r"(^|/)(CLAUDE|AGENTS|SKILL)\.md$",
+        r"(^|/)(agents|prompts|skills|commands|reference|output-styles)/",
+        r"(^|/)(CLAUDE|AGENTS|SKILL|GEMINI)\.md$",
         r"(^|/)\.claude/",
+        r"(^|/)\.cursorrules$",
+        r"(^|/)\.cursor/rules/",
+        r"(^|/)copilot-instructions\.md$",
+        r"(^|/)system_prompt\.",
+        r"\.prompt\.md$",
     ],
     "accessibility-auditor": [
         r"\.(tsx|jsx|vue|svelte|html|hbs|erb|css|scss|sass|less)$",

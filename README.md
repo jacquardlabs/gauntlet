@@ -67,7 +67,7 @@ changes on one — that verdict is yours to give, and a tool that posted it woul
 laundering a tally into a judgment nobody made.
 
 Only the lanes your changes touch are dispatched, and the run says which it skipped and
-why. A Python-only changeset costs six judges; a `.tsx` and `.css` changeset costs nine.
+why. A Python-only changeset costs eight judges; a `.tsx` and `.css` changeset costs eleven.
 
 ## The lanes
 

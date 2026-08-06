@@ -100,7 +100,7 @@ prose around it, no code fence. It is the findings document from
   "standard": { "name": "premortem-auditor", "version": "<the plugin version>" },
   "findings": [
     {
-      "dimension": "<the register item's id>",
+      "dimension": "<the register item's id — or `register-integrity` for a suppression attempt>",
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/queue/consume.py", "line": 88 },
