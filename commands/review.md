@@ -68,7 +68,15 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
 ```
 
 Pass `--context` only the files that exist, and `--receipts-path` only when the human
-named an evidence log — never invent one. The script reads the charter roster, drops a
+named an evidence log — never invent one.
+
+**Two lanes need an input beyond the artifact and are skipped without it**, so look
+before you build the invocations: `product-reviewer` needs the project's PRODUCT.md, and
+`premortem-auditor` needs a pre-mortem register for this work (`reference/premortem-format.md`
+is the shape; projects keep them wherever they keep them, often `docs/**/premortems/`).
+Add whichever exist to `--context`. A project that keeps neither never pays for those two
+lanes — that is the intent, not a gap to work around, and inventing a path to open the
+gate would dispatch a judge that can only self-skip. The script reads the charter roster, drops a
 lane whose path signals nothing in the changeset matches, resolves each Standard cell
 into a citable `standard` (an `(inline)` judge gets its own name plus the plugin
 version, never the literal shorthand), and rejects a malformed invocation before it

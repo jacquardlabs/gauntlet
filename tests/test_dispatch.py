@@ -84,6 +84,40 @@ def test_every_path_signal_is_keyed_to_a_registered_judge():
     )
 
 
+# ── context gating ────────────────────────────────────────────────────────────
+def test_a_lane_needing_context_it_did_not_get_is_not_dispatched():
+    """A lane with no register cannot answer its question, so dispatching it buys
+    a self-skip at the price of a model call — on every run, forever."""
+    judges = [_judge("premortem-auditor"), _judge("code-auditor")]
+    without = dispatch.selected(judges, ["a.py"], "acceptance", ["CLAUDE.md"])
+    assert [j["judge"] for j in without] == ["code-auditor"]
+
+
+def test_the_same_lane_is_dispatched_once_its_input_is_present():
+    judges = [_judge("premortem-auditor")]
+    with_reg = dispatch.selected(
+        judges, ["a.py"], "acceptance", ["docs/premortems/loop-driver.md"]
+    )
+    assert [j["judge"] for j in with_reg] == ["premortem-auditor"]
+
+
+def test_product_lane_needs_a_product_definition():
+    judges = [_judge("product-reviewer", mounts="`intake`, `acceptance`")]
+    assert dispatch.selected(judges, ["a.py"], "acceptance", ["CLAUDE.md"]) == []
+    got = dispatch.selected(judges, ["a.py"], "acceptance", ["PRODUCT.md"])
+    assert [j["judge"] for j in got] == ["product-reviewer"]
+
+
+def test_context_signals_are_keyed_to_registered_judges():
+    registered = {
+        j["judge"]
+        for j in dispatch.charter.parse_charter(
+            dispatch.charter.CHARTER.read_text()
+        )[0]
+    }
+    assert set(dispatch.CONTEXT_SIGNALS) <= registered
+
+
 # ── invocations ───────────────────────────────────────────────────────────────
 def test_every_invocation_is_contract_valid():
     judges = [_judge("code-auditor", standard="`idioms/`"), _judge("test-auditor", standard="(inline)")]

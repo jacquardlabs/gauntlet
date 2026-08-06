@@ -49,11 +49,20 @@ The roster. Columns are load-bearing:
 | `doc-auditor` | documentation | `acceptance` | (inline) | `agents/doc-auditor.md` |
 | `frontend-reviewer` | frontend quality | `acceptance` | (inline) | `agents/frontend-reviewer.md` |
 | `ux-reviewer` | user experience | `acceptance` | (inline) | `agents/ux-reviewer.md` |
+| `product-reviewer` | product fit | `intake`, `acceptance` | (inline) | `agents/product-reviewer.md` |
+| `premortem-auditor` | pre-mortem register | `acceptance` | `premortem-format` | `agents/premortem-auditor.md` |
+| `prompt-auditor` | model-facing instructions | `acceptance` | `prompt-checklist` | `agents/prompt-auditor.md` |
 
 The rest of the fleet migrates from studious under issue #2, in the cohorts recorded
 there. A judge is registered here in the same change that adds its file; a row without a
 file, a file without a row, or a standard that resolves to nothing all fail the check —
 see "Two kinds of standard" for what a Standard cell may resolve to.
+
+**Why `product-reviewer` declares both mounts, and no one else does yet.** Its question
+has two genuinely different forms: at intake, "does this solve a real problem for a named
+persona"; at acceptance, "does what shipped deliver that". Same lane, same standard, two
+question sets — which is what a mount is for. This is the case the security ruling below
+predicted.
 
 **Why `security-auditor` declares only `acceptance`.** Mounts are claims about where a
 judge's standard applies, not about ambition. The security checklist grades traced
@@ -107,6 +116,9 @@ needs a registered judge.
 | `doc-auditor` | a command or path the docs state, quoted, that does not exist or does not work as written |
 | `frontend-reviewer` | a reproducible broken flow: the steps, the expected result, the observed one |
 | `ux-reviewer` | a reproducible broken flow: the steps, the expected result, the observed one |
+| `product-reviewer` | the stated criterion, principle, persona, or journey — quoted — that the artifact does not deliver |
+| `premortem-auditor` | the register item, by id, marked REALIZED, plus the evidence that realized it |
+| `prompt-auditor` | the instruction or invariant the prompt surface contradicts, quoted, with the file it comes from |
 
 ## What migration must strip
 
