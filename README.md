@@ -71,7 +71,7 @@ why. A Python-only changeset costs six judges; a `.tsx` and `.css` changeset cos
 
 ## The lanes
 
-Eleven today, each with one concern and its own standard.
+Fourteen today, each with one concern and its own standard.
 
 | Judge | Judges | Standard |
 |---|---|---|
@@ -86,6 +86,13 @@ Eleven today, each with one concern and its own standard.
 | `frontend-reviewer` | component architecture, state, data fetching, render performance, bundle, error handling | its own prompt |
 | `ux-reviewer` | hierarchy, spacing, component consistency, interaction clarity, responsive behavior, polish | your DESIGN.md |
 | `doc-auditor` | comments and docstrings, API and type docs, README drift, TODO hygiene | its own prompt |
+| `product-reviewer` | problem validity, principles, journeys, scope, simplicity — then whether what shipped delivers it | your PRODUCT.md |
+| `premortem-auditor` | every failure mode recorded at design time, checked against what was built | your pre-mortem register |
+| `prompt-auditor` | trigger reliability, instruction conflicts, contract drift, duplication, injection safety, token economy | `prompt-checklist` |
+
+`product-reviewer` is the only lane that fires **before** the work as well as after —
+at intake it judges a proposal, at acceptance it judges what shipped. Every other lane
+judges the finished thing.
 
 A judge whose lane your change does not touch returns nothing and says so. That is a
 complete result, not a failure — and it is reported, so a lane that never ran can never

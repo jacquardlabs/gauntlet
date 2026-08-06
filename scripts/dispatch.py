@@ -54,6 +54,11 @@ PATH_SIGNALS: Dict[str, List[str]] = {
         r"\.(css|scss|sass|less)$",
         r"(^|/)(components|pages|layouts|templates|views|styles)/",
     ],
+    "prompt-auditor": [
+        r"(^|/)(agents|prompts|skills|commands)/",
+        r"(^|/)(CLAUDE|AGENTS|SKILL)\.md$",
+        r"(^|/)\.claude/",
+    ],
     "accessibility-auditor": [
         r"\.(tsx|jsx|vue|svelte|html|hbs|erb|css|scss|sass|less)$",
         r"(^|/)(components|pages|layouts|templates|views|styles)/",
