@@ -107,8 +107,67 @@ def _slash_command(line: str) -> Optional[str]:
 #: A Standard cell declaring that the judge's own prompt is the rubric.
 INLINE_STANDARD = "(inline)"
 
-#: `tools: Read, Grep, Bash` in YAML frontmatter.
-TOOLS_LINE = re.compile(r"^tools:\s*(?P<tools>.+)$", re.MULTILINE)
+#: The YAML frontmatter block — the opening `---` through the next `---` on its
+#: own line. Tools are read from here and nowhere else: a body line that begins
+#: `tools:` is documentation about a declaration, not one.
+FRONTMATTER = re.compile(
+    r"---[ \t]*\r?\n(?P<body>.*?)^---[ \t]*$", re.DOTALL | re.MULTILINE
+)
+
+#: The `tools:` key, matched against one line at a time — never with
+#: `re.MULTILINE` across the block. See `_declared_tools`.
+TOOLS_KEY = re.compile(r"tools:(?P<value>.*)$")
+
+#: One entry of a block sequence: `  - Read`. Zero indentation is legal YAML and
+#: unambiguous inside frontmatter, where no key begins with `-`.
+BLOCK_ENTRY = re.compile(r"[ \t]*-[ \t]*(?P<tool>.*?)[ \t]*$")
+
+
+def _frontmatter(text: str) -> str:
+    """The YAML frontmatter body, empty when the file opens without one."""
+    match = FRONTMATTER.match(text)
+    return match.group("body") if match else ""
+
+
+def _bare(token: str) -> str:
+    """A tool name with YAML's optional quoting and whitespace removed."""
+    return token.strip().strip("\"'")
+
+
+def _declared_tools(text: str) -> List[str]:
+    """Every tool this file's frontmatter declares.
+
+    Two YAML forms are ordinary, and a check that reads only one is a check on
+    whichever a contributor happened to type:
+
+    - `tools: Read, Grep, Bash` — inline, optionally bracketed (`[Read, Grep]`).
+      All 23 live judges are written this way.
+    - `tools:` followed by `  - Read` lines — a block sequence.
+
+    One `re.MULTILINE` pattern cannot read both, which is the defect this
+    replaces (#57): in `^tools:\\s*(?P<tools>.+)$` the `\\s*` crosses the newline
+    and the `.` does not, so a block sequence captured its first entry alone and
+    every later entry — `Write`, `Task` — left the guarded set silently. Hence a
+    line-at-a-time walk instead: the key line decides the form, and a block list
+    ends at the first line that is not an entry, so it can neither run past
+    `model:` nor escape the frontmatter into the body's own bullets.
+    """
+    lines = _frontmatter(text).splitlines()
+    for n, line in enumerate(lines):
+        key = TOOLS_KEY.match(line)
+        if not key:
+            continue
+        inline = key.group("value").strip().strip("[]")
+        if inline:
+            return [_bare(t) for t in inline.split(",") if _bare(t)]
+        tools: List[str] = []
+        for follower in lines[n + 1 :]:
+            entry = BLOCK_ENTRY.match(follower)
+            if not entry:
+                break
+            tools.append(_bare(entry.group("tool")))
+        return tools
+    return []
 
 
 def parse_charter(text: str) -> Tuple[List[Dict[str, str]], Dict[str, str]]:
@@ -252,15 +311,13 @@ def scan(rel: str, text: str) -> List[str]:
     problems out, so tests drive it without touching disk."""
     problems: List[str] = []
 
-    if match := TOOLS_LINE.search(text):
-        tools = [t.strip() for t in match.group("tools").split(",")]
-        problems.extend(
-            f"{rel}: declares the {tool} tool — a judge returns findings and "
-            f"never changes the artifact (charter rule 2). The consumer "
-            f"persists the findings document."
-            for tool in tools
-            if tool in MUTATION_TOOLS
-        )
+    problems.extend(
+        f"{rel}: declares the {tool} tool — a judge returns findings and "
+        f"never changes the artifact (charter rule 2). The consumer "
+        f"persists the findings document."
+        for tool in _declared_tools(text)
+        if tool in MUTATION_TOOLS
+    )
 
     for n, line in enumerate(text.splitlines(), 1):
         if cmd := _slash_command(line):

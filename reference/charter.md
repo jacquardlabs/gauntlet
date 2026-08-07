@@ -17,6 +17,12 @@ human may act on — never a patch, never an instruction to run something. This 
 `scripts/check_independence.py` enforces mechanically: a registered judge carries no
 mutation tool and names no slash command.
 
+**One grant that check deliberately does not cover: `Bash`.** All 23 judges declare it,
+because reading a repository at a ref is `git` and `grep`; adding it to `MUTATION_TOOLS`
+would disarm the whole fleet. So the residual is real — a judge induced past its
+injection-defense clause can write, read `~/.ssh`, or reach the network through the
+shell. What holds that line is the prompt clause in every judge, not the check.
+
 Both rules are about credibility, not purity. Findings land in the left margin of a
 consumer's workspace as machine facts; a fact whose author had a stake in the outcome
 is not a fact.

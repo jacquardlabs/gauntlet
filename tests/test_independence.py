@@ -33,6 +33,24 @@ having run.
 """
 
 
+#: The same judge, declared as a YAML block sequence. Ordinary YAML, and the form
+#: the tools check was blind to until #57.
+BLOCK_JUDGE = """---
+name: security-auditor
+description: Judges a changeset against the security checklist.
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+model: opus
+---
+
+Inspect read-only. Report findings in the contract shape; the consumer persists
+them.
+"""
+
+
 def _charter(rows="", anchors=""):
     return (
         "# Charter\n\n## Judges\n\n"
@@ -222,6 +240,38 @@ def test_every_mutation_tool_rejected():
     for tool in check.MUTATION_TOOLS:
         text = CLEAN_JUDGE.replace("tools: Read", f"tools: {tool}, Read")
         _has(check.scan("agents/x.md", text), f"declares the {tool} tool")
+
+
+def test_block_style_tools_are_read_past_the_first_entry():
+    """#57: `^tools:\\s*(?P<tools>.+)$` captured `- Read` and stopped, so a judge
+    declaring `Write` and `Task` as list entries 2 and 3 reported zero problems."""
+    text = BLOCK_JUDGE.replace("  - Grep\n", "  - Write\n  - Task\n")
+    problems = check.scan("agents/rogue-auditor.md", text)
+    _has(problems, "declares the Write tool")
+    _has(problems, "declares the Task tool")
+
+
+def test_block_style_read_only_judge_passes():
+    assert check.scan("agents/security-auditor.md", BLOCK_JUDGE) == []
+
+
+def test_bracketed_inline_tools_are_read():
+    text = CLEAN_JUDGE.replace(
+        "tools: Read, Grep, Glob, Bash", "tools: [Read, Grep, Write]"
+    )
+    _has(check.scan("agents/x.md", text), "declares the Write tool")
+
+
+def test_a_block_list_never_escapes_the_frontmatter():
+    """The list ends at the next key; the parse ends at the closing `---`. A body
+    bullet naming a tool is prose, and a body `tools:` line is documentation."""
+    text = BLOCK_JUDGE + (
+        "\nWhat this judge never does:\n\n"
+        "- Write the fix it recommends.\n"
+        "- Task another agent to apply one.\n\n"
+        "A producer would declare tools: Read, Write, Edit. You are not one.\n"
+    )
+    assert check.scan("agents/x.md", text) == []
 
 
 def test_slash_command_rejected_in_backticks():
