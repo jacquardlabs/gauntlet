@@ -30,7 +30,7 @@ class Artifact(TypedDict, total=False):
     kind: str   # required — "changeset" | "document" | "repository"
     base: str   # changeset: required — git sha
     head: str   # changeset: required — git sha
-    root: str   # changeset, repository: optional — defaults to the working directory
+    root: str   # all kinds: optional — defaults to the working directory
     pr: str     # changeset: optional — pull-request URL, carried through verbatim
     path: str   # document: required — markdown file
     ref: str    # repository: required — the sha or ref judged, a point in time
@@ -127,6 +127,7 @@ def _validate_artifact(artifact: object, where: str) -> None:
         _optional_str(artifact, "pr", f"{where}.artifact")
     elif kind == "document":
         _require_str(artifact, "path", f"{where}.artifact")
+        _optional_str(artifact, "root", f"{where}.artifact")
     elif kind == "repository":
         _require_str(artifact, "ref", f"{where}.artifact")
         _optional_str(artifact, "root", f"{where}.artifact")

@@ -72,7 +72,7 @@ What a consumer hands a judge, as JSON embedded in the dispatch:
 | Kind | Shape | Notes |
 |---|---|---|
 | `changeset` | `{kind: "changeset", base, head, root?, pr?}` | Git shas; `root` defaults to the working directory. `pr` is the pull-request URL when the changeset is a PR — the consumer resolves the PR to `base`/`head` at dispatch and carries the URL through, so the findings document is addressable back to the PR without the invocation in hand. |
-| `document` | `{kind: "document", path}` | Markdown file. Trade-study matrices are documents; the matrix locus lives on the finding (§4). |
+| `document` | `{kind: "document", path, root?}` | Markdown file; `root` defaults to the working directory, and is where the §4 quote check resolves `path`. Trade-study matrices are documents; the matrix locus lives on the finding (§4). |
 | `repository` | `{kind: "repository", ref, root?}` | A whole repository at one point in time — the artifact a `posture` review judges. `ref` is the sha or ref judged, required so a standing finding is reproducible against the state that produced it; `root` defaults to the working directory. There is deliberately no `base`: a posture review compares the repository to a standard, never to an earlier revision of itself. |
 
 A PR is not an artifact kind of its own: judges see every PR as an ordinary changeset.

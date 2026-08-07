@@ -134,6 +134,20 @@ def test_an_unreadable_document_skips_the_quote_check_not_the_load():
         assert notes == [] and failures == []
 
 
+def test_a_mistyped_document_root_is_a_failure_not_a_crash():
+    """Regression: `{"root": 123}` used to pass validate_findings, then
+    Path(123) raised TypeError inside load() — one bad lane taking every
+    other lane's findings down with it."""
+    with tempfile.TemporaryDirectory() as tmp:
+        doc = _doc("product-reviewer")
+        doc["artifact"] = {"kind": "document", "path": "plan.md", "root": 123}
+        _write(tmp, doc)
+        docs, _, failures = report.load(Path(tmp))
+        assert docs == []
+        _has(failures, "does not satisfy the findings contract")
+        _has(failures, "artifact.root")
+
+
 def test_changeset_criticals_never_face_the_quote_rule():
     """An anchor with no quoted span is fine on code — the quote rule is a
     document-artifact rule, not a new anchor grammar for the fleet."""

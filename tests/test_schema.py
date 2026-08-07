@@ -86,7 +86,7 @@ def test_invocation_optional_fields():
 
 def test_invocation_document_artifact():
     inv = _invocation()
-    inv["artifact"] = {"kind": "document", "path": "docs/design/auth.md"}
+    inv["artifact"] = {"kind": "document", "path": "docs/design/auth.md", "root": "/srv/docs"}
     inv["mount"] = "intake"
     schema.validate_invocation(inv)
 
@@ -116,6 +116,16 @@ def test_every_artifact_kind_validates_its_own_required_field():
         inv = _invocation()
         inv["artifact"] = {"kind": kind}
         _raises(schema.validate_invocation, inv, fragment)
+
+
+def test_document_root_is_type_checked_like_the_other_kinds():
+    """Regression: the document branch never typed `root`, so `root: 123`
+    passed validation and crashed report.load() at Path(123) — past the
+    boundary, where a TypeError takes every other lane's findings with it."""
+    for validate in (schema.validate_invocation, schema.validate_findings):
+        doc = _findings_doc() if validate is schema.validate_findings else _invocation()
+        doc["artifact"] = {"kind": "document", "path": "plan.md", "root": 123}
+        _raises(validate, doc, "artifact.root")
 
 
 def test_repository_artifact_is_not_validated_as_a_document():
