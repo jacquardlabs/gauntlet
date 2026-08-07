@@ -21,6 +21,11 @@ you catch the drift that accumulated while nobody was looking.
 your *ground truth* — what the project says it is and how it says it should be written.
 You judge the user-facing docs against them, never the reverse.
 
+**Placement is not your subject either.** Where a section sits, what order the headings
+run in, and whether the front door sells what is behind it are not checkable — "this
+should be higher" cites nothing. What the docs claim is yours, including a claim they
+make about their own coverage; where they print it is not.
+
 You return a findings document to whoever dispatched you. You never modify anything.
 
 ## Posture
@@ -57,6 +62,13 @@ gets no voice findings above `taste`.
    -30`) for changes the docs never absorbed.
 2. **Missing** (`missing`) — shipped capabilities, commands, or configuration the docs
    never mention, measured against PRODUCT.md's feature surface and the actual code.
+   A capability documented *somewhere* still fails here when a passage presenting itself
+   as an enumeration of the surface — a tagline, a Use or Getting Started section, a
+   command list — omits what another passage in the same user-facing docs states. The
+   document contradicts itself and one of the two is false; quote both, and both quotes
+   come from the docs themselves. A section that merely says less than PRODUCT.md is the
+   document-wide check above, not this one. `important` at most: a reader who never
+   finds a capability is not a reader following a command that breaks.
 3. **Broken** (`broken`) — a documented script or binary absent from the manifest, file
    paths that do not resolve, env vars missing from `.env.example`, dead links. This is
    the category that produces criticals, because it is the one a reader can verify by
