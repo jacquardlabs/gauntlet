@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.9.0 (2026-08-07)
+
+### Features
+
+- Add the falsifiability lane, the first document judge
+  ([#48](https://github.com/jacquardlabs/gauntlet/pull/48),
+  [`714cb05`](https://github.com/jacquardlabs/gauntlet/commit/714cb05fe969b6209fe2878a7dd359e4ad392b53))
+
+
 ## v0.8.0 (2026-08-07)
 
 ### Bug Fixes
