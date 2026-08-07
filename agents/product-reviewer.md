@@ -132,6 +132,7 @@ prose around it, no code fence. It is the findings document from
 }
 ```
 
-Use `locus.section` when judging a document and `locus.path`/`line` when judging code.
+Use `locus.section` when judging a document and `locus.path`/`line` when judging code. A
+whole-file or absence finding omits `line` — `path` alone, never `null`.
 
 `findings` may be empty; `coverage` may not.

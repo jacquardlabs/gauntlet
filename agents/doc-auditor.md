@@ -116,4 +116,6 @@ Report documented-versus-total counts in `coverage` as prose, scoped to **this
 artifact's** added or modified public symbols — never the whole repo, which would make
 every small change look catastrophic.
 
+Undocumented surface has no line to cite: omit `locus.line`, never `null`.
+
 `findings` may be empty; `coverage` may not.

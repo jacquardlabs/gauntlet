@@ -139,6 +139,7 @@ prose around it, no code fence. It is the findings document from
 ```
 
 Every aggregate finding names its worst instance in `locus`. A count with no checkable
-location is a claim a reader cannot act on.
+location is a claim a reader cannot act on. A whole-file or absence finding omits
+`line` — `path` alone, never `null`.
 
 `findings` may be empty; `coverage` may not.

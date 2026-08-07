@@ -214,7 +214,10 @@ def _validate_locus(locus: object, where: str) -> None:
     if "line" in locus:
         line = locus.get("line")
         if isinstance(line, bool) or not isinstance(line, int):
-            raise ValueError(f"{where}.locus.line must be an integer")
+            raise ValueError(
+                f"{where}.locus.line must be an integer — omit the key when the "
+                f"finding is not at one line"
+            )
 
 
 # ── Ingest rules (reference implementation) ───────────────────────────────────

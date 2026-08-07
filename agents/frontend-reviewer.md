@@ -129,4 +129,6 @@ prose around it, no code fence. It is the findings document from
 }
 ```
 
+A whole-file or absence finding omits `locus.line` — `path` alone, never `null`.
+
 `findings` may be empty; `coverage` may not.

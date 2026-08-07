@@ -133,5 +133,8 @@ prose around it, no code fence. It is the findings document from
 }
 ```
 
+An absence finding — a capability nowhere documented, a section that does not exist —
+has no line: omit `locus.line`, never `null`.
+
 `findings` may be empty; `coverage` may not. Docs that still tell the truth report as an
 empty list with a substantive coverage line, and that is the best possible result.

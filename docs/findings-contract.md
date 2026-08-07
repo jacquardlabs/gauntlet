@@ -115,6 +115,10 @@ Each entry in `findings`:
 | `recommendation` | no | The action to take, imperative, **25 words or fewer**. Advisory, never a patch — judges do not produce. Why it matters belongs in `failure_scenario`: a recommendation that argues for itself is two fields in one, and the argument is what makes it unreadable in a PR margin. |
 | `receipts` | no | List of `outputDigest` strings citing records in the evidence log (§7). Only valid when the invocation carried `receipts_path`. |
 
+An optional field that does not apply is omitted, never `null` — a null is a type error,
+and one costs the whole document. `locus.line` is where that bites: a finding about a
+whole file carries `path` alone.
+
 Compact example:
 
 ```json
