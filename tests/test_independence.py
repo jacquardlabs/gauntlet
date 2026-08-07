@@ -278,6 +278,39 @@ def test_a_block_list_never_escapes_the_frontmatter():
     assert check.scan("agents/x.md", text) == []
 
 
+def test_missing_tools_key_rejected():
+    """The laziest frontmatter is the most permissive one: an omitted `tools:`
+    key inherits every tool available to subagents, `Write` and `Task` among
+    them. Parsed to `[]` and passed clean until the guard failed closed (#62)."""
+    text = "---\nname: security-auditor\nmodel: opus\n---\n\nInspect read-only.\n"
+    _has(check.scan("agents/x.md", text), "declares no `tools:` key")
+
+
+def test_unparseable_frontmatter_rejected():
+    for text in (
+        "# Security lane\n\nInspect read-only.\n",  # no frontmatter at all
+        "---\nname: security-auditor\ntools: Read, Grep\n",  # never terminated
+    ):
+        _has(check.scan("agents/x.md", text), "no terminated `---` frontmatter")
+
+
+def test_tools_key_naming_nothing_readable_rejected():
+    """Three ways to write a declaration this parser cannot resolve. Each once
+    yielded silence, which is what a judge declaring only read tools yields."""
+    for value in ("", " []", " [Read,"):
+        text = CLEAN_JUDGE.replace("tools: Read, Grep, Glob, Bash", f"tools:{value}")
+        _has(check.scan("agents/x.md", text), "naming no tool this check can read")
+
+
+def test_a_comment_never_truncates_a_block_list():
+    """A comment or blank line interrupts a block sequence without ending it;
+    stopping there drops every entry below, which is the original bug's shape."""
+    text = BLOCK_JUDGE.replace("  - Grep\n", "  # the read set\n\n  - Write\n")
+    _has(check.scan("agents/x.md", text), "declares the Write tool")
+    trailing = BLOCK_JUDGE.replace("  - Grep\n", "  - Write  # for the fix\n")
+    _has(check.scan("agents/x.md", trailing), "declares the Write tool")
+
+
 def test_slash_command_rejected_in_backticks():
     # The dominant form in the studious fleet: gate-invoked (`/review`).
     text = CLEAN_JUDGE + "\nDiff-scoped and gate-invoked (`/review`).\n"
