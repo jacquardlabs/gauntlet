@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.6.0 (2026-08-07)
+
+### Features
+
+- Migrate the product and interface posture lanes
+  ([#42](https://github.com/jacquardlabs/gauntlet/pull/42),
+  [`7aeea44`](https://github.com/jacquardlabs/gauntlet/commit/7aeea44d97af4700a996904ef4916b2429ef584a))
+
+
 ## v0.5.0 (2026-08-07)
 
 ### Features
