@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## v0.10.5 (2026-08-07)
+
+### Bug Fixes
+
+- Fail closed when a judge's tools declaration cannot be read
+  ([#63](https://github.com/jacquardlabs/gauntlet/pull/63),
+  [`b562212`](https://github.com/jacquardlabs/gauntlet/commit/b562212993cf8b25e489283c758d023febebb711))
+
+- Match the frontmatter delimiters on CRLF files
+  ([#63](https://github.com/jacquardlabs/gauntlet/pull/63),
+  [`b562212`](https://github.com/jacquardlabs/gauntlet/commit/b562212993cf8b25e489283c758d023febebb711))
+
+- Read block-sequence tools: frontmatter in the independence check
+  ([#63](https://github.com/jacquardlabs/gauntlet/pull/63),
+  [`b562212`](https://github.com/jacquardlabs/gauntlet/commit/b562212993cf8b25e489283c758d023febebb711))
+
+
 ## v0.10.4 (2026-08-07)
 
 ### Bug Fixes
