@@ -33,7 +33,7 @@ REF=$(git rev-parse --verify <ref>)   # HEAD when the keyword stands alone
 ```
 
 Judges read `artifact.root`, which defaults to the working directory, so a ref that is not
-the tree on disk needs a worktree at it and `--root` pointing there — same mechanism, same
+the tree on disk needs a worktree at it, its path in `ROOT` — same mechanism, same
 cleanup, and the same reason as the PR branch below. Report the ref and the tracked-file
 count, and skip the rest of this step: no base, no diff.
 
@@ -55,7 +55,8 @@ judge a different artifact than the one asked for.
 
 ```bash
 git fetch origin pull/<n>/head
-git worktree add --detach <tmp>/tree <head-sha>
+ROOT=<tmp>/tree
+git worktree add --detach $ROOT <head-sha>
 ```
 
 Two reasons, and the second is not politeness. `gh pr checkout` switches the human's
@@ -65,9 +66,10 @@ read the tree it is judging: the code lane's idiom linter runs against the worki
 directory, so reviewing a PR whose head was never checked out lints code that is not
 under review.
 
-Pass the worktree as `--root` to the dispatcher, so every judge's `artifact.root` points
-at it. Remove it when you are done (`git worktree remove --force <tmp>/tree`), even if
-the run failed.
+`ROOT` goes to the dispatcher as `--root`, so every judge's `artifact.root` points at the
+worktree. Without it they read whatever is on disk and the run pays for a checkout it
+never uses. Remove the worktree when you are done (`git worktree remove --force $ROOT`),
+even if the run failed.
 
 Get the changed paths (`git diff --name-only $BASE..$HEAD`, or the PR's `files`). Report
 the artifact and the file count before dispatching anything, and say which tree the
@@ -82,7 +84,7 @@ boundary:
 ```bash
 git diff --name-only $BASE..$HEAD > <tmp>/paths.txt
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
-  --base $BASE --head $HEAD ${PR:+--pr $PR} \
+  --base $BASE --head $HEAD ${PR:+--pr $PR} ${ROOT:+--root $ROOT} \
   --paths <tmp>/paths.txt \
   --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
 ```
