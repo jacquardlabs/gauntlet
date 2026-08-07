@@ -71,8 +71,8 @@ why. A Python-only changeset costs eight judges; a `.tsx` and `.css` changeset c
 
 ## The lanes
 
-Nineteen today, each with one concern and its own standard. Fourteen judge a
-changeset; five judge a whole repository as it stands (see "Standing reviews" below).
+Twenty-one today, each with one concern and its own standard. Fourteen judge a
+changeset; seven judge a whole repository as it stands (see "Standing reviews" below).
 
 | Judge | Judges | Standard |
 |---|---|---|
@@ -107,9 +107,10 @@ be mistaken for a lane that found nothing.
 
 ## Standing reviews
 
-Every lane above judges a change. Five judge the repository itself, at one ref, with no
+Every lane above judges a change. Seven judge the repository itself, at one ref, with no
 diff in sight — which is the only way to reach a defect sitting in code no recent branch
-has touched.
+has touched, or an inconsistency that only shows up when you look at every surface at
+once.
 
 | Judge | Judges | Standard |
 |---|---|---|
@@ -118,6 +119,8 @@ has touched.
 | `architecture-posture-auditor` | boundaries, complexity distribution, evolution readiness, data layer — against what the code actually does | its own prompt |
 | `prompt-posture-auditor` | trigger coverage, instruction conflicts, contract drift across seams, duplication, injection posture, token economy | `prompt-checklist` |
 | `docs-posture-auditor` | stale claims, missing capabilities, commands and paths that do not resolve, voice drift, structure gaps | its own prompt |
+| `product-posture-reviewer` | whether PRODUCT.md is still true — personas, principles, scope creep, stale known problems — and whether the product still coheres | its own prompt |
+| `interface-posture-reviewer` | cross-surface consistency, per-surface design-system adherence, accessibility, responsive behavior | its own prompt |
 
 These answer a third question. `intake` asks whether a thing should be built and
 `acceptance` asks whether what shipped delivers; **`posture` asks what state the
