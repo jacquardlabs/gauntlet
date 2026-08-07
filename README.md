@@ -76,8 +76,13 @@ Nothing is sniffed here; you name the file and the document lanes read it whole.
 **A whole repository** — every tracked file at one ref, no diff in sight:
 
 ```text
-git ls-files | python3 scripts/dispatch.py --ref HEAD --paths -
+/gauntlet:review posture
+/gauntlet:review posture origin/main
 ```
+
+`posture` is a literal keyword, not a path — `HEAD` and a branch name are both valid
+filenames, so nothing else could tell a standing review from a document run. The ref
+defaults to `HEAD`.
 
 This is the standing review, and it is the only way to reach a defect sitting in code no
 recent branch has touched. See [Standing reviews](#standing-reviews).
@@ -142,6 +147,15 @@ weekly or once a quarter, the question is identical and the cadence is yours.
 
 They read a whole repository at a `ref` rather than a changeset, so they cost more than
 a review and are worth running on a trunk, not a branch.
+
+Driving the pipeline yourself rather than through the command, selection is one call. It
+emits the invocations to dispatch, not findings; `scripts/report.py` compiles what the
+judges return:
+
+```text
+git ls-tree -r --name-only HEAD \
+  | python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" --ref HEAD --paths -
+```
 
 **Every run is a baseline, and that is the design.** These lanes measure the repository
 as it stands; they do not remember the last run, because a judge that kept its own
