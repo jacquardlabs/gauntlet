@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.5.0 (2026-08-07)
+
+### Features
+
+- Migrate the prompt and documentation posture lanes
+  ([#41](https://github.com/jacquardlabs/gauntlet/pull/41),
+  [`c246aa7`](https://github.com/jacquardlabs/gauntlet/commit/c246aa73f782d702ebf9c76348f7ecbd938c3f9f))
+
+
 ## v0.4.0 (2026-08-06)
 
 ### Features
