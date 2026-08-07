@@ -82,9 +82,10 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
   --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
 ```
 
-Only `product-reviewer` declares `intake` today, and it is context-gated (below) — a
-document run may legitimately select nothing. The script names the gate that dropped
-each judge; relay that, it is the answer, not an error to route around.
+`falsifiability-auditor` is ungated — it needs nothing beyond the document — so every
+document run dispatches it; `product-reviewer` joins when `--context` names a
+PRODUCT.md. Should selection ever come back empty, the script names the gate that
+dropped each judge; relay that, it is the answer, not an error to route around.
 
 Pass `--context` only the files that exist, and `--receipts-path` only when the human
 named an evidence log — never invent one.

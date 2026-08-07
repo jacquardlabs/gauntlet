@@ -71,8 +71,9 @@ why. A Python-only changeset costs eight judges; a `.tsx` and `.css` changeset c
 
 ## The lanes
 
-Twenty-one today, each with one concern and its own standard. Fourteen judge a
-changeset; seven judge a whole repository as it stands (see "Standing reviews" below).
+Twenty-two today, each with one concern and its own standard. Fourteen judge a
+changeset; seven judge a whole repository as it stands (see "Standing reviews" below);
+one judges a document before the work exists (see "Judging documents" below).
 
 | Judge | Judges | Standard |
 |---|---|---|
@@ -143,6 +144,32 @@ cycles where you can actually work it.
 If a consumer does keep prior findings, passing them in the invocation's `context` lets
 a lane name what is new, persistent, or resolved. That is a convenience, not the
 intended flow: nothing in gauntlet expects a report directory to exist.
+
+## Judging documents
+
+Everything above judges work — a change, or the repository it landed in. One lane
+judges the document that proposes work, before any exists:
+
+```text
+/gauntlet:review docs/migration-plan.md
+```
+
+`falsifiability-auditor` reads the named file at `intake` and asks one question: what
+does this document commit to, and how would we know it was wrong? A step consuming the
+output of a later step, a step with no success signal, an irreversible step with no
+stated recovery, a scope the named design never agreed to — and, first among them, a
+document that commits to nothing at all. Plausible prose with nothing checkable in it
+is the finding, not evidence of health: fluency is exactly what a reviewer is most
+inclined to wave through.
+
+Plans and migration plans need nothing beyond the file. Design docs, RFCs, postmortems,
+experiment designs, and ADRs ride the same lane with a type standard your project
+supplies as context — what a postmortem must commit to (action items with owners) is
+not what an experiment design must (a stopping rule stated before it runs). Adding a
+document type is a standard, never a new judge.
+
+On a document, a critical's anchor is a verbatim quote, and ingest checks that the
+quote actually appears — a fabricated anchor demotes the same way a missing one does.
 
 ## How to read a finding
 

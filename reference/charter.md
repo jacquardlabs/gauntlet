@@ -53,6 +53,7 @@ The roster. Columns are load-bearing:
 | `product-reviewer` | product fit | `intake`, `acceptance` | (inline) | `agents/product-reviewer.md` |
 | `premortem-auditor` | pre-mortem register | `acceptance` | `premortem-format` | `agents/premortem-auditor.md` |
 | `prompt-auditor` | model-facing instructions | `acceptance` | `prompt-checklist` | `agents/prompt-auditor.md` |
+| `falsifiability-auditor` | falsifiability | `intake` | (inline) | `agents/falsifiability-auditor.md` |
 | `security-posture-auditor` | security posture | `posture` | `security-checklist` | `agents/security-posture-auditor.md` |
 | `codebase-posture-auditor` | codebase posture | `posture` | `idioms/` | `agents/codebase-posture-auditor.md` |
 | `architecture-posture-auditor` | structural posture | `posture` | (inline) | `agents/architecture-posture-auditor.md` |
@@ -182,6 +183,7 @@ needs a registered judge.
 | `product-reviewer` | the stated criterion, principle, persona, or journey — quoted — that the artifact does not deliver |
 | `premortem-auditor` | the register item, by id, marked REALIZED, plus the evidence that realized it |
 | `prompt-auditor` | the instruction or invariant the prompt surface contradicts, quoted, with the file it comes from |
+| `falsifiability-auditor` | the commitment quoted verbatim from the document that cannot be checked as written — or, for an absence, the enclosing step or section quoted, so a reader can verify nothing in it commits |
 | `security-posture-auditor` | a named signature from `reference/security-checklist.md` plus the traced path from untrusted input to that sink at `file:line`, or the commit sha that exposed credential material and whether it is live at the judged ref |
 | `codebase-posture-auditor` | the measured total and the specific instance that makes it urgent, at `file:line` — a count alone is a metric, not a critical |
 | `architecture-posture-auditor` | both ends of the structural edge, the verified import or call that proves it, and the development cost it currently imposes |

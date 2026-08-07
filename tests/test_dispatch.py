@@ -297,9 +297,11 @@ def test_cli_document_needs_no_paths_and_defaults_mount_to_intake():
     )
     assert proc.returncode == 0, proc.stderr
     built = json.loads(proc.stdout)
-    assert {i["judge"] for i in built} == {"product-reviewer"}, (
-        "intake is one context-gated lane today; a second declarer means "
-        "this assertion is stale, not wrong"
+    assert {i["judge"] for i in built} == {
+        "falsifiability-auditor", "product-reviewer"
+    }, (
+        "intake is the ungated falsifiability lane plus the context-gated product "
+        "lane today; a new declarer means this assertion is stale, not wrong"
     )
     for invocation in built:
         schema.validate_invocation(invocation)
@@ -327,19 +329,26 @@ def test_cli_refuses_paths_beside_a_document():
     assert "takes no --paths" in proc.stderr
 
 
-def test_cli_names_the_gate_when_a_document_run_selects_nothing():
-    """Only context-gated lanes declare intake today, so a bare document run
-    selects zero judges — and the caller must hear why: the mount is declared,
-    the gate is closed. 'No judge declares intake' would be false."""
+def test_cli_bare_document_run_dispatches_the_falsifiability_lane():
+    """A document with no context selects exactly the ungated lane — the
+    falsifiability question needs nothing beyond the document itself, while
+    product-reviewer stays behind its PRODUCT.md gate. This replaces the
+    empty-selection test that pinned the gate-naming message: an ungated
+    declarer always survives intake selection now, so that branch is
+    unreachable with the shipped roster."""
     proc = subprocess.run(
         [sys.executable, str(REPO / "scripts/dispatch.py"),
          "--document", "docs/plan.md"],
         capture_output=True, text=True,
     )
-    assert proc.returncode == 1
-    assert "no judge declares" not in proc.stderr
-    assert "product-reviewer" in proc.stderr
-    assert "--context" in proc.stderr
+    assert proc.returncode == 0, proc.stderr
+    built = json.loads(proc.stdout)
+    assert {i["judge"] for i in built} == {"falsifiability-auditor"}
+    schema.validate_invocation(built[0])
+    assert built[0]["standard"]["name"] == "falsifiability-auditor", (
+        "an (inline) standard resolves to the judge's own name plus the "
+        "plugin version"
+    )
 
 
 def main():
