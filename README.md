@@ -1,8 +1,8 @@
 # gauntlet
 
-Run a changeset through a row of independent judges. Each one owns a single lane, grades
-what it sees against a standard it owns, and returns findings you can check — never a
-verdict, never a fix.
+Run a change, a document, or a whole repository through a row of independent judges. Each
+one owns a single lane, grades what it sees against a standard it owns, and returns
+findings you can check — never a verdict, never a fix.
 
 ```text
 /gauntlet:review 142
@@ -38,36 +38,49 @@ Findings are yours to act on. Gauntlet never decides whether that ships.
 /plugin install gauntlet@jacquardlabs-marketplace
 ```
 
-Until the marketplace entry lands ([#6](https://github.com/jacquardlabs/gauntlet/issues/6)),
-clone the repo and add the checkout as a local plugin directory.
-
 Nothing to configure. Judges read whatever context docs your project already has —
 CLAUDE.md, DESIGN.md, PRODUCT.md — and say in `coverage` when one they wanted was
 missing.
 
 ## Use
 
-**Review the current branch** against its merge-base:
+Three kinds of thing go through the gauntlet, and each is named a different way.
+
+**A change** — the current branch against its merge-base, or a pull request:
 
 ```text
 /gauntlet:review
-```
-
-**Review a pull request** — it resolves the PR, checks the head out so judges read the
-PR's tree rather than whatever is on your disk, and offers to post the findings as review
-comments once you have read them:
-
-```text
 /gauntlet:review 142
 /gauntlet:review https://github.com/you/app/pull/142
 ```
 
-Posting is comments only, after you say yes. Gauntlet will not approve a PR or request
-changes on one — that verdict is yours to give, and a tool that posted it would be
-laundering a tally into a judgment nobody made.
+A PR run resolves the shas, checks the head out so judges read the PR's tree rather than
+whatever is on your disk, and offers to post the findings as review comments once you
+have read them. Posting is comments only, after you say yes. Gauntlet will not approve a
+PR or request changes on one — that verdict is yours to give, and a tool that posted it
+would be laundering a tally into a judgment nobody made.
 
 Only the lanes your changes touch are dispatched, and the run says which it skipped and
 why. A Python-only changeset costs eight judges; a `.tsx` and `.css` changeset costs eleven.
+
+**A document** — a plan, design doc, RFC, postmortem, or trade study, judged before the
+work it proposes exists:
+
+```text
+/gauntlet:review docs/migration-plan.md
+```
+
+Nothing is sniffed here; you name the file and the document lanes read it whole. See
+[Judging documents](#judging-documents) for what they ask of it.
+
+**A whole repository** — every tracked file at one ref, no diff in sight:
+
+```text
+git ls-files | python3 scripts/dispatch.py --ref HEAD --paths -
+```
+
+This is the standing review, and it is the only way to reach a defect sitting in code no
+recent branch has touched. See [Standing reviews](#standing-reviews).
 
 ## The lanes
 
@@ -109,9 +122,8 @@ be mistaken for a lane that found nothing.
 ## Standing reviews
 
 Every lane above judges a change. Seven judge the repository itself, at one ref, with no
-diff in sight — which is the only way to reach a defect sitting in code no recent branch
-has touched, or an inconsistency that only shows up when you look at every surface at
-once.
+diff in sight — which reaches a defect sitting in code no recent branch has touched, or
+an inconsistency that only shows up when you look at every surface at once.
 
 | Judge | Judges | Standard |
 |---|---|---|
@@ -129,11 +141,7 @@ repository is in**. The mount is named for the question, not for a schedule — 
 weekly or once a quarter, the question is identical and the cadence is yours.
 
 They read a whole repository at a `ref` rather than a changeset, so they cost more than
-a review and are worth running on a trunk, not a branch:
-
-```text
-git ls-files | python3 scripts/dispatch.py --ref HEAD --paths -
-```
+a review and are worth running on a trunk, not a branch.
 
 **Every run is a baseline, and that is the design.** These lanes measure the repository
 as it stands; they do not remember the last run, because a judge that kept its own
@@ -147,12 +155,8 @@ intended flow: nothing in gauntlet expects a report directory to exist.
 
 ## Judging documents
 
-Everything above judges work — a change, or the repository it landed in. Two lanes
-judge the document that proposes work, before any exists:
-
-```text
-/gauntlet:review docs/migration-plan.md
-```
+Everything above judges work — a change, or the repository it landed in. Two lanes judge
+the document that proposes work, before any exists.
 
 `falsifiability-auditor` reads the named file at `intake` and asks one question: what
 does this document commit to, and how would we know it was wrong? A step consuming the
@@ -232,6 +236,8 @@ fact.
 
 `CONTRIBUTING.md` has the local check suite, the repo settings, and the rule that a judge
 is registered in `reference/charter.md` before its file exists.
+
+MIT licensed — see `LICENSE`.
 
 This repo reclaims the name of an earlier, unrelated Jacquard Labs project whose remote
 was retired.
