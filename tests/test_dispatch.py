@@ -298,9 +298,9 @@ def test_cli_document_needs_no_paths_and_defaults_mount_to_intake():
     assert proc.returncode == 0, proc.stderr
     built = json.loads(proc.stdout)
     assert {i["judge"] for i in built} == {
-        "falsifiability-auditor", "product-reviewer"
+        "falsifiability-auditor", "trade-study-auditor", "product-reviewer"
     }, (
-        "intake is the ungated falsifiability lane plus the context-gated product "
+        "intake is the two ungated document lanes plus the context-gated product "
         "lane today; a new declarer means this assertion is stale, not wrong"
     )
     for invocation in built:
@@ -329,13 +329,13 @@ def test_cli_refuses_paths_beside_a_document():
     assert "takes no --paths" in proc.stderr
 
 
-def test_cli_bare_document_run_dispatches_the_falsifiability_lane():
-    """A document with no context selects exactly the ungated lane — the
-    falsifiability question needs nothing beyond the document itself, while
-    product-reviewer stays behind its PRODUCT.md gate. This replaces the
-    empty-selection test that pinned the gate-naming message: an ungated
-    declarer always survives intake selection now, so that branch is
-    unreachable with the shipped roster."""
+def test_cli_bare_document_run_dispatches_the_ungated_document_lanes():
+    """A document with no context selects exactly the ungated lanes — the
+    falsifiability and trade-study questions need nothing beyond the document
+    itself, while product-reviewer stays behind its PRODUCT.md gate. Dispatch
+    reads names, never content, so a document with no matrix still costs the
+    trade-study lane a dispatch and buys a self-skip — the roster's safe
+    default."""
     proc = subprocess.run(
         [sys.executable, str(REPO / "scripts/dispatch.py"),
          "--document", "docs/plan.md"],
@@ -343,11 +343,16 @@ def test_cli_bare_document_run_dispatches_the_falsifiability_lane():
     )
     assert proc.returncode == 0, proc.stderr
     built = json.loads(proc.stdout)
-    assert {i["judge"] for i in built} == {"falsifiability-auditor"}
-    schema.validate_invocation(built[0])
-    assert built[0]["standard"]["name"] == "falsifiability-auditor", (
+    standards = {i["judge"]: i["standard"] for i in built}
+    assert set(standards) == {"falsifiability-auditor", "trade-study-auditor"}
+    for invocation in built:
+        schema.validate_invocation(invocation)
+    assert standards["falsifiability-auditor"]["name"] == "falsifiability-auditor", (
         "an (inline) standard resolves to the judge's own name plus the "
         "plugin version"
+    )
+    assert standards["trade-study-auditor"] == {"name": "trade-study-format"}, (
+        "a file-backed standard keeps its own name, no version"
     )
 
 

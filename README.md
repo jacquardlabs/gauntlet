@@ -71,9 +71,9 @@ why. A Python-only changeset costs eight judges; a `.tsx` and `.css` changeset c
 
 ## The lanes
 
-Twenty-two today, each with one concern and its own standard. Fourteen judge a
+Twenty-three today, each with one concern and its own standard. Fourteen judge a
 changeset; seven judge a whole repository as it stands (see "Standing reviews" below);
-one judges a document before the work exists (see "Judging documents" below).
+two judge a document before the work exists (see "Judging documents" below).
 
 | Judge | Judges | Standard |
 |---|---|---|
@@ -147,8 +147,8 @@ intended flow: nothing in gauntlet expects a report directory to exist.
 
 ## Judging documents
 
-Everything above judges work — a change, or the repository it landed in. One lane
-judges the document that proposes work, before any exists:
+Everything above judges work — a change, or the repository it landed in. Two lanes
+judge the document that proposes work, before any exists:
 
 ```text
 /gauntlet:review docs/migration-plan.md
@@ -166,7 +166,19 @@ Plans and migration plans need nothing beyond the file. Design docs, RFCs, postm
 experiment designs, and ADRs ride the same lane with a type standard your project
 supplies as context — what a postmortem must commit to (action items with owners) is
 not what an experiment design must (a stopping rule stated before it runs). Adding a
-document type is a standard, never a new judge.
+document type is a standard, never a new judge — unless the type changes what
+verification means, which is what earns the second lane:
+
+`trade-study-auditor` fires when the document decides by comparison — named options
+scored against criteria, a recommendation claiming to follow. It checks that every
+load-bearing cell carries a citation a reader can check, that the recommendation
+derives from the matrix rather than sitting beside it, and that each losing option was
+engaged at its strongest. A weight with no stated reason, a criterion only the winner
+satisfies, a strawmanned runner-up — a matrix arranged to reach its answer is the
+lane's defining finding. Findings land on a cell (`Cost at 10k rps × DynamoDB`), the
+locus no other lane uses; `reference/trade-study-format.md` is the minimal shape it
+judges against, and a document with no matrix costs the lane a self-skip and nothing
+else.
 
 On a document, a critical's anchor is a verbatim quote, and ingest checks that the
 quote actually appears — a fabricated anchor demotes the same way a missing one does.
