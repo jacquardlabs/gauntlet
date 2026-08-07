@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v0.8.0 (2026-08-07)
+
+### Bug Fixes
+
+- Let --document carry --root — every artifact kind shares that scope
+  ([#47](https://github.com/jacquardlabs/gauntlet/pull/47),
+  [`0ac9bfc`](https://github.com/jacquardlabs/gauntlet/commit/0ac9bfcde38caf2d7e9631a95654991064c96f37))
+
+### Features
+
+- Dispatch document artifacts at intake ([#47](https://github.com/jacquardlabs/gauntlet/pull/47),
+  [`0ac9bfc`](https://github.com/jacquardlabs/gauntlet/commit/0ac9bfcde38caf2d7e9631a95654991064c96f37))
+
+
 ## v0.7.0 (2026-08-07)
 
 ### Bug Fixes
