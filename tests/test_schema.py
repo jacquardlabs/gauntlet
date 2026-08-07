@@ -322,6 +322,23 @@ def test_one_true_quote_suffices_beside_a_foreign_one():
     assert notes == []
 
 
+def test_product_reviewer_two_source_anchor_survives_ingest():
+    """The product lane's criterion lives in PRODUCT.md, so on a document its
+    anchor quotes two files: the criterion, and the span of the judged document
+    that fails it. One span matching the artifact satisfies the rule, which is
+    what makes that lane's prompt satisfiable rather than structurally demoted
+    on every document run (#59). Pins the `any` in the quote check — tightened
+    to `all`, every compliant product-reviewer critical would demote again."""
+    doc = _document_findings_doc(
+        'PRODUCT.md principle "one command, one answer"; the plan\'s '
+        '"Flip the read path to the new store" leaves reconciliation manual'
+    )
+    doc["judge"] = "product-reviewer"
+    out, notes = schema.normalize_findings(doc, DOCUMENT_TEXT)
+    assert out["findings"][0]["tier"] == "critical"
+    assert notes == []
+
+
 def test_quote_rule_skipped_without_document_text():
     """An unreadable document skips the check — demoting every critical against
     text nobody saw would be the checker fabricating, not the judge."""

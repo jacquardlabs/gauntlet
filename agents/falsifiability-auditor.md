@@ -104,10 +104,12 @@ Emit the canonical tier directly — there is no per-lane vocabulary to map:
 **A critical must cite its anchor, and on this surface an anchor is a verbatim
 quote**: the commitment, quoted from the document exactly, that cannot be checked as
 written — or, for an absence, the enclosing step or section quoted, so a reader can
-verify nothing in it commits. The consumer string-matches the quote against the
-document at ingest; a paraphrase demotes exactly as a missing anchor does. Documents
-are the cheapest surface to fake an anchor on, which is why yours are the ones that
-get checked.
+verify nothing in it commits. **The quoted span goes inside double quotation marks
+inside the `anchor` string.** The consumer string-matches what those marks delimit
+against the document at ingest, so an anchor that is verbatim but undelimited demotes
+exactly as a paraphrase does, and a paraphrase demotes exactly as a missing anchor
+does. Documents are the cheapest surface to fake an anchor on, which is why yours are
+the ones that get checked.
 
 ## Output
 
@@ -128,7 +130,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "section": "Phase 2 — cutover" },
-      "anchor": "required on critical: a verbatim quote from the document — the uncheckable commitment, or the enclosing unit that makes none",
+      "anchor": "required on critical: a verbatim quote from the document, inside double quotation marks — the uncheckable commitment, or the enclosing unit that makes none",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "who proceeds on this document's word, and what they hit",

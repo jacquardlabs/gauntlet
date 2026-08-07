@@ -134,7 +134,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/report.py" \
 without it, absence is indistinguishable from a lane with no findings.
 
 It validates every document at the boundary, applies the ingest rules (anchor-or-demote,
-taste-caps-at-track) and names what it changed, checks the documents agree about which
+quote-or-demote on a document artifact, taste-caps-at-track) and names what it changed, checks the documents agree about which
 artifact they judged, orders findings most-severe-first, and renders. A non-zero exit
 means at least one lane did not report — pass that on; it is not a failure of the run to
 hide.

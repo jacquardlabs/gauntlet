@@ -184,8 +184,9 @@ locus no other lane uses; `reference/trade-study-format.md` is the minimal shape
 judges against, and a document with no matrix costs the lane a self-skip and nothing
 else.
 
-On a document, a critical's anchor is a verbatim quote, and ingest checks that the
-quote actually appears — a fabricated anchor demotes the same way a missing one does.
+On a document, a critical's anchor is a verbatim quote in double quotation marks, and
+ingest checks that the quote actually appears — a fabricated anchor demotes the same way
+a missing one does.
 
 ## How to read a finding
 

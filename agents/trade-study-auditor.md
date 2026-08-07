@@ -99,10 +99,12 @@ Emit the canonical tier directly — there is no per-lane vocabulary to map:
 **A critical must cite its anchor, and on this surface an anchor is a verbatim
 quote**: the cell's content, quoted from the document exactly, plus the checkable
 fact it misstates or omits — or, for a whole-matrix finding, the recommendation or
-criterion row it indicts, quoted the same way. The consumer string-matches the quote
-against the document at ingest; a paraphrase demotes exactly as a missing anchor
-does. Documents are the cheapest surface to fake an anchor on, which is why yours are
-the ones that get checked.
+criterion row it indicts, quoted the same way. **The quoted span goes inside double
+quotation marks inside the `anchor` string.** The consumer string-matches what those
+marks delimit against the document at ingest, so an anchor that is verbatim but
+undelimited demotes exactly as a paraphrase does, and a paraphrase demotes exactly as
+a missing anchor does. Documents are the cheapest surface to fake an anchor on, which
+is why yours are the ones that get checked.
 
 ## Output
 
@@ -123,7 +125,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "cell": "Cost at 10k rps × DynamoDB", "section": "Matrix" },
-      "anchor": "required on critical: a verbatim quote from the document — the cell as written, or the recommendation or criterion row a whole-matrix finding indicts — plus the checkable fact it misstates or omits",
+      "anchor": "required on critical: a verbatim quote from the document, inside double quotation marks — the cell as written, or the recommendation or criterion row a whole-matrix finding indicts — plus the checkable fact it misstates or omits",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "who commits on this recommendation's word, and what the matrix actually supports",

@@ -340,6 +340,39 @@ def test_every_judge_output_template_matches_the_contract():
             )
 
 
+def test_every_intake_lane_states_the_document_quote_rule():
+    """Quote-or-demote matches only spans inside double quotation marks, and
+    `scripts/dispatch.py` mounts a `--document` run at `intake` — so the intake
+    declarers are today exactly the lanes that face the rule. A new declarer
+    means this guard covers one more lane, not that it is stale.
+
+    A lane told to quote the document but not to delimit the quote, or told to
+    quote some other file and never the artifact, files a compliant critical
+    that ingest demotes as a fabrication every time (#59). Both the agent file
+    and the charter's anchor row must say it: the rule living in three places
+    with the copies drifting is the defect this test exists for.
+    """
+    judges, anchors = check.parse_charter((REPO / "reference/charter.md").read_text())
+    intake = [j for j in judges if "intake" in check._cell_tokens(j["mounts"])]
+    assert intake, "no intake lane is registered — this guard has gone vacuous"
+    for j in intake:
+        text = " ".join((REPO / j["path"]).read_text().split())
+        assert "double quotation marks" in text, (
+            f"{j['judge']} judges a document at intake and never states that the "
+            f"anchor's quote goes inside double quotation marks — a verbatim but "
+            f"undelimited anchor demotes as a fabrication"
+        )
+        assert re.search(r"quot\w+[^.]{0,140}document|document[^.]{0,140}quot\w+", text), (
+            f"{j['judge']} never says the anchor quotes the judged document — the "
+            f"quote rule keys on artifact kind, so a lane citing only another file "
+            f"demotes on every document run"
+        )
+        assert "double quotation marks" in anchors[j["judge"]], (
+            f"the charter's anchor row for {j['judge']} omits the delimiter its "
+            f"agent file states — the copies have drifted"
+        )
+
+
 def test_unregistered_agent_file_rejected():
     judges, _ = check.parse_charter(_charter(ROW, ANCHOR))
     with tempfile.TemporaryDirectory() as tmp:

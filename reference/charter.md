@@ -181,11 +181,11 @@ needs a registered judge.
 | `doc-auditor` | a command or path the docs state, quoted, that does not exist or does not work as written |
 | `frontend-reviewer` | a reproducible broken flow: the steps, the expected result, the observed one |
 | `ux-reviewer` | a reproducible broken flow: the steps, the expected result, the observed one |
-| `product-reviewer` | the stated criterion, principle, persona, or journey — quoted — that the artifact does not deliver |
+| `product-reviewer` | the stated criterion, principle, persona, or journey — quoted from PRODUCT.md inside double quotation marks — that the artifact does not deliver; on a `document` artifact, plus the failing span quoted the same way from the judged document, each quote named for its source |
 | `premortem-auditor` | the register item, by id, marked REALIZED, plus the evidence that realized it |
 | `prompt-auditor` | the instruction or invariant the prompt surface contradicts, quoted, with the file it comes from |
-| `falsifiability-auditor` | the commitment quoted verbatim from the document that cannot be checked as written — or, for an absence, the enclosing step or section quoted, so a reader can verify nothing in it commits |
-| `trade-study-auditor` | the cell or recommendation quoted verbatim from the document, plus the checkable fact it misstates or omits — a whole-matrix finding (a weight with no stated reason, a criterion only the winner satisfies) quotes the recommendation or criterion row it indicts |
+| `falsifiability-auditor` | the commitment quoted verbatim from the document, inside double quotation marks, that cannot be checked as written — or, for an absence, the enclosing step or section quoted the same way, so a reader can verify nothing in it commits |
+| `trade-study-auditor` | the cell or recommendation quoted verbatim from the document, inside double quotation marks, plus the checkable fact it misstates or omits — a whole-matrix finding (a weight with no stated reason, a criterion only the winner satisfies) quotes the recommendation or criterion row it indicts |
 | `security-posture-auditor` | a named signature from `reference/security-checklist.md` plus the traced path from untrusted input to that sink at `file:line`, or the commit sha that exposed credential material and whether it is live at the judged ref |
 | `codebase-posture-auditor` | the measured total and the specific instance that makes it urgent, at `file:line` — a count alone is a metric, not a critical |
 | `architecture-posture-auditor` | both ends of the structural edge, the verified import or call that proves it, and the development cost it currently imposes |
@@ -196,10 +196,16 @@ needs a registered judge.
 
 Documents are the most taste-exposed surface the fleet judges, and an anchor is cheaper
 to fake there than on code. So on a `document` artifact a critical's anchor must contain
-a verbatim quote from the artifact, and ingest verifies the quote appears — a fabricated
-anchor demotes the same way a missing one does (#44). An absence finding ("this step
-names no success signal") quotes the enclosing unit it indicts, which the same check
-covers.
+a verbatim quote from the artifact **inside double quotation marks**, and ingest verifies
+the quote appears — a fabricated anchor demotes the same way a missing one does, and so
+does a true quote nobody delimited (#44). An absence finding ("this step names no success
+signal") quotes the enclosing unit it indicts, which the same check covers.
+
+The rule keys on artifact kind, never on lane, and an anchor may carry more than one
+quoted span — one span matching the artifact satisfies it. That is how a lane whose
+anchor cites a second file still clears the check rather than being exempted from it:
+`product-reviewer` quotes the PRODUCT.md criterion and the document span that fails it,
+each named for its source (#59).
 
 ## What migration must strip
 
