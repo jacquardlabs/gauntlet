@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.10.4 (2026-08-07)
+
+### Bug Fixes
+
+- Reconcile the document-anchor rule with the lanes subject to it
+  ([#64](https://github.com/jacquardlabs/gauntlet/pull/64),
+  [`fa282d3`](https://github.com/jacquardlabs/gauntlet/commit/fa282d39050881d4cb519f2efec7de8e3c3e5db8))
+
+
 ## v0.10.3 (2026-08-07)
 
 ### Bug Fixes
