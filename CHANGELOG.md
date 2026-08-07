@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v0.12.0 (2026-08-07)
+
+### Documentation
+
+- Point the README at the renamed ingest-notes section
+  ([#70](https://github.com/jacquardlabs/gauntlet/pull/70),
+  [`8a4a530`](https://github.com/jacquardlabs/gauntlet/commit/8a4a5308fa2ae84163898e37d192e3789feaf68b))
+
+### Features
+
+- Make every ingest accommodation visible in the report
+  ([#70](https://github.com/jacquardlabs/gauntlet/pull/70),
+  [`8a4a530`](https://github.com/jacquardlabs/gauntlet/commit/8a4a5308fa2ae84163898e37d192e3789feaf68b))
+
+
 ## v0.11.0 (2026-08-07)
 
 ### Bug Fixes
