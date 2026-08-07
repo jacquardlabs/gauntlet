@@ -125,6 +125,39 @@ project ever swap this for its own?** Swap in a different security checklist, ye
 Swap in a different definition of structural fault while keeping the architecture
 judge, no — that is a different judge.
 
+## How the document surface grows (#37)
+
+Most document types fail one way: the document makes no claim that could later be shown
+wrong. A plan step with no success signal, a design doc with no stated rollback, an
+experiment with no stopping rule — the same finding in different clothes. So the
+document surface is factored around that question, not around document types:
+
+- **One falsifiability lane** owns "what does this commit to, and how would we know it
+  was wrong?" for any document at `intake`. Plans are its primary dispatch; design
+  docs, RFCs, postmortems, experiment designs, and ADRs ride it with a type standard.
+- **Type depth is data, not architecture.** Per-type specifics arrive as a standard:
+  one gauntlet owns in `reference/` (the premortem pattern) or one the consumer
+  supplies through `context` (the product-reviewer pattern — anything an org would
+  swap: RFC templates, postmortem formats, launch checklists). Adding a document type
+  is a standard plus a dispatch row, never an agent file.
+- **A bespoke lane is earned when the type changes what verification means**, not its
+  vocabulary. `premortem-auditor` clears the bar (register ids, three-verdict
+  semantics); a trade-study lane will (`cell` locus, recommendation derived from the
+  matrix — the contract pre-wired both); a deprecation plan, SLO doc, or runbook does
+  not.
+- **Documents are named, never sniffed.** Changeset judges are selected from changed
+  paths; a document has no diff, so the consumer names the artifact and the lane — the
+  `CONTEXT_SIGNALS` shape in `scripts/dispatch.py`, never a second `PATH_SIGNALS`
+  (#43).
+- **A new lane or dimension is earned by a realized failure**, not a plausible
+  category — the SRE launch-review substantiation rule, and the pre-mortem register is
+  the machinery that records realized failures. The fleet grows under its own evidence
+  discipline.
+- **No lane where a deterministic tool is the incumbent.** Commands-that-work is
+  execution, alert-has-runbook is lint, SLI-measurable-today needs live metrics. A
+  document lane owns semantic judgment nothing mechanical checks — "code owns
+  bookkeeping, prompts own judgment", pointed outward.
+
 ## Anchors — what a critical must cite
 
 Per-lane objective anchors, carried from studious `reference/severity-rubric.md`. A
@@ -156,6 +189,13 @@ needs a registered judge.
 | `docs-posture-auditor` | the command, path, or claim the docs state, quoted, plus the evidence it does not exist or does not work as written |
 | `product-posture-reviewer` | the documented claim — persona, principle, not-building entry, or known problem — quoted from PRODUCT.md, plus the evidence that contradicts it |
 | `interface-posture-reviewer` | a reproducible broken flow (steps, expected, observed), or the concept and each surface's differing rendering quoted at `file:line` |
+
+Documents are the most taste-exposed surface the fleet judges, and an anchor is cheaper
+to fake there than on code. So on a `document` artifact a critical's anchor must contain
+a verbatim quote from the artifact, and ingest verifies the quote appears — a fabricated
+anchor demotes the same way a missing one does (#44). An absence finding ("this step
+names no success signal") quotes the enclosing unit it indicts, which the same check
+covers.
 
 ## What migration must strip
 

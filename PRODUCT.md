@@ -10,8 +10,9 @@ the rest of the staff-engineering artifact surface.
 
 - One versioned findings contract that every judge emits and every consumer reads
 - Two consumers minimum: a Claude Code entrypoint here, and viva type bundles there
-- Blades beyond code: production-readiness/launch review, migration-plan review,
-  postmortem quality, trade-study receipts, promo-packet evidence, estimate sanity
+- Blades beyond code: code at `acceptance`, documents at `intake`, repositories at
+  `posture` — one predicate across all three. The document surface grows by standards,
+  not lanes (charter, "How the document surface grows"; ruled in #37)
 
 ## Non-goals
 
@@ -21,6 +22,10 @@ the rest of the staff-engineering artifact surface.
 - Numeric confidence — recommendations are grounds-classed (sourced / inferred /
   taste), never scored
 - Being a platform — no server, no daemon, no accounts; local and keyless
+- The parts of the job that are not artifacts — mentoring, org navigation, meetings
+- Checks a deterministic tool does better: docs-command execution, alert→runbook lint,
+  live-metrics backtesting. A lane exists only where judgment has no mechanical
+  incumbent (#37)
 
 ## Consumers are thin
 
