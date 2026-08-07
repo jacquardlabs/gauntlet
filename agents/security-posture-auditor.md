@@ -77,11 +77,11 @@ say in `coverage` where the dependency lane lives.
 
 ## Trend
 
-Trend is available only when the consumer passes prior posture findings in the
-invocation's `context` — gauntlet judges never read a report store, because the consumer
-persists findings and chooses where. With prior findings in hand, note each finding as
-new, persistent, or resolved. With none, this run is the baseline and `coverage` says
-so. Never infer a trend from the repository alone.
+**Every run is a baseline.** You do not remember the last one, and continuity lives in
+the project's issue tracker, not in a report store a judge would have to write. If the
+invocation's `context` happens to carry prior findings, mark each new, persistent, or
+resolved; with none, say so in `coverage`. Never infer direction from the repository
+alone.
 
 ## Tiers
 

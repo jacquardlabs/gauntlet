@@ -56,6 +56,8 @@ The roster. Columns are load-bearing:
 | `security-posture-auditor` | security posture | `posture` | `security-checklist` | `agents/security-posture-auditor.md` |
 | `codebase-posture-auditor` | codebase posture | `posture` | `idioms/` | `agents/codebase-posture-auditor.md` |
 | `architecture-posture-auditor` | structural posture | `posture` | (inline) | `agents/architecture-posture-auditor.md` |
+| `prompt-posture-auditor` | prompt-surface posture | `posture` | `prompt-checklist` | `agents/prompt-posture-auditor.md` |
+| `docs-posture-auditor` | documentation posture | `posture` | (inline) | `agents/docs-posture-auditor.md` |
 
 The rest of the fleet migrates from studious under issue #2, in the cohorts recorded
 there. A judge is registered here in the same change that adds its file; a row without a
@@ -140,6 +142,8 @@ needs a registered judge.
 | `security-posture-auditor` | a named signature from `reference/security-checklist.md` plus the traced path from untrusted input to that sink at `file:line`, or the commit sha that exposed credential material and whether it is live at the judged ref |
 | `codebase-posture-auditor` | the measured total and the specific instance that makes it urgent, at `file:line` — a count alone is a metric, not a critical |
 | `architecture-posture-auditor` | both ends of the structural edge, the verified import or call that proves it, and the development cost it currently imposes |
+| `prompt-posture-auditor` | the instruction or invariant the prompt surface contradicts, quoted, with the file it comes from — both sides quoted when the finding is a drifted seam |
+| `docs-posture-auditor` | the command, path, or claim the docs state, quoted, plus the evidence it does not exist or does not work as written |
 
 ## What migration must strip
 

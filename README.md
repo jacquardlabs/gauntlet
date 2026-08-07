@@ -71,8 +71,8 @@ why. A Python-only changeset costs eight judges; a `.tsx` and `.css` changeset c
 
 ## The lanes
 
-Seventeen today, each with one concern and its own standard. Fourteen judge a
-changeset; three judge a whole repository as it stands (see "Standing reviews" below).
+Nineteen today, each with one concern and its own standard. Fourteen judge a
+changeset; five judge a whole repository as it stands (see "Standing reviews" below).
 
 | Judge | Judges | Standard |
 |---|---|---|
@@ -107,7 +107,7 @@ be mistaken for a lane that found nothing.
 
 ## Standing reviews
 
-Every lane above judges a change. Three judge the repository itself, at one ref, with no
+Every lane above judges a change. Five judge the repository itself, at one ref, with no
 diff in sight — which is the only way to reach a defect sitting in code no recent branch
 has touched.
 
@@ -116,6 +116,8 @@ has touched.
 | `security-posture-auditor` | pre-existing vulnerabilities, secrets anywhere in git history, security-config baseline, dependency confusion | `security-checklist` |
 | `codebase-posture-auditor` | debt totals, dead code, dependency health, test health, interface consistency — as aggregates and direction | `idioms/<language>` |
 | `architecture-posture-auditor` | boundaries, complexity distribution, evolution readiness, data layer — against what the code actually does | its own prompt |
+| `prompt-posture-auditor` | trigger coverage, instruction conflicts, contract drift across seams, duplication, injection posture, token economy | `prompt-checklist` |
+| `docs-posture-auditor` | stale claims, missing capabilities, commands and paths that do not resolve, voice drift, structure gaps | its own prompt |
 
 These answer a third question. `intake` asks whether a thing should be built and
 `acceptance` asks whether what shipped delivers; **`posture` asks what state the
@@ -129,10 +131,15 @@ a review and are worth running on a trunk, not a branch:
 git ls-files | python3 scripts/dispatch.py --ref HEAD --paths -
 ```
 
-**Trend needs your help.** These lanes report direction — debt up, coupling down — only
-when the dispatch passes prior findings as context. Gauntlet never reads a report store,
-because judges do not write and the consumer decides where findings live. With nothing
-passed, a run is a baseline and says so.
+**Every run is a baseline, and that is the design.** These lanes measure the repository
+as it stands; they do not remember the last run, because a judge that kept its own
+history would need a report store, and judges do not write. Continuity belongs in your
+issue tracker — file what you intend to act on, and the tracker holds the trend across
+cycles where you can actually work it.
+
+If a consumer does keep prior findings, passing them in the invocation's `context` lets
+a lane name what is new, persistent, or resolved. That is a convenience, not the
+intended flow: nothing in gauntlet expects a report directory to exist.
 
 ## How to read a finding
 
