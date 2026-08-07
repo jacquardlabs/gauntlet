@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.10.1 (2026-08-07)
+
+### Bug Fixes
+
+- State the trade-study seam on both sides ([#50](https://github.com/jacquardlabs/gauntlet/pull/50),
+  [`5a8f524`](https://github.com/jacquardlabs/gauntlet/commit/5a8f5248957d52de8fd7127f69d9ca396e2a2de9))
+
+
 ## v0.10.0 (2026-08-07)
 
 ### Features
