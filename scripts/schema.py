@@ -3,8 +3,8 @@
 
 The one module a consumer imports at the boundary: `validate_invocation()` on
 dispatch, `validate_findings()` on ingest, then `normalize_findings()` — the
-reference implementation of the two ingest rules (anchor-or-demote,
-taste-caps-at-track). `docs/findings-contract.md` is the normative text; where
+reference implementation of the ingest rules (anchor-or-demote,
+quote-or-demote, taste-caps-at-track). `docs/findings-contract.md` is the normative text; where
 this module and that doc disagree, the doc governs and the mismatch is a bug
 here.
 
@@ -14,7 +14,8 @@ the enforced rules.
 """
 from __future__ import annotations
 
-from typing import List, Tuple, TypedDict
+import re
+from typing import List, Optional, Tuple, TypedDict
 
 CONTRACT_VERSION = 1
 TIERS = ("critical", "important", "track")
@@ -216,16 +217,44 @@ def _validate_locus(locus: object, where: str) -> None:
 
 
 # ── Ingest rules (reference implementation) ───────────────────────────────────
-def normalize_findings(data: dict) -> Tuple[dict, List[str]]:
-    """Apply the two ingest rules to a validated findings document. Pure —
-    returns a new document plus the notes a compiled report must name.
+#: Quoted spans in an anchor: straight or curly double quotation marks. Curly
+#: because document prose gets smart-quoted by editors, and demoting a true
+#: quote over its glyphs would punish the judge for the author's typography.
+_QUOTED = re.compile(r'"([^"]+)"|“([^”]+)”')
+
+
+def _squash(text: str) -> str:
+    """Whitespace-normalized: every run of whitespace becomes one space, so a
+    reflowed line still matches the quote a judge took from it."""
+    return " ".join(text.split())
+
+
+def normalize_findings(
+    data: dict, document_text: Optional[str] = None
+) -> Tuple[dict, List[str]]:
+    """Apply the ingest rules to a validated findings document. Pure — reads no
+    files; returns a new document plus the notes a compiled report must name.
 
     1. **Anchor-or-demote** (contract §4): a `critical` with no non-empty
        `anchor` is recorded `important`.
-    2. **Taste caps at track** (contract §4/§5): a `basis: taste` finding never
-       ranks above `track`. Applied after rule 1, so a taste critical lands at
-       `track` either way.
+    2. **Quote-or-demote** (contract §4, charter "Anchors", #44): on a
+       `document` artifact a critical's anchor must contain a verbatim quote
+       from the artifact in double quotation marks. Matching is
+       whitespace-normalized on both sides; one matching quoted span suffices,
+       since an anchor may also quote a second source (a drifted seam quotes
+       both sides). Fires only when the caller supplies `document_text` — a
+       document that could not be read skips the check rather than demoting on
+       evidence nobody saw. Never fires on changeset or repository artifacts.
+    3. **Taste caps at track** (contract §4/§5): a `basis: taste` finding never
+       ranks above `track`. Applied last, so a taste critical lands at `track`
+       either way.
     """
+    check_quotes = (
+        document_text is not None
+        and isinstance(data.get("artifact"), dict)
+        and data["artifact"].get("kind") == "document"
+    )
+    haystack = _squash(document_text) if check_quotes else ""
     notes: List[str] = []
     out = dict(data)
     out["findings"] = []
@@ -237,6 +266,20 @@ def normalize_findings(data: dict) -> Tuple[dict, List[str]]:
                 f"anchor-or-demote: {nf.get('summary', '?')!r} recorded important "
                 "(critical cited no anchor)"
             )
+        elif nf.get("tier") == "critical" and check_quotes:
+            quotes = [_squash(a or b) for a, b in _QUOTED.findall(nf["anchor"])]
+            if not any(quotes):
+                nf["tier"] = "important"
+                notes.append(
+                    f"quote-or-demote: {nf.get('summary', '?')!r} recorded important "
+                    "(document anchor quotes nothing)"
+                )
+            elif not any(q and q in haystack for q in quotes):
+                nf["tier"] = "important"
+                notes.append(
+                    f"quote-or-demote: {nf.get('summary', '?')!r} recorded important "
+                    "(anchor's quoted text does not appear in the document)"
+                )
         if nf.get("basis") == "taste" and nf.get("tier") != "track":
             notes.append(
                 f"taste-caps-at-track: {nf.get('summary', '?')!r} recorded track "

@@ -230,6 +230,125 @@ def test_normalize_is_pure():
     assert doc == before
 
 
+# ── quote-or-demote (document artifacts, #44) ─────────────────────────────────
+DOCUMENT_TEXT = (
+    "# Migration plan\n"
+    "\n"
+    "## Step 3 — cutover\n"
+    "\n"
+    "Flip the read path to the new store\n"
+    "and watch error rates for one hour.\n"
+)
+
+
+def _document_findings_doc(anchor):
+    doc = _findings_doc()
+    doc["mount"] = "intake"
+    doc["artifact"] = {"kind": "document", "path": "docs/plan.md"}
+    doc["findings"][0]["locus"] = {"section": "Step 3 — cutover"}
+    doc["findings"][0]["anchor"] = anchor
+    return doc
+
+
+def test_document_critical_with_verbatim_quote_untouched():
+    doc = _document_findings_doc(
+        'Step names no rollback: "Flip the read path to the new store" is one-way'
+    )
+    out, notes = schema.normalize_findings(doc, DOCUMENT_TEXT)
+    assert out["findings"][0]["tier"] == "critical"
+    assert notes == []
+
+
+def test_document_critical_with_unquoted_anchor_demoted():
+    doc = _document_findings_doc(
+        "Step 3 names no rollback path and no abort criterion"
+    )
+    out, notes = schema.normalize_findings(doc, DOCUMENT_TEXT)
+    assert out["findings"][0]["tier"] == "important"
+    assert len(notes) == 1 and "quote-or-demote" in notes[0]
+    assert "quotes nothing" in notes[0]
+
+
+def test_document_critical_with_fabricated_quote_demoted():
+    doc = _document_findings_doc(
+        'Plan promises "roll back within five minutes" but names no mechanism'
+    )
+    out, notes = schema.normalize_findings(doc, DOCUMENT_TEXT)
+    assert out["findings"][0]["tier"] == "important"
+    assert len(notes) == 1 and "quote-or-demote" in notes[0]
+    assert "does not appear" in notes[0]
+
+
+def test_reflowed_quote_still_matches():
+    """The document breaks the line mid-sentence; the judge quotes it as one
+    line. A hard string match would demote a true quote over a reflow."""
+    doc = _document_findings_doc(
+        'No success signal: "Flip the read path to the new store and watch '
+        'error rates for one hour." commits to nothing checkable'
+    )
+    out, notes = schema.normalize_findings(doc, DOCUMENT_TEXT)
+    assert out["findings"][0]["tier"] == "critical"
+    assert notes == []
+
+
+def test_curly_quotes_match_too():
+    doc = _document_findings_doc(
+        "No success signal: “watch error rates for one hour” names no threshold"
+    )
+    out, notes = schema.normalize_findings(doc, DOCUMENT_TEXT)
+    assert out["findings"][0]["tier"] == "critical"
+    assert notes == []
+
+
+def test_one_true_quote_suffices_beside_a_foreign_one():
+    """A drifted-seam anchor quotes both sides; the side from another file is
+    not in the document and must not demote the finding."""
+    doc = _document_findings_doc(
+        'Plan says "watch error rates for one hour" but the runbook says '
+        '"page after five minutes"'
+    )
+    out, notes = schema.normalize_findings(doc, DOCUMENT_TEXT)
+    assert out["findings"][0]["tier"] == "critical"
+    assert notes == []
+
+
+def test_quote_rule_skipped_without_document_text():
+    """An unreadable document skips the check — demoting every critical against
+    text nobody saw would be the checker fabricating, not the judge."""
+    doc = _document_findings_doc("Step 3 names no rollback path")
+    out, notes = schema.normalize_findings(doc)
+    assert out["findings"][0]["tier"] == "critical"
+    assert notes == []
+
+
+def test_quote_rule_never_fires_on_changeset_or_repository():
+    for artifact in (
+        {"kind": "changeset", "base": "a1b2c3d", "head": "e4f5a6b"},
+        {"kind": "repository", "ref": "a1b2c3d"},
+    ):
+        doc = _findings_doc()
+        doc["artifact"] = artifact
+        doc["findings"][0]["anchor"] = "an anchor with no quoted span at all"
+        out, notes = schema.normalize_findings(doc, DOCUMENT_TEXT)
+        assert out["findings"][0]["tier"] == "critical", artifact["kind"]
+        assert notes == []
+
+
+def test_anchorless_document_critical_gets_the_presence_note_only():
+    doc = _document_findings_doc("   ")
+    out, notes = schema.normalize_findings(doc, DOCUMENT_TEXT)
+    assert out["findings"][0]["tier"] == "important"
+    assert len(notes) == 1 and "anchor-or-demote" in notes[0]
+
+
+def test_taste_document_critical_lands_at_track_after_quote_demotion():
+    doc = _document_findings_doc("Step 3 names no rollback path")
+    doc["findings"][0]["basis"] = "taste"
+    out, notes = schema.normalize_findings(doc, DOCUMENT_TEXT)
+    assert out["findings"][0]["tier"] == "track"
+    assert len(notes) == 2
+
+
 def main():
     tests = [
         (name, fn)
