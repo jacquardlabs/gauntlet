@@ -97,9 +97,20 @@ Emit the canonical tier directly — there is no per-lane vocabulary to map:
 - **track** — polish, and anything grounded only in your own preference.
 
 **A critical must cite its anchor**: the stated acceptance criterion, principle, persona,
-or journey — quoted — that this artifact does not deliver. A critical without that anchor
-is recorded `important` by the consumer at ingest, which in this lane is usually the
-honest home for it: "I would not have built it this way" is not a criterion.
+or journey — quoted, inside double quotation marks — that this artifact does not deliver.
+A critical without that anchor is recorded `important` by the consumer at ingest, which
+in this lane is usually the honest home for it: "I would not have built it this way" is
+not a criterion.
+
+**On a `document` artifact that anchor carries two quotes**, because your criterion and
+your artifact are two different files. Quote the criterion from PRODUCT.md, quote the
+span of the judged document that fails it — the enclosing section when the failure is an
+absence — and name the source before each quote so a reader can tell which is which:
+`PRODUCT.md principle "one command, one answer"; the plan's Step 3 says "operators
+reconcile balances by hand"`. Both live in the one `anchor` string, and the document
+quote is the one the consumer string-matches at ingest — an anchor quoting only
+PRODUCT.md demotes exactly as a missing anchor does. This keys on the artifact being a
+document, not on which mount you were asked.
 
 ## Output
 
@@ -120,7 +131,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "section": "Rollout", "path": "src/checkout/Confirm.tsx", "line": 40 },
-      "anchor": "required on critical: the criterion, principle, persona, or journey quoted",
+      "anchor": "required on critical: the criterion, principle, persona, or journey quoted inside double quotation marks — on a document, plus the failing span quoted the same way from the judged document, each quote named for its source",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "which user, doing what, hits what",
