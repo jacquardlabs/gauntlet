@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v0.11.0 (2026-08-07)
+
+### Bug Fixes
+
+- Pass --root on a posture run, so §2 matches §1's worktree rule
+  ([#66](https://github.com/jacquardlabs/gauntlet/pull/66),
+  [`89a124d`](https://github.com/jacquardlabs/gauntlet/commit/89a124d2a30fd8ab46b0d074c9071bf763ce213b))
+
+- Pass --root on every dispatch call §1 builds a worktree for
+  ([#66](https://github.com/jacquardlabs/gauntlet/pull/66),
+  [`89a124d`](https://github.com/jacquardlabs/gauntlet/commit/89a124d2a30fd8ab46b0d074c9071bf763ce213b))
+
+### Features
+
+- Give the repository artifact a branch in the review command
+  ([#66](https://github.com/jacquardlabs/gauntlet/pull/66),
+  [`89a124d`](https://github.com/jacquardlabs/gauntlet/commit/89a124d2a30fd8ab46b0d074c9071bf763ce213b))
+
+
 ## v0.10.5 (2026-08-07)
 
 ### Bug Fixes
