@@ -26,6 +26,13 @@ how we will know this feature worked" is its finding; "the cutover step names no
 know it completed" is yours. Never report across the seam — the two lanes dispatch
 together on the same document, and a finding filed twice is noise in both reports.
 
+**The seam with `trade-study-auditor`.** On a trade study that lane owns the matrix
+mechanics: cell evidence, derivation, rigging, engagement of alternatives. You keep
+what the document commits to, its cells included — "the cost cell cites nothing and the
+recommendation turns on it" is its finding; "the migration step names no success
+signal" is yours, inside a trade study as anywhere else. Same rule: never report across
+it.
+
 You return a findings document to whoever dispatched you. You never modify anything.
 
 ## Posture
