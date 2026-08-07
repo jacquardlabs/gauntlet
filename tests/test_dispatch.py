@@ -83,6 +83,16 @@ def test_build_artifact_document():
     )
 
 
+def test_build_artifact_document_carries_root():
+    # `root` scopes every artifact kind (contract §3): the document path
+    # resolves relative to it at ingest, so dispatch must pass it through.
+    built = dispatch.build_artifact(document="docs/plan.md", root="/srv/repo")
+    assert built == {"kind": "document", "path": "docs/plan.md", "root": "/srv/repo"}
+    schema.validate_invocation(
+        {**_INVOCATION_SHELL, "mount": "intake", "artifact": built}
+    )
+
+
 def test_build_artifact_refuses_a_diff_scoped_posture_run():
     """A stray --base on a repository run must fail loudly: silently dropping it
     would let a caller believe a standing review was scoped to a diff."""
@@ -100,14 +110,14 @@ def test_build_artifact_needs_base_and_head_without_a_ref():
 
 
 def test_build_artifact_refuses_a_document_with_changeset_or_repo_scope():
-    """A document is one named file, whole — a stray sha or root would let a
-    caller believe it scoped the run to something else."""
+    """A document is one named file, whole — a stray sha would let a caller
+    believe it scoped the run to something else. `root` is not scope creep:
+    every kind carries it (contract §3)."""
     for kwargs in (
         {"document": "docs/plan.md", "ref": "a1b2c3d"},
         {"document": "docs/plan.md", "base": "a1b2c3d"},
         {"document": "docs/plan.md", "head": "e4f5a6b"},
         {"document": "docs/plan.md", "pr": "http://pr/1"},
-        {"document": "docs/plan.md", "root": "/srv/repo"},
     ):
         _build_raises(kwargs, "takes no")
 

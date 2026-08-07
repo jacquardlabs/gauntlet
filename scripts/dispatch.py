@@ -123,14 +123,15 @@ def build_artifact(
     scope the others carry by design — a repository artifact has no `base`
     (a posture review measures the repository against a standard, never against
     an earlier revision of itself), and a document is one named path whose
-    content is the artifact: no shas, no `root`. Silently ignoring a stray
-    `--base` would let a caller believe it scoped a standing review to a diff.
+    content is the artifact: no shas. Silently ignoring a stray `--base` would
+    let a caller believe it scoped a standing review to a diff. `root` is the
+    one scope every kind shares — contract §3 declares it optional on all three,
+    and a document `path` resolves relative to it at ingest.
     """
     if document:
         conflicting = [
             flag for flag, value in (
-                ("--ref", ref), ("--base", base), ("--head", head),
-                ("--pr", pr), ("--root", root),
+                ("--ref", ref), ("--base", base), ("--head", head), ("--pr", pr),
             )
             if value
         ]
@@ -139,8 +140,8 @@ def build_artifact(
                 "--document judges one named file, whole, and takes no "
                 + ", ".join(conflicting)
             )
-        return {"kind": "document", "path": document}
-    if ref:
+        artifact = {"kind": "document", "path": document}
+    elif ref:
         conflicting = [
             flag for flag, value in (("--base", base), ("--head", head), ("--pr", pr))
             if value
