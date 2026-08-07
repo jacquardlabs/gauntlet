@@ -109,9 +109,12 @@ INLINE_STANDARD = "(inline)"
 
 #: The YAML frontmatter block — the opening `---` through the next `---` on its
 #: own line. Tools are read from here and nowhere else: a body line that begins
-#: `tools:` is documentation about a declaration, not one.
+#: `tools:` is documentation about a declaration, not one. `\r` is allowed on
+#: both delimiters because `$` stops before the `\n` and leaves it in the line:
+#: a CRLF file whose closing `---` did not match would parse to no frontmatter,
+#: no tools, and a clean pass — this check must never fail open.
 FRONTMATTER = re.compile(
-    r"---[ \t]*\r?\n(?P<body>.*?)^---[ \t]*$", re.DOTALL | re.MULTILINE
+    r"---[ \t\r]*\n(?P<body>.*?)^---[ \t\r]*$", re.DOTALL | re.MULTILINE
 )
 
 #: The `tools:` key, matched against one line at a time — never with

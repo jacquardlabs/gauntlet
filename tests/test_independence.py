@@ -249,6 +249,10 @@ def test_block_style_tools_are_read_past_the_first_entry():
     problems = check.scan("agents/rogue-auditor.md", text)
     _has(problems, "declares the Write tool")
     _has(problems, "declares the Task tool")
+    # Same file with CRLF terminators. A frontmatter pattern that stops the
+    # closing `---` at `[ \t]*$` matches nothing here, and no frontmatter parses
+    # to no tools — a fail-open in the one check that must not have one.
+    _has(check.scan("agents/rogue-auditor.md", text.replace("\n", "\r\n")), "Write tool")
 
 
 def test_block_style_read_only_judge_passes():
