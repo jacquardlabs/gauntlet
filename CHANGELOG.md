@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v0.10.2 (2026-08-07)
+
+### Bug Fixes
+
+- Read the docs against themselves, and rule placement out of the lane
+  ([#55](https://github.com/jacquardlabs/gauntlet/pull/55),
+  [`f438dba`](https://github.com/jacquardlabs/gauntlet/commit/f438dba42dfd99c9d7fcf0f36fabac5d1eb0071b))
+
+### Documentation
+
+- Put all three artifacts in Use, and drop the stale install caveat
+  ([#53](https://github.com/jacquardlabs/gauntlet/pull/53),
+  [`13576ca`](https://github.com/jacquardlabs/gauntlet/commit/13576ca3173f43b273ff5979f65e33643bcd37be))
+
+- Rule tracker maintenance out of scope ([#51](https://github.com/jacquardlabs/gauntlet/pull/51),
+  [`6131fb7`](https://github.com/jacquardlabs/gauntlet/commit/6131fb712fe8d29673dfdfc1db7ed744bb510f64))
+
+
 ## v0.10.1 (2026-08-07)
 
 ### Bug Fixes
