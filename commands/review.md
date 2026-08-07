@@ -35,8 +35,7 @@ REF=$(git rev-parse --verify <ref>)   # HEAD when the keyword stands alone
 Judges read `artifact.root`, which defaults to the working directory, so a ref that is not
 the tree on disk needs a worktree at it and `--root` pointing there — same mechanism, same
 cleanup, and the same reason as the PR branch below. Report the ref and the tracked-file
-count, and skip the rest of this step: no base, no diff. A posture review measures the
-repository against a standard, never against an earlier revision of itself.
+count, and skip the rest of this step: no base, no diff.
 
 **A document was named** (the argument is a path, not a PR) — the file itself is the
 artifact, whole. Confirm it exists, report it as the artifact, and skip the rest of
@@ -110,7 +109,7 @@ For a repository, `--ref` replaces the shas and `--paths` is the tracked files a
 ```bash
 git ls-tree -r --name-only $REF > <tmp>/paths.txt
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
-  --ref $REF --paths <tmp>/paths.txt \
+  --ref $REF ${ROOT:+--root $ROOT} --paths <tmp>/paths.txt \
   --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
 ```
 
