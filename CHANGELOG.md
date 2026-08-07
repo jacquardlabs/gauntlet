@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.10.0 (2026-08-07)
+
+### Features
+
+- Add the trade-study lane, the second bespoke document judge
+  ([#49](https://github.com/jacquardlabs/gauntlet/pull/49),
+  [`7b6d4ae`](https://github.com/jacquardlabs/gauntlet/commit/7b6d4aee9a42b416fa4e7bfdb9b6d877478a3373))
+
+
 ## v0.9.0 (2026-08-07)
 
 ### Features
