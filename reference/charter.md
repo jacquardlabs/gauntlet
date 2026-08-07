@@ -54,6 +54,7 @@ The roster. Columns are load-bearing:
 | `premortem-auditor` | pre-mortem register | `acceptance` | `premortem-format` | `agents/premortem-auditor.md` |
 | `prompt-auditor` | model-facing instructions | `acceptance` | `prompt-checklist` | `agents/prompt-auditor.md` |
 | `falsifiability-auditor` | falsifiability | `intake` | (inline) | `agents/falsifiability-auditor.md` |
+| `trade-study-auditor` | trade study | `intake` | `trade-study-format` | `agents/trade-study-auditor.md` |
 | `security-posture-auditor` | security posture | `posture` | `security-checklist` | `agents/security-posture-auditor.md` |
 | `codebase-posture-auditor` | codebase posture | `posture` | `idioms/` | `agents/codebase-posture-auditor.md` |
 | `architecture-posture-auditor` | structural posture | `posture` | (inline) | `agents/architecture-posture-auditor.md` |
@@ -143,9 +144,9 @@ document surface is factored around that question, not around document types:
   is a standard plus a dispatch row, never an agent file.
 - **A bespoke lane is earned when the type changes what verification means**, not its
   vocabulary. `premortem-auditor` clears the bar (register ids, three-verdict
-  semantics); a trade-study lane will (`cell` locus, recommendation derived from the
-  matrix — the contract pre-wired both); a deprecation plan, SLO doc, or runbook does
-  not.
+  semantics); `trade-study-auditor` does (`cell` locus, recommendation derived from
+  the matrix — the contract pre-wired both); a deprecation plan, SLO doc, or runbook
+  does not.
 - **Documents are named, never sniffed.** Changeset judges are selected from changed
   paths; a document has no diff, so the consumer names the artifact and the lane — the
   `CONTEXT_SIGNALS` shape in `scripts/dispatch.py`, never a second `PATH_SIGNALS`
@@ -184,6 +185,7 @@ needs a registered judge.
 | `premortem-auditor` | the register item, by id, marked REALIZED, plus the evidence that realized it |
 | `prompt-auditor` | the instruction or invariant the prompt surface contradicts, quoted, with the file it comes from |
 | `falsifiability-auditor` | the commitment quoted verbatim from the document that cannot be checked as written — or, for an absence, the enclosing step or section quoted, so a reader can verify nothing in it commits |
+| `trade-study-auditor` | the cell or recommendation quoted verbatim from the document, plus the checkable fact it misstates or omits — a whole-matrix finding (a weight with no stated reason, a criterion only the winner satisfies) quotes the recommendation or criterion row it indicts |
 | `security-posture-auditor` | a named signature from `reference/security-checklist.md` plus the traced path from untrusted input to that sink at `file:line`, or the commit sha that exposed credential material and whether it is live at the judged ref |
 | `codebase-posture-auditor` | the measured total and the specific instance that makes it urgent, at `file:line` — a count alone is a metric, not a critical |
 | `architecture-posture-auditor` | both ends of the structural edge, the verified import or call that proves it, and the development cost it currently imposes |
