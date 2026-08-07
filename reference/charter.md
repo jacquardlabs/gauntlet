@@ -58,6 +58,8 @@ The roster. Columns are load-bearing:
 | `architecture-posture-auditor` | structural posture | `posture` | (inline) | `agents/architecture-posture-auditor.md` |
 | `prompt-posture-auditor` | prompt-surface posture | `posture` | `prompt-checklist` | `agents/prompt-posture-auditor.md` |
 | `docs-posture-auditor` | documentation posture | `posture` | (inline) | `agents/docs-posture-auditor.md` |
+| `product-posture-reviewer` | product posture | `posture` | (inline) | `agents/product-posture-reviewer.md` |
+| `interface-posture-reviewer` | interface posture | `posture` | (inline) | `agents/interface-posture-reviewer.md` |
 
 The rest of the fleet migrates from studious under issue #2, in the cohorts recorded
 there. A judge is registered here in the same change that adds its file; a row without a
@@ -85,6 +87,14 @@ that name into a payload would have put a calendar in the contract. Two consumer
 running the same standing review weekly and quarterly ask an identical question, and a
 judge cannot tell them apart — so cadence stays with the consumer that owns the
 scheduling, and the mount names the question.
+
+**Why `product-posture-reviewer` has no context gate and `product-reviewer` does.**
+`scripts/dispatch.py` drops `product-reviewer` when no PRODUCT.md is supplied, because a
+lane judging a change against a product definition that does not exist can only produce
+preference. The posture lane inverts that: **the absence of a stated product intent is
+its most valuable finding**, and gating it would guarantee the projects that most need
+to hear it never do. It runs, falls back to the README as a proxy, marks everything
+`inferred`, and reports the gap.
 
 A `posture` judge reads a `repository` artifact (contract §3) rather than a changeset,
 which is what makes the migration mechanical: the eight studious `review-*` agents lose
@@ -144,6 +154,8 @@ needs a registered judge.
 | `architecture-posture-auditor` | both ends of the structural edge, the verified import or call that proves it, and the development cost it currently imposes |
 | `prompt-posture-auditor` | the instruction or invariant the prompt surface contradicts, quoted, with the file it comes from — both sides quoted when the finding is a drifted seam |
 | `docs-posture-auditor` | the command, path, or claim the docs state, quoted, plus the evidence it does not exist or does not work as written |
+| `product-posture-reviewer` | the documented claim — persona, principle, not-building entry, or known problem — quoted from PRODUCT.md, plus the evidence that contradicts it |
+| `interface-posture-reviewer` | a reproducible broken flow (steps, expected, observed), or the concept and each surface's differing rendering quoted at `file:line` |
 
 ## What migration must strip
 
