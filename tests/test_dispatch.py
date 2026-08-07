@@ -75,6 +75,24 @@ def _build_raises(kwargs, fragment):
     raise AssertionError(f"expected ValueError containing {fragment!r} for {kwargs}")
 
 
+def test_build_artifact_document():
+    built = dispatch.build_artifact(document="docs/plan.md")
+    assert built == {"kind": "document", "path": "docs/plan.md"}
+    schema.validate_invocation(
+        {**_INVOCATION_SHELL, "mount": "intake", "artifact": built}
+    )
+
+
+def test_build_artifact_document_carries_root():
+    # `root` scopes every artifact kind (contract §3): the document path
+    # resolves relative to it at ingest, so dispatch must pass it through.
+    built = dispatch.build_artifact(document="docs/plan.md", root="/srv/repo")
+    assert built == {"kind": "document", "path": "docs/plan.md", "root": "/srv/repo"}
+    schema.validate_invocation(
+        {**_INVOCATION_SHELL, "mount": "intake", "artifact": built}
+    )
+
+
 def test_build_artifact_refuses_a_diff_scoped_posture_run():
     """A stray --base on a repository run must fail loudly: silently dropping it
     would let a caller believe a standing review was scoped to a diff."""
@@ -89,6 +107,19 @@ def test_build_artifact_refuses_a_diff_scoped_posture_run():
 def test_build_artifact_needs_base_and_head_without_a_ref():
     for kwargs in ({}, {"base": "a1b2c3d"}, {"head": "e4f5a6b"}):
         _build_raises(kwargs, "--base and --head")
+
+
+def test_build_artifact_refuses_a_document_with_changeset_or_repo_scope():
+    """A document is one named file, whole — a stray sha would let a caller
+    believe it scoped the run to something else. `root` is not scope creep:
+    every kind carries it (contract §3)."""
+    for kwargs in (
+        {"document": "docs/plan.md", "ref": "a1b2c3d"},
+        {"document": "docs/plan.md", "base": "a1b2c3d"},
+        {"document": "docs/plan.md", "head": "e4f5a6b"},
+        {"document": "docs/plan.md", "pr": "http://pr/1"},
+    ):
+        _build_raises(kwargs, "takes no")
 
 
 # ── mount selection ───────────────────────────────────────────────────────────
@@ -175,6 +206,35 @@ def test_product_lane_needs_a_product_definition():
     assert [j["judge"] for j in got] == ["product-reviewer"]
 
 
+def test_document_selection_skips_path_signals():
+    """A document has no changed paths to sniff — the consumer named it — so a
+    lane whose path signals would drop it from any changeset still runs."""
+    judges = [
+        _judge("dependency-auditor", mounts="`intake`"),
+        _judge("code-auditor", mounts="`intake`"),
+    ]
+    chosen = dispatch.selected(judges, None, "intake")
+    assert [j["judge"] for j in chosen] == ["dependency-auditor", "code-auditor"]
+
+
+def test_document_selection_keeps_the_context_gates():
+    judges = [_judge("product-reviewer", mounts="`intake`, `acceptance`")]
+    assert dispatch.selected(judges, None, "intake") == []
+    got = dispatch.selected(judges, None, "intake", ["PRODUCT.md"])
+    assert [j["judge"] for j in got] == ["product-reviewer"]
+
+
+def test_document_selection_keeps_the_mount_gate():
+    judges = [_judge("security-auditor", mounts="`acceptance`")]
+    assert dispatch.selected(judges, None, "intake") == []
+
+
+def test_the_signal_tables_share_no_key():
+    """The empty-selection message derives each dropped judge's reason from
+    which table holds it; a judge in both would make that reason a guess."""
+    assert not set(dispatch.PATH_SIGNALS) & set(dispatch.CONTEXT_SIGNALS)
+
+
 def test_context_signals_are_keyed_to_registered_judges():
     registered = {
         j["judge"]
@@ -227,6 +287,59 @@ def test_cli_emits_valid_invocations_for_the_real_roster():
         names = {i["judge"] for i in built}
         assert "accessibility-auditor" not in names, "no frontend files changed"
         assert "dependency-auditor" not in names, "no manifest changed"
+
+
+def test_cli_document_needs_no_paths_and_defaults_mount_to_intake():
+    proc = subprocess.run(
+        [sys.executable, str(REPO / "scripts/dispatch.py"),
+         "--document", "docs/plan.md", "--context", "PRODUCT.md"],
+        capture_output=True, text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+    built = json.loads(proc.stdout)
+    assert {i["judge"] for i in built} == {"product-reviewer"}, (
+        "intake is one context-gated lane today; a second declarer means "
+        "this assertion is stale, not wrong"
+    )
+    for invocation in built:
+        schema.validate_invocation(invocation)
+        assert invocation["mount"] == "intake"
+        assert invocation["artifact"] == {"kind": "document", "path": "docs/plan.md"}
+
+
+def test_cli_changeset_still_requires_paths():
+    proc = subprocess.run(
+        [sys.executable, str(REPO / "scripts/dispatch.py"),
+         "--base", "a1b2c3d4e5f6", "--head", "f6e5d4c3b2a1"],
+        capture_output=True, text=True,
+    )
+    assert proc.returncode == 2
+    assert "--paths" in proc.stderr
+
+
+def test_cli_refuses_paths_beside_a_document():
+    proc = subprocess.run(
+        [sys.executable, str(REPO / "scripts/dispatch.py"),
+         "--document", "docs/plan.md", "--paths", "paths.txt"],
+        capture_output=True, text=True,
+    )
+    assert proc.returncode == 2
+    assert "takes no --paths" in proc.stderr
+
+
+def test_cli_names_the_gate_when_a_document_run_selects_nothing():
+    """Only context-gated lanes declare intake today, so a bare document run
+    selects zero judges — and the caller must hear why: the mount is declared,
+    the gate is closed. 'No judge declares intake' would be false."""
+    proc = subprocess.run(
+        [sys.executable, str(REPO / "scripts/dispatch.py"),
+         "--document", "docs/plan.md"],
+        capture_output=True, text=True,
+    )
+    assert proc.returncode == 1
+    assert "no judge declares" not in proc.stderr
+    assert "product-reviewer" in proc.stderr
+    assert "--context" in proc.stderr
 
 
 def main():

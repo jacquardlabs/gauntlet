@@ -1,5 +1,5 @@
 ---
-description: Run a changeset through the gauntlet — dispatch the judges whose lanes it touches, compile their findings, and optionally post them to a PR.
+description: Run a changeset or document through the gauntlet — dispatch the judges that apply, compile their findings, and optionally post them to a PR.
 allowed-tools: Bash, Read, Glob, Grep, Task
 ---
 
@@ -10,7 +10,8 @@ judges that apply, dispatch them, compile what they return, and show it. **You n
 decide what happens next** — no verdict of your own, no gate, no ledger, no follow-on
 door. Every side effect is one the human confirms in this same invocation.
 
-`$ARGUMENTS` may name a PR (number or URL). Empty means the current branch.
+`$ARGUMENTS` may name a PR (number or URL) or a document path (`docs/plan.md`) — a
+file to judge at `intake`. Empty means the current branch.
 
 ## 1. Resolve the artifact
 
@@ -20,6 +21,10 @@ door. Every side effect is one the human confirms in this same invocation.
 BASE=$(git merge-base HEAD "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)")
 HEAD=$(git rev-parse HEAD)
 ```
+
+**A document was named** (the argument is a path, not a PR) — the file itself is the
+artifact, whole. Confirm it exists, report it as the artifact, and skip the rest of
+this step: no shas, no worktree, no changed paths.
 
 **A PR was named** — resolve it to the same two shas, and keep the URL:
 
@@ -66,6 +71,20 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
   --paths <tmp>/paths.txt \
   --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
 ```
+
+For a document, `--document <path>` replaces the shas and there is no `--paths` — a
+document has no diff to sniff, so path signals do not apply and selection is declared
+mount (`intake` unless you pass `--mount`) plus the same context gates:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
+  --document <path> \
+  --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
+```
+
+Only `product-reviewer` declares `intake` today, and it is context-gated (below) — a
+document run may legitimately select nothing. The script names the gate that dropped
+each judge; relay that, it is the answer, not an error to route around.
 
 Pass `--context` only the files that exist, and `--receipts-path` only when the human
 named an evidence log — never invent one.

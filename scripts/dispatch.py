@@ -114,17 +114,34 @@ def build_artifact(
     head: Optional[str] = None,
     root: Optional[str] = None,
     pr: Optional[str] = None,
+    document: Optional[str] = None,
 ) -> dict:
-    """The artifact this run judges: a `repository` when `ref` is given, a
-    `changeset` otherwise (contract §3).
+    """The artifact this run judges: a `document` when `document` is given, a
+    `repository` when `ref` is, a `changeset` otherwise (contract §3).
 
-    The two are mutually exclusive rather than merged, because a repository
-    artifact carries no `base` by design — a posture review measures the
-    repository against a standard, never against an earlier revision of itself.
-    Silently ignoring a stray `--base` would let a caller believe it scoped a
-    standing review to a diff.
+    The kinds are mutually exclusive rather than merged, because each refuses
+    scope the others carry by design — a repository artifact has no `base`
+    (a posture review measures the repository against a standard, never against
+    an earlier revision of itself), and a document is one named path whose
+    content is the artifact: no shas. Silently ignoring a stray `--base` would
+    let a caller believe it scoped a standing review to a diff. `root` is the
+    one scope every kind shares — contract §3 declares it optional on all three,
+    and a document `path` resolves relative to it at ingest.
     """
-    if ref:
+    if document:
+        conflicting = [
+            flag for flag, value in (
+                ("--ref", ref), ("--base", base), ("--head", head), ("--pr", pr),
+            )
+            if value
+        ]
+        if conflicting:
+            raise ValueError(
+                "--document judges one named file, whole, and takes no "
+                + ", ".join(conflicting)
+            )
+        artifact = {"kind": "document", "path": document}
+    elif ref:
         conflicting = [
             flag for flag, value in (("--base", base), ("--head", head), ("--pr", pr))
             if value
@@ -151,7 +168,7 @@ def build_artifact(
 
 def selected(
     judges: List[dict],
-    paths: List[str],
+    paths: Optional[List[str]],
     mount: str,
     context: Optional[List[str]] = None,
 ) -> List[dict]:
@@ -162,6 +179,10 @@ def selected(
     supplied. The second is not an optimization — a lane with no register or no
     product definition cannot answer its question at all, so dispatching it buys a
     self-skip at the price of a model call, on every run, forever.
+
+    `paths=None` means the artifact has no paths to sniff — a document is named
+    by the consumer, never sniffed (charter, "How the document surface grows") —
+    so the path exclusion does not apply and only mount and context gates do.
     """
     chosen = []
     for judge in judges:
@@ -169,7 +190,7 @@ def selected(
         if mount not in charter._cell_tokens(judge["mounts"]):
             continue
         signals = PATH_SIGNALS.get(name)
-        if signals and not any(
+        if paths is not None and signals and not any(
             re.search(pattern, path) for pattern in signals for path in paths
         ):
             continue
@@ -182,7 +203,7 @@ def selected(
 
 def invocations(
     judges: List[dict],
-    paths: List[str],
+    paths: Optional[List[str]],
     mount: str,
     artifact: dict,
     context: Optional[List[str]] = None,
@@ -215,37 +236,51 @@ def main() -> int:
         "--ref",
         help="Judge a whole repository at this sha or ref, instead of a changeset",
     )
+    parser.add_argument(
+        "--document",
+        help="Judge one markdown file, whole, instead of a changeset",
+    )
     parser.add_argument("--root", help="Repo root; defaults to the working directory")
     parser.add_argument(
         "--mount",
         default=None,
         choices=schema.MOUNTS,
-        help="Defaults to posture with --ref, acceptance otherwise",
+        help="Defaults to intake with --document, posture with --ref, "
+        "acceptance otherwise",
     )
     parser.add_argument(
         "--paths",
-        required=True,
         help="File holding the paths in scope, one per line, or - for stdin. "
         "For a changeset these are the changed paths; for --ref, the repository's "
-        "tracked files (git ls-files) — path signals scope lanes either way",
+        "tracked files (git ls-files) — path signals scope lanes either way. "
+        "Not taken with --document: a document is one named path, never sniffed",
     )
     parser.add_argument("--context", default="", help="Comma-separated grounding docs")
     parser.add_argument("--receipts-path", help="Evidence log this run may cite")
     args = parser.parse_args()
 
-    text = sys.stdin.read() if args.paths == "-" else Path(args.paths).read_text()
-    paths = [line.strip() for line in text.splitlines() if line.strip()]
+    if args.document:
+        if args.paths:
+            parser.error("--document names the one path in scope and takes no --paths")
+        paths = None
+    else:
+        if not args.paths:
+            parser.error("--paths is required unless --document is given")
+        text = sys.stdin.read() if args.paths == "-" else Path(args.paths).read_text()
+        paths = [line.strip() for line in text.splitlines() if line.strip()]
 
     judges, _ = charter.parse_charter(charter.CHARTER.read_text(encoding="utf-8"))
     if not judges:
         print("gauntlet: the charter registers no judges", file=sys.stderr)
         return 1
 
-    mount = args.mount or ("posture" if args.ref else "acceptance")
+    mount = args.mount or (
+        "intake" if args.document else "posture" if args.ref else "acceptance"
+    )
     context = [c.strip() for c in args.context.split(",") if c.strip()]
     try:
         artifact = build_artifact(
-            args.ref, args.base, args.head, args.root, args.pr
+            args.ref, args.base, args.head, args.root, args.pr, args.document
         )
         built = invocations(
             judges, paths, mount, artifact, context, args.receipts_path
@@ -255,7 +290,28 @@ def main() -> int:
         return 1
 
     if not built:
-        print(f"gauntlet: no judge declares mount {mount!r}", file=sys.stderr)
+        # Say why, truthfully: "no judge declares the mount" and "every judge
+        # declaring it was gated out" are different answers, and telling a
+        # caller the first when the second is true hides the gate they could
+        # open. The reason comes from which signal table holds the judge — a
+        # judge in neither is never dropped, and the tables share no key.
+        declaring = sorted(
+            j["judge"] for j in judges if mount in charter._cell_tokens(j["mounts"])
+        )
+        if not declaring:
+            print(f"gauntlet: no judge declares mount {mount!r}", file=sys.stderr)
+        else:
+            dropped = "; ".join(
+                f"{name} needs a --context path matching {CONTEXT_SIGNALS[name]}"
+                if name in CONTEXT_SIGNALS
+                else f"{name} matched no path in scope"
+                for name in declaring
+            )
+            print(
+                f"gauntlet: every judge declaring mount {mount!r} was dropped "
+                f"by selection — {dropped}",
+                file=sys.stderr,
+            )
         return 1
 
     print(json.dumps(built, indent=2))
