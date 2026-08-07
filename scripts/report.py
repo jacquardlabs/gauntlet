@@ -79,7 +79,9 @@ def load(
         except ValueError as exc:
             failures.append(f"{path.name}: does not satisfy the findings contract — {exc}")
             continue
-        normalized, doc_notes = schema.normalize_findings(data)
+        normalized, doc_notes = schema.normalize_findings(
+            data, _document_text(data["artifact"])
+        )
         if documents and normalized["artifact"] != documents[0]["artifact"]:
             failures.append(
                 f"{path.name}: judged a different artifact than "
@@ -97,6 +99,26 @@ def load(
     )
 
     return documents, notes, failures
+
+
+def _document_text(artifact: dict) -> Optional[str]:
+    """The judged document's text, for the quote-or-demote ingest rule.
+
+    `schema.normalize_findings` is pure and reads no files, so the read lives
+    here: `artifact.path`, relative to `artifact.root` when set. None for any
+    other artifact kind, and None when the file cannot be read — a consumer
+    compiling findings away from where the document lives still gets its
+    report, with the quote check skipped rather than every critical demoted
+    against text nobody saw.
+    """
+    if artifact.get("kind") != "document":
+        return None
+    try:
+        return (Path(artifact.get("root") or ".") / artifact["path"]).read_text(
+            encoding="utf-8"
+        )
+    except (OSError, ValueError):
+        return None
 
 
 def _artifact_id(artifact: dict) -> str:

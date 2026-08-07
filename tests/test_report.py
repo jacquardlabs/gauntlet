@@ -92,6 +92,72 @@ def test_a_judge_that_wrote_nothing_is_a_failure_not_an_absence():
         _has(failures, "test-auditor: dispatched but wrote no findings document")
 
 
+def _document_run(tmp, anchor, text="The plan promises a rollback in one step.\n"):
+    """A findings dir plus the judged document it cites, under one root."""
+    (Path(tmp) / "plan.md").write_text(text)
+    finding = _finding(tier="critical", path=None)
+    finding["locus"] = {"section": "Rollback"}
+    finding["anchor"] = anchor
+    doc = _doc("product-reviewer", [finding])
+    doc["mount"] = "intake"
+    doc["artifact"] = {"kind": "document", "path": "plan.md", "root": tmp}
+    findings_dir = Path(tmp) / "findings"
+    findings_dir.mkdir()
+    _write(findings_dir, doc)
+    return findings_dir
+
+
+def test_load_verifies_a_document_quote_against_artifact_root():
+    with tempfile.TemporaryDirectory() as tmp:
+        dir_ = _document_run(tmp, 'Plan claims "a rollback in one step" untested')
+        docs, notes, failures = report.load(dir_)
+        assert docs[0]["findings"][0]["tier"] == "critical"
+        assert notes == [] and failures == []
+
+
+def test_load_demotes_a_fabricated_document_quote():
+    with tempfile.TemporaryDirectory() as tmp:
+        dir_ = _document_run(tmp, 'Plan claims "we can revert instantly" untested')
+        docs, notes, failures = report.load(dir_)
+        assert docs[0]["findings"][0]["tier"] == "important"
+        _has(notes, "quote-or-demote")
+        _has(notes, "product-reviewer:")
+        assert failures == []
+
+
+def test_an_unreadable_document_skips_the_quote_check_not_the_load():
+    with tempfile.TemporaryDirectory() as tmp:
+        dir_ = _document_run(tmp, 'Plan claims "we can revert instantly" untested')
+        (Path(tmp) / "plan.md").unlink()
+        docs, notes, failures = report.load(dir_)
+        assert docs[0]["findings"][0]["tier"] == "critical"
+        assert notes == [] and failures == []
+
+
+def test_a_mistyped_document_root_is_a_failure_not_a_crash():
+    """Regression: `{"root": 123}` used to pass validate_findings, then
+    Path(123) raised TypeError inside load() — one bad lane taking every
+    other lane's findings down with it."""
+    with tempfile.TemporaryDirectory() as tmp:
+        doc = _doc("product-reviewer")
+        doc["artifact"] = {"kind": "document", "path": "plan.md", "root": 123}
+        _write(tmp, doc)
+        docs, _, failures = report.load(Path(tmp))
+        assert docs == []
+        _has(failures, "does not satisfy the findings contract")
+        _has(failures, "artifact.root")
+
+
+def test_changeset_criticals_never_face_the_quote_rule():
+    """An anchor with no quoted span is fine on code — the quote rule is a
+    document-artifact rule, not a new anchor grammar for the fleet."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _write(tmp, _doc(findings=[_finding(tier="critical")]))
+        docs, notes, _ = report.load(Path(tmp))
+        assert docs[0]["findings"][0]["tier"] == "critical"
+        assert notes == []
+
+
 def test_documents_must_agree_about_the_artifact():
     other = _doc("test-auditor")
     other["artifact"] = {"kind": "changeset", "base": "999999999999", "head": "888888888888"}

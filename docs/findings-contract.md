@@ -72,7 +72,7 @@ What a consumer hands a judge, as JSON embedded in the dispatch:
 | Kind | Shape | Notes |
 |---|---|---|
 | `changeset` | `{kind: "changeset", base, head, root?, pr?}` | Git shas; `root` defaults to the working directory. `pr` is the pull-request URL when the changeset is a PR — the consumer resolves the PR to `base`/`head` at dispatch and carries the URL through, so the findings document is addressable back to the PR without the invocation in hand. |
-| `document` | `{kind: "document", path}` | Markdown file. Trade-study matrices are documents; the matrix locus lives on the finding (§4). |
+| `document` | `{kind: "document", path, root?}` | Markdown file; `root` defaults to the working directory, and is where the §4 quote check resolves `path`. Trade-study matrices are documents; the matrix locus lives on the finding (§4). |
 | `repository` | `{kind: "repository", ref, root?}` | A whole repository at one point in time — the artifact a `posture` review judges. `ref` is the sha or ref judged, required so a standing finding is reproducible against the state that produced it; `root` defaults to the working directory. There is deliberately no `base`: a posture review compares the repository to a standard, never to an earlier revision of itself. |
 
 A PR is not an artifact kind of its own: judges see every PR as an ordinary changeset.
@@ -108,7 +108,7 @@ Each entry in `findings`:
 | `tier` | yes | `critical` \| `important` \| `track` — canonical at emit. Judges emit these three directly; the per-judge label→tier mapping table dies at migration. |
 | `summary` | yes | The claim, ≤15 words. |
 | `locus` | yes | Object with at least one of `path` (+ optional `line`), `section`, or `cell`. Code findings use `path`/`line`; document findings use `section`; matrix findings add `cell`. |
-| `anchor` | when `tier: critical` | The objective anchor the judge's lane owns (severity-rubric's table travels into the charter): the checkable fact, not the judge's feeling. **Anchor-or-demote:** a consumer records an anchorless critical as `important` — enforced at ingest, named in the compiled report. |
+| `anchor` | when `tier: critical` | The objective anchor the judge's lane owns (severity-rubric's table travels into the charter): the checkable fact, not the judge's feeling. **Anchor-or-demote:** a consumer records an anchorless critical as `important` — enforced at ingest, named in the compiled report. On a `document` artifact the anchor must also contain a verbatim quote from the artifact, in double quotation marks; ingest matches it against the document text, whitespace-normalized on both sides, and records a miss as `important` beside the presence rule (#44). A document the consumer cannot read skips the quote check. |
 | `basis` | yes | `sourced` \| `inferred` \| `taste` — grounds classing, aligned with viva's `Annotation.basis` and extended per viva#175. `sourced` cites a receipt or an anchor a reader can check; `inferred` is reasoned from the artifact without a direct citation; `taste` is labeled preference. **A `taste` finding never ranks above `track`.** Replaces the old Confirmed/Potential vocabulary — one confidence grammar across gauntlet and viva, never numeric. |
 | `level` | no | `high` \| `medium` \| `low` — strength within the basis, viva's `Annotation.level`. |
 | `failure_scenario` | no | Concrete inputs/state → wrong outcome. Expected on `critical` and `important` code findings. |
