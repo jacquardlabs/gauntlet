@@ -33,6 +33,24 @@ having run.
 """
 
 
+#: The same judge, declared as a YAML block sequence. Ordinary YAML, and the form
+#: the tools check was blind to until #57.
+BLOCK_JUDGE = """---
+name: security-auditor
+description: Judges a changeset against the security checklist.
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+model: opus
+---
+
+Inspect read-only. Report findings in the contract shape; the consumer persists
+them.
+"""
+
+
 def _charter(rows="", anchors=""):
     return (
         "# Charter\n\n## Judges\n\n"
@@ -222,6 +240,75 @@ def test_every_mutation_tool_rejected():
     for tool in check.MUTATION_TOOLS:
         text = CLEAN_JUDGE.replace("tools: Read", f"tools: {tool}, Read")
         _has(check.scan("agents/x.md", text), f"declares the {tool} tool")
+
+
+def test_block_style_tools_are_read_past_the_first_entry():
+    """#57: `^tools:\\s*(?P<tools>.+)$` captured `- Read` and stopped, so a judge
+    declaring `Write` and `Task` as list entries 2 and 3 reported zero problems."""
+    text = BLOCK_JUDGE.replace("  - Grep\n", "  - Write\n  - Task\n")
+    problems = check.scan("agents/rogue-auditor.md", text)
+    _has(problems, "declares the Write tool")
+    _has(problems, "declares the Task tool")
+    # Same file with CRLF terminators. A frontmatter pattern that stops the
+    # closing `---` at `[ \t]*$` matches nothing here, and no frontmatter parses
+    # to no tools — a fail-open in the one check that must not have one.
+    _has(check.scan("agents/rogue-auditor.md", text.replace("\n", "\r\n")), "Write tool")
+
+
+def test_block_style_read_only_judge_passes():
+    assert check.scan("agents/security-auditor.md", BLOCK_JUDGE) == []
+
+
+def test_bracketed_inline_tools_are_read():
+    text = CLEAN_JUDGE.replace(
+        "tools: Read, Grep, Glob, Bash", "tools: [Read, Grep, Write]"
+    )
+    _has(check.scan("agents/x.md", text), "declares the Write tool")
+
+
+def test_a_block_list_never_escapes_the_frontmatter():
+    """The list ends at the next key; the parse ends at the closing `---`. A body
+    bullet naming a tool is prose, and a body `tools:` line is documentation."""
+    text = BLOCK_JUDGE + (
+        "\nWhat this judge never does:\n\n"
+        "- Write the fix it recommends.\n"
+        "- Task another agent to apply one.\n\n"
+        "A producer would declare tools: Read, Write, Edit. You are not one.\n"
+    )
+    assert check.scan("agents/x.md", text) == []
+
+
+def test_missing_tools_key_rejected():
+    """The laziest frontmatter is the most permissive one: an omitted `tools:`
+    key inherits every tool available to subagents, `Write` and `Task` among
+    them. Parsed to `[]` and passed clean until the guard failed closed (#62)."""
+    text = "---\nname: security-auditor\nmodel: opus\n---\n\nInspect read-only.\n"
+    _has(check.scan("agents/x.md", text), "declares no `tools:` key")
+
+
+def test_unparseable_frontmatter_rejected():
+    for text in (
+        "# Security lane\n\nInspect read-only.\n",  # no frontmatter at all
+        "---\nname: security-auditor\ntools: Read, Grep\n",  # never terminated
+    ):
+        _has(check.scan("agents/x.md", text), "no terminated `---` frontmatter")
+
+
+def test_tools_key_naming_nothing_readable_rejected():
+    """Three ways to write a declaration this parser cannot resolve. Each once
+    yielded silence, which is what a judge declaring only read tools yields."""
+    for value in ("", " []", " [Read,"):
+        text = CLEAN_JUDGE.replace("tools: Read, Grep, Glob, Bash", f"tools:{value}")
+        _has(check.scan("agents/x.md", text), "naming no tool this check can read")
+
+
+def test_a_comment_never_truncates_a_block_list():
+    """A comment or blank line interrupts a block sequence without ending it;
+    stopping there drops every entry below, which is the original bug's shape."""
+    text = BLOCK_JUDGE.replace("  - Grep\n", "  # the read set\n\n  - Write\n")
+    _has(check.scan("agents/x.md", text), "declares the Write tool")
+    trailing = BLOCK_JUDGE.replace("  - Grep\n", "  - Write  # for the fix\n")
+    _has(check.scan("agents/x.md", trailing), "declares the Write tool")
 
 
 def test_slash_command_rejected_in_backticks():

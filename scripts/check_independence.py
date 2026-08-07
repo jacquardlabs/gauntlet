@@ -7,7 +7,9 @@ checkable half of them. What a judge may never do:
 1. **Carry a mutation tool.** `Write`, `Edit`, `Task` and friends in an agent's
    `tools:` frontmatter are the difference between "returns findings" and
    "changes the artifact" — the whole basis for treating findings as machine
-   facts rather than a participant's opinion.
+   facts rather than a participant's opinion. The declaration must be explicit
+   and readable: an omitted `tools:` key inherits every tool available to
+   subagents, so this half fails closed and reports what it could not read.
 2. **Name a slash command.** A gauntlet judge is dispatched by a consumer (a viva
    bundle, CI, a bare session) and routes no one anywhere. This is also the
    migration tripwire: the studious fleet mentions `/review`, `/retro`, and
@@ -107,8 +109,127 @@ def _slash_command(line: str) -> Optional[str]:
 #: A Standard cell declaring that the judge's own prompt is the rubric.
 INLINE_STANDARD = "(inline)"
 
-#: `tools: Read, Grep, Bash` in YAML frontmatter.
-TOOLS_LINE = re.compile(r"^tools:\s*(?P<tools>.+)$", re.MULTILINE)
+#: The YAML frontmatter block — the opening `---` through the next `---` on its
+#: own line. Tools are read from here and nowhere else: a body line that begins
+#: `tools:` is documentation about a declaration, not one. `\r` is allowed on
+#: both delimiters because `$` stops before the `\n` and leaves it in the line:
+#: a CRLF file whose closing `---` did not match would parse to no frontmatter,
+#: no tools, and a clean pass — this check must never fail open.
+FRONTMATTER = re.compile(
+    r"---[ \t\r]*\n(?P<body>.*?)^---[ \t\r]*$", re.DOTALL | re.MULTILINE
+)
+
+#: The `tools:` key, matched against one line at a time — never with
+#: `re.MULTILINE` across the block. See `_declared_tools`.
+TOOLS_KEY = re.compile(r"tools:(?P<value>.*)$")
+
+#: One entry of a block sequence: `  - Read`. Zero indentation is legal YAML and
+#: unambiguous inside frontmatter, where no key begins with `-`.
+BLOCK_ENTRY = re.compile(r"[ \t]*-[ \t]*(?P<tool>.*?)[ \t]*$")
+
+
+def _frontmatter(text: str) -> Optional[str]:
+    """The YAML frontmatter body, or `None` when the file opens without a
+    terminated `---` block."""
+    match = FRONTMATTER.match(text)
+    return match.group("body") if match else None
+
+
+def _bare(token: str) -> str:
+    """A tool name with YAML's quoting, trailing comment, and whitespace gone."""
+    return token.split("#")[0].strip().strip("\"'")
+
+
+def _declared_tools(frontmatter: str) -> Optional[List[str]]:
+    """Every tool this frontmatter declares, or `None` when it names no `tools:`
+    key at all. An empty list means a key that named nothing readable.
+
+    Two YAML forms are ordinary, and a check that reads only one is a check on
+    whichever a contributor happened to type:
+
+    - `tools: Read, Grep, Bash` — inline, optionally bracketed (`[Read, Grep]`).
+      All 23 live judges are written this way.
+    - `tools:` followed by `  - Read` lines — a block sequence.
+
+    One `re.MULTILINE` pattern cannot read both, which is the defect this
+    replaces (#57): in `^tools:\\s*(?P<tools>.+)$` the `\\s*` crosses the newline
+    and the `.` does not, so a block sequence captured its first entry alone and
+    every later entry — `Write`, `Task` — left the guarded set silently. Hence a
+    line-at-a-time walk instead: the key line decides the form, and a block list
+    ends at the first line that is not an entry, so it can neither run past
+    `model:` nor escape the frontmatter into the body's own bullets.
+
+    Every ambiguity resolves toward *unreadable* rather than toward a short list,
+    because a short list is what a clean judge looks like. A bracketed value with
+    no closing bracket continues onto lines this does not parse, so it yields the
+    empty list its caller reports rather than the one entry it could see.
+    """
+    lines = frontmatter.splitlines()
+    for n, line in enumerate(lines):
+        key = TOOLS_KEY.match(line)
+        if not key:
+            continue
+        inline = key.group("value").split("#")[0].strip()
+        if inline.startswith("["):
+            if not inline.endswith("]"):
+                return []  # a flow sequence running onto lines this cannot read
+            inline = inline[1:-1]
+        if inline.strip():
+            return [_bare(t) for t in inline.split(",") if _bare(t)]
+        tools: List[str] = []
+        for follower in lines[n + 1 :]:
+            # A comment or a blank line interrupts a block sequence without
+            # ending it; ending the walk there would drop every entry below.
+            if not follower.strip() or follower.lstrip().startswith("#"):
+                continue
+            entry = BLOCK_ENTRY.match(follower)
+            if not entry:
+                break
+            tools.append(_bare(entry.group("tool")))
+        return tools
+    return None
+
+
+def _tool_problems(rel: str, text: str) -> List[str]:
+    """Rule 2's mechanical half, failing closed.
+
+    A judge that declares only read tools and a file whose declaration cannot be
+    read both produce no tool names, and they are opposites: an omitted `tools:`
+    key **inherits every tool available to subagents**, `Write` and `Task`
+    included. #57 was one instance — block YAML the old pattern could not read —
+    and fixing that instance alone would have left the check passing the simpler
+    mistake. So anything short of an explicit, readable declaration is a problem
+    here (#62).
+    """
+    frontmatter = _frontmatter(text)
+    if frontmatter is None:
+        return [
+            f"{rel}: has no terminated `---` frontmatter block, so the tools it "
+            f"carries cannot be read — and an unread declaration is an unchecked "
+            f"one (charter rule 2). Open the file with frontmatter naming the "
+            f"read-only tools the lane needs."
+        ]
+    tools = _declared_tools(frontmatter)
+    if tools is None:
+        return [
+            f"{rel}: declares no `tools:` key, so it inherits every tool available "
+            f"to subagents — `Write` and `Task` among them (charter rule 2). A "
+            f"judge names its tools: `tools: Read, Grep, Glob, Bash`."
+        ]
+    if not tools:
+        return [
+            f"{rel}: has a `tools:` key naming no tool this check can read, which "
+            f"passes as though the judge declared none — the shape a mutation tool "
+            f"hides in (charter rule 2). Declare them inline "
+            f"(`tools: Read, Grep`) or as a `- Read` block list."
+        ]
+    return [
+        f"{rel}: declares the {tool} tool — a judge returns findings and "
+        f"never changes the artifact (charter rule 2). The consumer "
+        f"persists the findings document."
+        for tool in tools
+        if tool in MUTATION_TOOLS
+    ]
 
 
 def parse_charter(text: str) -> Tuple[List[Dict[str, str]], Dict[str, str]]:
@@ -248,19 +369,12 @@ def charter_problems(text: str) -> List[str]:
 
 
 def scan(rel: str, text: str) -> List[str]:
-    """Check one judge file against the three prohibitions. Pure: text in,
-    problems out, so tests drive it without touching disk."""
+    """Check one judge file against the three prohibitions, plus the explicit
+    tools declaration the first of them is read from. Pure: text in, problems
+    out, so tests drive it without touching disk."""
     problems: List[str] = []
 
-    if match := TOOLS_LINE.search(text):
-        tools = [t.strip() for t in match.group("tools").split(",")]
-        problems.extend(
-            f"{rel}: declares the {tool} tool — a judge returns findings and "
-            f"never changes the artifact (charter rule 2). The consumer "
-            f"persists the findings document."
-            for tool in tools
-            if tool in MUTATION_TOOLS
-        )
+    problems.extend(_tool_problems(rel, text))
 
     for n, line in enumerate(text.splitlines(), 1):
         if cmd := _slash_command(line):
