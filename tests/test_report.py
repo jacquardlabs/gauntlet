@@ -575,6 +575,7 @@ def test_pr_summary_carries_failures_notes_and_coverage():
     payload = json.loads(report.render_pr_comments(
         [_doc()], ["security-auditor: taste-caps-at-track: x"], ["y.json: exploded"]))
     assert "did not report" in payload["summary"]
+    assert "**What ingest changed or could not check:**" in payload["summary"]
     assert "taste-caps-at-track" in payload["summary"]
     assert "Coverage" in payload["summary"]
 

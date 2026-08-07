@@ -212,8 +212,10 @@ logged and revisited. Three tiers, never a fourth.
 **Anchor** — a `critical` must cite the checkable fact its lane owns: a named
 vulnerability signature plus the traced path to the sink, a behavior delta with its input
 and wrong output, the contract that broke and who depends on it. **A critical citing no
-anchor is recorded `important`**, and the report says so under *Recorded differently than
-claimed*. A tier is a claim about your code, not about how the reviewer feels about it.
+anchor is recorded `important`**, and the report says so under *What ingest changed or
+could not check* — beside every other accommodation the boundary made, including a quote
+check that could not run because the document was unreadable. A tier is a claim about
+your code, not about how the reviewer feels about it.
 
 **Grounds** — `sourced` cites something you can go check; `inferred` was reasoned from
 the artifact without a direct citation; `taste` is preference, labelled as preference and
