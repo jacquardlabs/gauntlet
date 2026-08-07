@@ -2,6 +2,26 @@
 
 <!-- version list -->
 
+## v0.7.0 (2026-08-07)
+
+### Bug Fixes
+
+- Declare and type-check root on document artifacts
+  ([#46](https://github.com/jacquardlabs/gauntlet/pull/46),
+  [`417e4c1`](https://github.com/jacquardlabs/gauntlet/commit/417e4c1321b6e1cd3833dfa33ab6acdd7d6132de))
+
+### Documentation
+
+- Rule the document surface — one falsifiability lane, standards as data
+  ([#45](https://github.com/jacquardlabs/gauntlet/pull/45),
+  [`7a6bfd4`](https://github.com/jacquardlabs/gauntlet/commit/7a6bfd415f46cc20ab54274a8ea0c0853118e77d))
+
+### Features
+
+- Quote-match document anchors at ingest ([#46](https://github.com/jacquardlabs/gauntlet/pull/46),
+  [`417e4c1`](https://github.com/jacquardlabs/gauntlet/commit/417e4c1321b6e1cd3833dfa33ab6acdd7d6132de))
+
+
 ## v0.6.0 (2026-08-07)
 
 ### Features
