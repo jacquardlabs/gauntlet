@@ -194,7 +194,7 @@ def test_findings_rejections():
 # ── normalize_findings ────────────────────────────────────────────────────────
 def test_anchored_critical_untouched():
     doc = _findings_doc()
-    out, notes = schema.normalize_findings(doc)
+    out, notes = schema.normalize_findings(doc, None)
     assert out["findings"][0]["tier"] == "critical"
     assert notes == []
 
@@ -202,7 +202,7 @@ def test_anchored_critical_untouched():
 def test_anchorless_critical_demoted():
     doc = _findings_doc()
     doc["findings"][0]["anchor"] = "   "
-    out, notes = schema.normalize_findings(doc)
+    out, notes = schema.normalize_findings(doc, None)
     assert out["findings"][0]["tier"] == "important"
     assert len(notes) == 1 and "anchor-or-demote" in notes[0]
 
@@ -210,7 +210,7 @@ def test_anchorless_critical_demoted():
 def test_taste_caps_at_track():
     doc = _findings_doc()
     doc["findings"][0].update(basis="taste", tier="important")
-    out, notes = schema.normalize_findings(doc)
+    out, notes = schema.normalize_findings(doc, None)
     assert out["findings"][0]["tier"] == "track"
     assert len(notes) == 1 and "taste-caps-at-track" in notes[0]
 
@@ -219,7 +219,7 @@ def test_taste_critical_lands_at_track_with_both_notes():
     doc = _findings_doc()
     doc["findings"][0].update(basis="taste")
     doc["findings"][0].pop("anchor")
-    out, notes = schema.normalize_findings(doc)
+    out, notes = schema.normalize_findings(doc, None)
     assert out["findings"][0]["tier"] == "track"
     assert len(notes) == 2
 
@@ -227,7 +227,7 @@ def test_taste_critical_lands_at_track_with_both_notes():
 def test_taste_at_track_needs_no_note():
     doc = _findings_doc()
     doc["findings"][0].update(basis="taste", tier="track")
-    out, notes = schema.normalize_findings(doc)
+    out, notes = schema.normalize_findings(doc, None)
     assert out["findings"][0]["tier"] == "track"
     assert notes == []
 
@@ -236,7 +236,7 @@ def test_normalize_is_pure():
     doc = _findings_doc()
     doc["findings"][0]["anchor"] = ""
     before = copy.deepcopy(doc)
-    schema.normalize_findings(doc)
+    schema.normalize_findings(doc, None)
     assert doc == before
 
 
@@ -339,11 +339,54 @@ def test_product_reviewer_two_source_anchor_survives_ingest():
     assert notes == []
 
 
-def test_quote_rule_skipped_without_document_text():
+def test_quote_rule_skipped_without_document_text_is_noted():
     """An unreadable document skips the check — demoting every critical against
-    text nobody saw would be the checker fabricating, not the judge."""
+    text nobody saw would be the checker fabricating, not the judge. The skip is
+    noted all the same: a report that renders identically whether the rule ran
+    or silently did not cannot be read as evidence either way (#68)."""
     doc = _document_findings_doc("Step 3 names no rollback path")
-    out, notes = schema.normalize_findings(doc)
+    out, notes = schema.normalize_findings(doc, None)
+    assert out["findings"][0]["tier"] == "critical", "the fail-open stands"
+    assert len(notes) == 1 and "quote-check-skipped" in notes[0]
+    assert "docs/plan.md" in notes[0], "the note names the artifact it could not check"
+
+
+def test_the_skip_note_carries_the_reason_from_whoever_tried_to_read():
+    """`normalize_findings` is pure and never learns why a read failed, so the
+    reason arrives from the caller that attempted it."""
+    doc = _document_findings_doc("Step 3 names no rollback path")
+    _, notes = schema.normalize_findings(
+        doc, None, "[Errno 2] No such file or directory: '/tmp/x/plan.md'"
+    )
+    assert "No such file or directory" in notes[0]
+
+
+def test_the_skip_is_noted_even_when_the_lane_filed_no_criticals():
+    """Whether the reader learns the check did not run must not depend on what
+    the lane happened to file — the skip contaminates the demote-at-ingest
+    metric (#37) in the direction of looking healthy, findings or not."""
+    doc = _document_findings_doc("Step 3 names no rollback path")
+    doc["findings"] = []
+    _, notes = schema.normalize_findings(doc, None)
+    assert len(notes) == 1 and "quote-check-skipped" in notes[0]
+
+
+def test_document_text_has_no_default_to_disable_the_rule_by_omission():
+    """#68: the pre-#46 one-argument signature disabled quote-or-demote on every
+    document artifact, silently — and that is how the viva bundle's own docs
+    show the call. Required, the skip is a decision at the call site."""
+    doc = _document_findings_doc("Step 3 names no rollback path")
+    try:
+        schema.normalize_findings(doc)
+    except TypeError:
+        return
+    raise AssertionError("normalize_findings must require document_text")
+
+
+def test_a_non_document_artifact_is_never_noted_as_a_skip():
+    """The rule does not apply to a changeset, so nothing was accommodated and
+    there is nothing to report — a note here would be noise on every code run."""
+    out, notes = schema.normalize_findings(_findings_doc(), None)
     assert out["findings"][0]["tier"] == "critical"
     assert notes == []
 

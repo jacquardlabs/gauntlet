@@ -58,6 +58,12 @@ def load(
     across runs, or one judge re-dispatched after a new commit, otherwise yields
     a report titled with one span while carrying findings graded against
     another — and PR comments anchored to lines that moved.
+
+    Every accommodation this boundary makes lands in the returned notes. The
+    accommodations are deliberate — a code fence is unwrapped, an unreadable
+    document skips the quote check, a lane nobody dispatched is still ingested —
+    but an invisible one is a report that reads identically whether the check
+    ran or silently did not.
     """
     documents: List[dict] = []
     notes: List[str] = []
@@ -65,7 +71,7 @@ def load(
 
     for path in sorted(directory.glob("*.json")):
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
+            raw = path.read_text(encoding="utf-8")
         except (OSError, ValueError) as exc:
             # ValueError, not json.JSONDecodeError: a reply truncated mid-multibyte
             # raises UnicodeDecodeError, which is a ValueError and was escaping this
@@ -74,14 +80,41 @@ def load(
             # itself a ValueError, so the wider tuple loses nothing.
             failures.append(f"{path.name}: could not be read as JSON — {exc}")
             continue
+        unfenced = False
+        try:
+            data = json.loads(raw)
+        except ValueError as exc:
+            # Parse first, de-frame only on failure: a reply that is already one
+            # JSON object takes the identical path it always did, and the unwrap
+            # can only ever recover a lane, never reinterpret a working one.
+            body = _unfenced(raw)
+            if body is None:
+                failures.append(
+                    f"{path.name}: could not be read as JSON — {exc}"
+                    + (
+                        "; a code fence was present but did not wrap the whole "
+                        "reply, so nothing was unwrapped"
+                        if _looks_fenced(raw)
+                        else ""
+                    )
+                )
+                continue
+            try:
+                data = json.loads(body)
+            except ValueError as inner:
+                failures.append(
+                    f"{path.name}: could not be read as JSON even after unwrapping "
+                    f"the code fence it arrived in — {inner}"
+                )
+                continue
+            unfenced = True
         try:
             schema.validate_findings(data)
         except ValueError as exc:
             failures.append(f"{path.name}: does not satisfy the findings contract — {exc}")
             continue
-        normalized, doc_notes = schema.normalize_findings(
-            data, _document_text(data["artifact"])
-        )
+        text, unread = _document_text(data["artifact"])
+        normalized, doc_notes = schema.normalize_findings(data, text, unread)
         if documents and normalized["artifact"] != documents[0]["artifact"]:
             failures.append(
                 f"{path.name}: judged a different artifact than "
@@ -90,6 +123,11 @@ def load(
             )
             continue
         documents.append(normalized)
+        if unfenced:
+            notes.append(
+                f"{normalized['judge']}: fence-unwrapped: {path.name} arrived inside "
+                "a code fence, stripped as transport packaging before parsing"
+            )
         notes.extend(f"{normalized['judge']}: {note}" for note in doc_notes)
 
     reported = {doc["judge"] for doc in documents}
@@ -97,28 +135,88 @@ def load(
         f"{judge}: dispatched but wrote no findings document"
         for judge in sorted(set(expected or []) - reported)
     )
+    if expected:
+        # The mirror of the line above, and the same reasoning: without a roster
+        # this function cannot know, but with one, a document from a lane nobody
+        # dispatched is a stale file from an earlier run whose findings are now
+        # in this report — graded against an artifact it happens to agree with.
+        notes.extend(
+            f"{judge}: undispatched-lane: filed a findings document this run never "
+            "asked for; its findings were ingested anyway"
+            for judge in sorted(reported - set(expected))
+        )
 
     return documents, notes, failures
 
 
-def _document_text(artifact: dict) -> Optional[str]:
-    """The judged document's text, for the quote-or-demote ingest rule.
+#: A fence line: three or more backticks, optionally an info string (```json).
+_FENCE_OPEN = re.compile(r"^`{3,}[ \t]*[A-Za-z0-9_+-]*[ \t]*$")
+_FENCE_CLOSE = re.compile(r"^`{3,}[ \t]*$")
+
+
+def _looks_fenced(raw: str) -> bool:
+    """Whether any line opens a fence — true even when `_unfenced` refuses to
+    strip it, which is what lets a rejected wrapper be named rather than
+    silently read as an ordinary parse failure."""
+    return any(line.lstrip().startswith("```") for line in raw.split("\n"))
+
+
+def _unfenced(raw: str) -> Optional[str]:
+    """The body of a code fence wrapping a whole reply, or None if none does.
+
+    A fence is transport packaging, not content — the contract puts transport
+    out of scope entirely ("whether the judge runs as a Task-tool subagent, a
+    workflow `agent()` call, or a bare prompt, the payloads are the contract"),
+    so removing a wrapper is categorically different from repairing a malformed
+    document. Judges are still told to emit no fence, and every unwrap is noted:
+    the point is to recover the lane *and* keep the drift reportable, since two
+    lanes in fifteen were total losses to this at opus and sonnet alike (#61).
+
+    The wrapper must be genuine: optional leading prose, an opening fence line,
+    and a closing fence as the last non-blank line. The bytes between them are
+    returned untouched. Anything after the close is the judge's own content, and
+    dropping content would be the repair this deliberately is not.
+    """
+    lines = raw.split("\n")
+    opened = None
+    for i, line in enumerate(lines):
+        if line.lstrip().startswith("```"):
+            opened = i
+            break
+    if opened is None or not _FENCE_OPEN.match(lines[opened].strip()):
+        return None
+    closed = None
+    for j in range(len(lines) - 1, opened, -1):
+        if lines[j].strip():
+            closed = j
+            break
+    if closed is None or not _FENCE_CLOSE.match(lines[closed].strip()):
+        return None
+    return "\n".join(lines[opened + 1:closed])
+
+
+def _document_text(artifact: dict) -> Tuple[Optional[str], Optional[str]]:
+    """The judged document's text for the quote-or-demote ingest rule, and why
+    it is missing when it is.
 
     `schema.normalize_findings` is pure and reads no files, so the read lives
-    here: `artifact.path`, relative to `artifact.root` when set. None for any
-    other artifact kind, and None when the file cannot be read — a consumer
-    compiling findings away from where the document lives still gets its
-    report, with the quote check skipped rather than every critical demoted
-    against text nobody saw.
+    here: `artifact.path`, relative to `artifact.root` when set. `(None, None)`
+    for any other artifact kind — the rule does not apply there, so nothing was
+    accommodated. `(None, why)` when a document artifact cannot be read: the
+    read still fails open, so a consumer compiling findings away from where the
+    document lives gets its report rather than every critical demoted against
+    text nobody saw — but the reason travels back, because a check that silently
+    did not run renders exactly like one that ran and passed (#68).
     """
     if artifact.get("kind") != "document":
-        return None
+        return None, None
     try:
-        return (Path(artifact.get("root") or ".") / artifact["path"]).read_text(
+        text = (Path(artifact.get("root") or ".") / artifact["path"]).read_text(
             encoding="utf-8"
         )
-    except (OSError, ValueError):
-        return None
+    except (OSError, ValueError) as exc:
+        return None, str(exc)
+    return text, None
 
 
 def _artifact_id(artifact: dict) -> str:
@@ -336,7 +434,10 @@ def render_markdown(
             lines.append("")
 
     if notes:
-        lines += ["## Recorded differently than claimed", ""]
+        # Not "Recorded differently than claimed": the list now also carries
+        # checks that did not run and wrappers that were stripped, and filing
+        # those under a heading about demotions would hide them in plain sight.
+        lines += ["## What ingest changed or could not check", ""]
         lines += [f"- {note}" for note in notes]
         lines += [""]
 
@@ -447,7 +548,7 @@ def render_pr_comments(
         )
     if notes:
         summary.append(
-            "\n**Recorded differently than claimed:**\n"
+            "\n**What ingest changed or could not check:**\n"
             + "\n".join(f"- {note}" for note in notes)
         )
     summary.append(

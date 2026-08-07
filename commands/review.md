@@ -155,6 +155,13 @@ file as it came back. Do not repair it, re-ask for it, or drop it — a lane sil
 missing from a report is the one failure mode this whole repo exists to prevent, and the
 compiler is built to say so out loud.
 
+The compiler removes exactly one wrapper itself: a code fence around the whole reply,
+which is transport packaging — `docs/findings-contract.md` puts transport out of scope —
+and never content. It parses what was inside byte-for-byte and names the unwrap in the
+report, so the lane lands and the drift still shows (#61). Write the reply verbatim
+anyway: the unwrap is the compiler's business, not yours, and a reply that does not parse
+after unwrapping is a lane that did not report, exactly as before.
+
 ## 4. Compile
 
 ```bash
@@ -164,10 +171,14 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/report.py" \
 ```
 
 `--expect` is what lets the compiler see a judge that died before writing anything:
-without it, absence is indistinguishable from a lane with no findings.
+without it, absence is indistinguishable from a lane with no findings. It reads the
+reverse too — a document from a lane this run never dispatched, which is what a reused
+scratch directory leaves behind.
 
 It validates every document at the boundary, applies the ingest rules (anchor-or-demote,
-quote-or-demote on a document artifact, taste-caps-at-track) and names what it changed, checks the documents agree about which
+quote-or-demote on a document artifact, taste-caps-at-track), names everything it changed
+or could not check — a demotion, an unwrapped fence, a quote check skipped because the
+document could not be read — checks the documents agree about which
 artifact they judged, orders findings most-severe-first, and renders. A non-zero exit
 means at least one lane did not report — pass that on; it is not a failure of the run to
 hide.

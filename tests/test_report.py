@@ -125,13 +125,125 @@ def test_load_demotes_a_fabricated_document_quote():
         assert failures == []
 
 
-def test_an_unreadable_document_skips_the_quote_check_not_the_load():
+def test_an_unreadable_document_skips_the_quote_check_and_names_the_skip():
+    """#68. The fail-open is right — demoting every critical against text nobody
+    saw would be the checker fabricating. Rendering that run identically to one
+    where every anchor was checked and passed is not: this used to assert
+    `notes == []`, which pinned exactly that silence."""
     with tempfile.TemporaryDirectory() as tmp:
         dir_ = _document_run(tmp, 'Plan claims "we can revert instantly" untested')
         (Path(tmp) / "plan.md").unlink()
         docs, notes, failures = report.load(dir_)
-        assert docs[0]["findings"][0]["tier"] == "critical"
-        assert notes == [] and failures == []
+        assert docs[0]["findings"][0]["tier"] == "critical", "the fail-open stands"
+        assert failures == [], "a skipped check is not an unjudged lane"
+        _has(notes, "quote-check-skipped")
+        _has(notes, "product-reviewer:")
+        _has(notes, "plan.md")
+        _has(notes, "No such file or directory")
+
+
+def test_an_undecodable_document_names_why_it_could_not_be_read():
+    """The other read failure: a latin-1 document raises UnicodeDecodeError, not
+    OSError, and the reader is owed which one happened."""
+    with tempfile.TemporaryDirectory() as tmp:
+        dir_ = _document_run(tmp, 'Plan claims "we can revert instantly" untested')
+        (Path(tmp) / "plan.md").write_bytes(b"rollback in one \xe9tape\n")
+        _, notes, failures = report.load(dir_)
+        assert failures == []
+        _has(notes, "quote-check-skipped")
+        _has(notes, "codec can't decode")
+
+
+# ── de-framing a fenced reply (#61) ───────────────────────────────────────────
+def _fenced(text, info="json", lead="", tail=""):
+    return f"{lead}```{info}\n{text}\n```\n{tail}"
+
+
+def test_a_fenced_reply_is_unwrapped_and_the_unwrap_is_named():
+    """#61: two lanes in fifteen were total losses to a fence, at opus and
+    sonnet alike, with 23 byte-identical copies of the instruction already
+    forbidding it. A fence is transport packaging, which the contract puts out
+    of scope — so it is stripped, and named, because a silent unwrap would
+    recover the lane by trading one invisible accommodation for another."""
+    with tempfile.TemporaryDirectory() as tmp:
+        (Path(tmp) / "test-auditor.json").write_text(
+            _fenced(
+                json.dumps(_doc("test-auditor", [_finding()]), indent=2),
+                lead="Here is the findings document:\n\n",
+            )
+        )
+        docs, notes, failures = report.load(Path(tmp), ["test-auditor"])
+        assert failures == [], "the lane is recovered, not lost"
+        assert docs[0]["findings"][0]["summary"] == "a important thing"
+        _has(notes, "fence-unwrapped")
+        _has(notes, "test-auditor:")
+
+
+def test_a_bare_fence_with_no_info_string_is_a_wrapper_too():
+    with tempfile.TemporaryDirectory() as tmp:
+        (Path(tmp) / "a.json").write_text(_fenced(json.dumps(_doc()), info=""))
+        docs, notes, failures = report.load(Path(tmp))
+        assert len(docs) == 1 and failures == []
+        _has(notes, "fence-unwrapped")
+
+
+def test_a_bare_valid_document_is_untouched_by_the_unwrap():
+    """Parse first, de-frame only on a parse failure. The ordinary path is the
+    one it always was, byte for byte, and no note claims an accommodation that
+    never happened."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _write(tmp, _doc(findings=[_finding()]))
+        docs, notes, failures = report.load(Path(tmp))
+        assert len(docs) == 1 and notes == [] and failures == []
+        assert docs[0]["findings"][0] == _finding(), "no bytes altered"
+
+
+def test_a_reply_that_still_does_not_parse_after_unwrapping_is_a_failure():
+    """Unwrapping is de-framing, never repair: what was inside the fence is
+    parsed as it came, and a lane whose document is malformed is lost exactly as
+    it is today."""
+    with tempfile.TemporaryDirectory() as tmp:
+        (Path(tmp) / "a.json").write_text(_fenced('{"judge": '))
+        docs, notes, failures = report.load(Path(tmp))
+        assert docs == [] and notes == []
+        _has(failures, "even after unwrapping")
+
+
+def test_a_fence_that_does_not_wrap_the_whole_reply_is_named_not_stripped():
+    """Content after the close is the judge's own, and dropping it would be the
+    repair this deliberately is not. The failure says a fence was seen, so a
+    shape this ruling did not cover surfaces in the next run's report rather
+    than reading as an ordinary parse failure."""
+    with tempfile.TemporaryDirectory() as tmp:
+        (Path(tmp) / "a.json").write_text(
+            _fenced(json.dumps(_doc()), tail="\nLet me know if you want more detail.\n")
+        )
+        docs, _, failures = report.load(Path(tmp))
+        assert docs == []
+        _has(failures, "did not wrap the whole reply")
+
+
+def test_an_unfenced_unparseable_reply_reads_the_same_as_before():
+    """No fence anywhere, so nothing about fences enters the failure line."""
+    with tempfile.TemporaryDirectory() as tmp:
+        (Path(tmp) / "a.json").write_text("{not json")
+        _, _, failures = report.load(Path(tmp))
+        _has(failures, "could not be read as JSON")
+        assert "code fence" not in failures[0]
+
+
+def test_a_lane_nobody_dispatched_is_ingested_and_named():
+    """The mirror of the missing-lane failure. A scratch directory reused across
+    runs leaves a stale document behind; it agrees about the artifact, so the
+    artifact guard never sees it, and its findings join the tally unannounced."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _write(tmp, _doc("security-auditor"), _doc("test-auditor"))
+        docs, notes, failures = report.load(Path(tmp), ["security-auditor"])
+        assert len(docs) == 2 and failures == [], "the findings are kept, not dropped"
+        _has(notes, "undispatched-lane")
+        _has(notes, "test-auditor:")
+        _, no_roster, _ = report.load(Path(tmp))
+        assert no_roster == [], "without a roster there is nothing to compare against"
 
 
 def test_a_mistyped_document_root_is_a_failure_not_a_crash():
@@ -262,10 +374,18 @@ def test_markdown_names_unjudged_lanes_loudly():
     assert "Absence of findings here is not a clean result" in out
 
 
-def test_markdown_names_demotions():
-    out = report.render_markdown([_doc()], ["security-auditor: anchor-or-demote: x"], [])
-    assert "## Recorded differently than claimed" in out
-    assert "anchor-or-demote" in out
+def test_markdown_names_demotions_and_checks_that_did_not_run():
+    """One section for every ingest accommodation. The heading is no longer
+    "Recorded differently than claimed": a check that never ran did not record
+    anything differently, and filing it under that heading would hide it."""
+    out = report.render_markdown([_doc()], [
+        "security-auditor: anchor-or-demote: x",
+        "product-reviewer: quote-check-skipped: 'plan.md' was not read at ingest",
+        "test-auditor: fence-unwrapped: test-auditor.json arrived inside a code fence",
+    ], [])
+    assert "## What ingest changed or could not check" in out
+    for note in ("anchor-or-demote", "quote-check-skipped", "fence-unwrapped"):
+        assert note in out
 
 
 def test_markdown_survives_a_document_locus():
@@ -455,6 +575,7 @@ def test_pr_summary_carries_failures_notes_and_coverage():
     payload = json.loads(report.render_pr_comments(
         [_doc()], ["security-auditor: taste-caps-at-track: x"], ["y.json: exploded"]))
     assert "did not report" in payload["summary"]
+    assert "**What ingest changed or could not check:**" in payload["summary"]
     assert "taste-caps-at-track" in payload["summary"]
     assert "Coverage" in payload["summary"]
 
