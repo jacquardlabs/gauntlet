@@ -234,7 +234,9 @@ def _squash(text: str) -> str:
 
 
 def normalize_findings(
-    data: dict, document_text: Optional[str] = None
+    data: dict,
+    document_text: Optional[str],
+    unavailable_reason: Optional[str] = None,
 ) -> Tuple[dict, List[str]]:
     """Apply the ingest rules to a validated findings document. Pure — reads no
     files; returns a new document plus the notes a compiled report must name.
@@ -252,14 +254,28 @@ def normalize_findings(
     3. **Taste caps at track** (contract §4/§5): a `basis: taste` finding never
        ranks above `track`. Applied last, so a taste critical lands at `track`
        either way.
+
+    `document_text` carries no default deliberately (#68). The skip in rule 2 is
+    an accommodation, and a default made it the silent one: a consumer calling
+    the pre-#46 one-argument signature disabled the rule on every document
+    artifact forever and its report read exactly like a run where every anchor
+    was checked and passed. Required, the choice is made at the call site; and a
+    caller that does pass `None` for a document artifact gets a
+    `quote-check-skipped` note, so the skip reaches the reader either way.
+    `unavailable_reason` is that note's *why* — why the text could not be had,
+    from whoever tried to get it. Ignored when `document_text` is not `None`.
     """
-    check_quotes = (
-        document_text is not None
-        and isinstance(data.get("artifact"), dict)
-        and data["artifact"].get("kind") == "document"
-    )
+    artifact = data.get("artifact") if isinstance(data.get("artifact"), dict) else {}
+    is_document = artifact.get("kind") == "document"
+    check_quotes = is_document and document_text is not None
     haystack = _squash(document_text) if check_quotes else ""
     notes: List[str] = []
+    if is_document and document_text is None:
+        notes.append(
+            f"quote-check-skipped: {artifact.get('path', '?')!r} was not read at "
+            "ingest, so this lane's document criticals are unverified against it — "
+            + (unavailable_reason or "no document text was supplied to the ingest rules")
+        )
     out = dict(data)
     out["findings"] = []
     for f in data.get("findings", []):
