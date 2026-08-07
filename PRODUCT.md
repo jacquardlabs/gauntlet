@@ -26,6 +26,10 @@ the rest of the staff-engineering artifact surface.
 - Checks a deterministic tool does better: docs-command execution, alert→runbook lint,
   live-metrics backtesting. A lane exists only where judgment has no mechanical
   incumbent (#37)
+- Tracker maintenance — backlog hygiene, triage, prioritization. The tracker
+  coordinates work rather than being work under review, and every answer it wants is a
+  disposition: close this, merge that, do this first. Judges emit findings and never
+  dispositions, which is the same wall `review-outcomes` hit (#2, #15, #39)
 
 ## Consumers are thin
 
