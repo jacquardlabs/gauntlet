@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.10.3 (2026-08-07)
+
+### Bug Fixes
+
+- Tell every judge to omit locus.line when a finding is not at one line
+  ([#56](https://github.com/jacquardlabs/gauntlet/pull/56),
+  [`9800148`](https://github.com/jacquardlabs/gauntlet/commit/9800148a407be18de0d217ce7127ee63f8aefbd1))
+
+
 ## v0.10.2 (2026-08-07)
 
 ### Bug Fixes

@@ -1,7 +1,7 @@
 {
   "name": "gauntlet",
   "description": "Independent judges for pre-delivery artifacts. Run a changeset, design doc, migration plan, or packet through the gauntlet: each judge grades it against a standard it owns and returns findings with receipts. A judge never produces — findings out, nothing else.",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "author": {
     "name": "Jacquard Labs"
   },
