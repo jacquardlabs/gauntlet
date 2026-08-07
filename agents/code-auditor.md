@@ -144,4 +144,6 @@ Style preferences you cannot ground in a documented convention, a linter rule, o
 language rubric are `basis: taste` — which the consumer caps at `track`. Say it as taste
 rather than dressing it as a defect.
 
+A whole-file or absence finding omits `locus.line` — `path` alone, never `null`.
+
 `findings` may be empty; `coverage` may not.

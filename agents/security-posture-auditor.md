@@ -136,7 +136,8 @@ prose around it, no code fence. It is the findings document from
 
 For an aggregated hardening finding, put the count in `summary` and name the worst
 instance in `locus` — an aggregate with no checkable location is a claim a reader
-cannot act on.
+cannot act on. A whole-file or absence finding omits `line` — `path` alone, never
+`null`.
 
 `findings` may be empty; `coverage` may not. An empty list with a substantive coverage
 line is how a clean posture audit reports, and it is a complete result.

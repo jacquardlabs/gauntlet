@@ -136,6 +136,7 @@ prose around it, no code fence. It is the findings document from
 ```
 
 Name **every** surface involved in a cross-surface finding. One surface's rendering is
-not an inconsistency.
+not an inconsistency. A whole-file or absence finding omits `line` — `path` alone, never
+`null`.
 
 `findings` may be empty; `coverage` may not.

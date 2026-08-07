@@ -122,5 +122,7 @@ prose around it, no code fence. It is the findings document from
 }
 ```
 
+A whole-file or absence finding omits `locus.line` — `path` alone, never `null`.
+
 `findings` may be empty — a register whose every item came back NOT REALIZED is the
 best possible result, and reports as an empty list with a substantive coverage line.

@@ -323,6 +323,16 @@ def test_every_judge_output_template_matches_the_contract():
             f"with no stated cap drifts (measured: summary caps at 15 and lands at "
             f"11; recommendation capped at nothing landed at 42)"
         )
+        if "line" in doc["findings"][0]["locus"]:
+            assert re.search(
+                r"omits? .{0,40}?`(?:locus\.)?line`|`(?:locus\.)?line`.{0,40}?\bomits?\b",
+                " ".join(text.split()),
+            ), (
+                f"{j['judge']}'s template shows locus.line populated and never says to "
+                f"omit it — the shape a judge with a whole-file or absence finding "
+                f"reaches for is `null`, which fails validation and loses the entire "
+                f"findings document (#52)"
+            )
         for enum, field in ((schema.TIERS, "tier"), (schema.BASES, "basis")):
             offered = {v.strip() for v in doc["findings"][0][field].split("|")}
             assert offered == set(enum), (
