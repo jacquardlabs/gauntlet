@@ -1,5 +1,5 @@
 ---
-description: Run a changeset or document through the gauntlet — dispatch the judges that apply, compile their findings, and optionally post them to a PR.
+description: Run a changeset, a document, or a whole repository through the gauntlet — dispatch the judges that apply, compile their findings, and optionally post them to a PR.
 allowed-tools: Bash, Read, Glob, Grep, Task
 ---
 
@@ -10,8 +10,11 @@ judges that apply, dispatch them, compile what they return, and show it. **You n
 decide what happens next** — no verdict of your own, no gate, no ledger, no follow-on
 door. Every side effect is one the human confirms in this same invocation.
 
-`$ARGUMENTS` may name a PR (number or URL) or a document path (`docs/plan.md`) — a
-file to judge at `intake`. Empty means the current branch.
+Read `$ARGUMENTS` in this order — the literal word `posture`, alone or followed by a ref,
+for a standing review of the whole repository; then a PR (number or URL); then a document
+path (`docs/plan.md`), a file to judge at `intake`. Empty is the current branch, at
+`acceptance`. The keyword is matched exactly and a ref is never sniffed: `HEAD`, a sha,
+and a branch name are all valid file paths, so only a token tells the two apart.
 
 ## 1. Resolve the artifact
 
@@ -21,6 +24,18 @@ file to judge at `intake`. Empty means the current branch.
 BASE=$(git merge-base HEAD "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)")
 HEAD=$(git rev-parse HEAD)
 ```
+
+**A standing review was asked for** (`posture`, or `posture <ref>`) — the artifact is the
+whole repository at one ref:
+
+```bash
+REF=$(git rev-parse --verify <ref>)   # HEAD when the keyword stands alone
+```
+
+Judges read `artifact.root`, which defaults to the working directory, so a ref that is not
+the tree on disk needs a worktree at it, its path in `ROOT` — same mechanism, same
+cleanup, and the same reason as the PR branch below. Report the ref and the tracked-file
+count, and skip the rest of this step: no base, no diff.
 
 **A document was named** (the argument is a path, not a PR) — the file itself is the
 artifact, whole. Confirm it exists, report it as the artifact, and skip the rest of
@@ -40,7 +55,8 @@ judge a different artifact than the one asked for.
 
 ```bash
 git fetch origin pull/<n>/head
-git worktree add --detach <tmp>/tree <head-sha>
+ROOT=<tmp>/tree
+git worktree add --detach $ROOT <head-sha>
 ```
 
 Two reasons, and the second is not politeness. `gh pr checkout` switches the human's
@@ -50,9 +66,10 @@ read the tree it is judging: the code lane's idiom linter runs against the worki
 directory, so reviewing a PR whose head was never checked out lints code that is not
 under review.
 
-Pass the worktree as `--root` to the dispatcher, so every judge's `artifact.root` points
-at it. Remove it when you are done (`git worktree remove --force <tmp>/tree`), even if
-the run failed.
+`ROOT` goes to the dispatcher as `--root`, so every judge's `artifact.root` points at the
+worktree. Without it they read whatever is on disk and the run pays for a checkout it
+never uses. Remove the worktree when you are done (`git worktree remove --force $ROOT`),
+even if the run failed.
 
 Get the changed paths (`git diff --name-only $BASE..$HEAD`, or the PR's `files`). Report
 the artifact and the file count before dispatching anything, and say which tree the
@@ -67,7 +84,7 @@ boundary:
 ```bash
 git diff --name-only $BASE..$HEAD > <tmp>/paths.txt
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
-  --base $BASE --head $HEAD ${PR:+--pr $PR} \
+  --base $BASE --head $HEAD ${PR:+--pr $PR} ${ROOT:+--root $ROOT} \
   --paths <tmp>/paths.txt \
   --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
 ```
@@ -88,6 +105,22 @@ decision matrix costs the trade-study lane a self-skip, the roster's safe defaul
 `product-reviewer` joins when `--context` names a PRODUCT.md. Should selection ever
 come back empty, the script names the gate that dropped each judge; relay that, it is
 the answer, not an error to route around.
+
+For a repository, `--ref` replaces the shas and `--paths` is the tracked files at that ref:
+
+```bash
+git ls-tree -r --name-only $REF > <tmp>/paths.txt
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
+  --ref $REF ${ROOT:+--root $ROOT} --paths <tmp>/paths.txt \
+  --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
+```
+
+Mount is the only gate that fires here, and it selects the `posture` lanes. `--paths` is
+required, but no posture lane declares a path signal, so the list drops nothing today — it
+is the honest scope, and a lane that acquires a signal gets the right answer without a
+change here. No context gate applies either: `product-posture-reviewer` is deliberately
+ungated, because a project with no PRODUCT.md is that lane's most valuable finding
+(`reference/charter.md`).
 
 Pass `--context` only the files that exist, and `--receipts-path` only when the human
 named an evidence log — never invent one.
@@ -144,6 +177,10 @@ important" is the tally the compiler already printed; whether that ships is the 
 call, and stating it as one would make this a gate.
 
 ## 5. Post to the PR — only if a PR was named, and only on confirmation
+
+A document run and a standing review stop at §4: neither names a PR, and `pr-comments`
+derives its anchorable lines from `base..head`, which a `repository` artifact does not
+carry.
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/report.py" --findings <tmp>/findings \

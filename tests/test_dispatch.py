@@ -356,6 +356,35 @@ def test_cli_bare_document_run_dispatches_the_ungated_document_lanes():
     )
 
 
+def test_the_cli_reaches_every_mount_the_contract_defines():
+    """Mount is derived from the artifact kind, never picked by the consumer, so
+    a mount no kind defaults to is a mount no entrypoint reaches without an
+    explicit `--mount`. Pairs with test_independence's check that the command
+    dispatches every kind: together they run from a typed argument to a judge.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        paths = Path(tmp) / "paths.txt"
+        paths.write_text("scripts/report.py\n")
+        runs = (
+            ["--base", "a1b2c3d4e5f6", "--head", "f6e5d4c3b2a1", "--paths", str(paths)],
+            ["--document", "docs/plan.md"],
+            ["--ref", "a1b2c3d4e5f6", "--paths", str(paths)],
+        )
+        reached = set()
+        for args in runs:
+            proc = subprocess.run(
+                [sys.executable, str(REPO / "scripts/dispatch.py"), *args],
+                capture_output=True, text=True,
+            )
+            assert proc.returncode == 0, proc.stderr
+            mounts = {i["mount"] for i in json.loads(proc.stdout)}
+            assert len(mounts) == 1, f"{args} produced mixed mounts: {mounts}"
+            reached |= mounts
+    assert reached == set(schema.MOUNTS), (
+        f"no artifact kind defaults to {set(schema.MOUNTS) - reached}"
+    )
+
+
 def main():
     tests = [
         (name, fn)

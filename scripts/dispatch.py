@@ -252,7 +252,8 @@ def main() -> int:
         "--paths",
         help="File holding the paths in scope, one per line, or - for stdin. "
         "For a changeset these are the changed paths; for --ref, the repository's "
-        "tracked files (git ls-files) — path signals scope lanes either way. "
+        "tracked files at that ref (git ls-tree -r --name-only) — path signals "
+        "scope lanes either way. "
         "Not taken with --document: a document is one named path, never sniffed",
     )
     parser.add_argument("--context", default="", help="Comma-separated grounding docs")

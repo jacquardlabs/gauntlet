@@ -62,6 +62,15 @@ def _charter(rows="", anchors=""):
     )
 
 
+#: The dispatcher flag that builds each artifact kind. A kind is reachable only
+#: through the flag that produces it, so this is what "the command can run this
+#: kind" reduces to. A changeset takes shas rather than a kind flag.
+KIND_FLAGS = {
+    "changeset": "--base",
+    "document": "--document",
+    "repository": "--ref",
+}
+
 ROW = (
     "| `security-auditor` | security | `acceptance` | `security-checklist` "
     "| `agents/security-auditor.md` |\n"
@@ -490,6 +499,47 @@ def test_readme_lane_table_matches_the_roster():
     )
     assert registered - named == set(), f"README omits {registered - named}"
     assert named - registered == set(), f"README names unregistered {named - registered}"
+
+
+def test_the_command_can_dispatch_every_artifact_kind():
+    """The entrypoint is the only thing a human can run, so a kind the contract
+    defines and the command never dispatches is a lane with no runnable path —
+    which is what `repository` was for five releases, stranding 7 of 23 judges
+    (#58). The `repository` kind reached `dispatch.py`, `schema.py`, `report.py`,
+    the charter, and the contract in #38, and nothing failed when it missed the
+    one file that runs them."""
+    text = (REPO / "commands/review.md").read_text()
+    unmapped = set(schema.ARTIFACT_KINDS) - set(KIND_FLAGS)
+    assert not unmapped, f"KIND_FLAGS names no dispatcher flag for {unmapped}"
+    for kind, flag in KIND_FLAGS.items():
+        assert flag in text, (
+            f"commands/review.md never passes {flag}, so no human can run a "
+            f"{kind} artifact through the gauntlet"
+        )
+
+
+def test_every_dispatch_block_passes_the_worktree_root():
+    """§1 builds a worktree so judges read the tree they are judging; a dispatch
+    block that drops `--root` spends the checkout and then judges whatever is on
+    disk, which is the failure the worktree was added to prevent (#28).
+
+    A document run is the one exemption, ruled in §1 — it names one file and
+    builds no worktree, so it has no root to pass and the human's working
+    directory is the right default.
+    """
+    blocks = [
+        block
+        for block in re.findall(
+            r"```bash\n(.*?)```", (REPO / "commands/review.md").read_text(), re.DOTALL
+        )
+        if "dispatch.py" in block
+    ]
+    assert blocks, "commands/review.md shows no dispatch call at all"
+    for block in blocks:
+        assert "--root" in block or "--document" in block, (
+            f"this dispatch block never passes --root, so its judges read the "
+            f"working directory rather than the tree §1 resolved:\n{block}"
+        )
 
 
 def test_surface_is_derived_from_the_roster():
