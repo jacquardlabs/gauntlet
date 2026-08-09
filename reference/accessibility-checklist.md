@@ -2,10 +2,11 @@
 
 The standard the accessibility lane judges against. Deliberately narrow: the
 blocking-tier items (no keyboard access, contrast failures on core flows) plus the
-adjacent checks needed to make those judgments — focus management and semantic HTML. It
-is not a full WCAG audit, and a consuming project that installs a richer accessibility
-rubric should register that as its standard instead. A consuming project's CLAUDE.md
-overrides anything here.
+adjacent checks needed to make those judgments — focus management, semantic HTML, and the
+language and direction declarations assistive technology depends on. It is not a full
+WCAG audit, and a consuming project that installs a richer accessibility rubric should
+register that as its standard instead. A consuming project's CLAUDE.md overrides anything
+here.
 
 ## Keyboard access
 
@@ -56,12 +57,28 @@ overrides anything here.
 - Live regions (`aria-live`) are used for content that updates without a page reload and needs
   to be announced (form errors, async status messages).
 
+## Language and direction
+
+- The document declares its language (`<html lang>`), and any passage in a different
+  language carries its own `lang` — without it a screen reader announces the text with
+  the wrong voice and pronunciation rules.
+- A locale switcher, or any region that swaps languages without a reload, updates `lang`
+  with the content rather than leaving the value the page loaded with.
+- Layout that must mirror for right-to-left locales uses logical properties
+  (`margin-inline-start`, `padding-inline`, `inset-inline`, `text-align: start`) rather
+  than physical `left`/`right`, and no `dir` is hardcoded on a surface the product ships
+  in an RTL locale.
+
+Hardcoded user-facing strings and locale-unsafe date, number, and currency formatting are
+internationalization rather than accessibility. No lane owns them; they belong in
+`coverage`, not in findings.
+
 ## Tier guidance
 
 - **critical** — no keyboard path to a core action, a keyboard trap, contrast failure on
   core-flow text or controls, missing focus indicator on a primary interactive element.
-- **important** — other contrast, focus, or semantic gaps that degrade but do not block
-  task completion (secondary content, non-critical flows).
+- **important** — other contrast, focus, semantic, or language gaps that degrade but do
+  not block task completion (secondary content, non-critical flows).
 - **track** — polish: minor heading nesting, decorative-image alt-text edge cases.
 
 A gap on a surface no user reaches in a core flow drops a tier and is `basis: inferred`.
