@@ -96,13 +96,13 @@ two judge a document before the work exists (see "Judging documents" below).
 | Judge | Judges | Standard |
 |---|---|---|
 | `security-auditor` | injection, auth, authorization, secrets, headers, CSRF, data exposure, unsafe dependency use | `security-checklist` |
-| `code-auditor` | type safety, complexity, maintainability, consistency, idioms, error handling, hygiene | `idioms/<language>` |
+| `code-auditor` | logic errors, type safety, complexity, maintainability, consistency, idioms, error handling, hygiene | `idioms/<language>` |
 | `test-auditor` | coverage of the change, assertion quality, regression tests on fixes, weakened or skipped tests | its own prompt |
-| `architecture-auditor` | pattern fit, coupling, complexity distribution, backend performance, data and migrations | its own prompt |
+| `architecture-auditor` | pattern fit, coupling, complexity distribution, simplicity, backend performance, data and migrations | its own prompt |
 | `infra-auditor` | IaC misconfiguration, blast radius, CI/CD pipeline risk, container hygiene, cost signals | `infra-checklist` |
 | `operability-auditor` | failure signal, resilience, runtime hygiene, concurrency safety, ops commitments | `operability-checklist` |
 | `dependency-auditor` | new and updated packages, known vulnerabilities, licenses, maintenance signal, lockfile drift | `dependency-checklist` |
-| `accessibility-auditor` | keyboard access, contrast, focus management, semantic HTML | `accessibility-checklist` |
+| `accessibility-auditor` | keyboard access, contrast, focus management, semantic HTML, language and direction | `accessibility-checklist` |
 | `frontend-reviewer` | component architecture, state, data fetching, render performance, bundle, error handling | its own prompt |
 | `ux-reviewer` | hierarchy, spacing, component consistency, interaction clarity, responsive behavior, polish | your DESIGN.md |
 | `doc-auditor` | comments and docstrings, API and type docs, README drift, TODO hygiene | its own prompt |
