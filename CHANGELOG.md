@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.13.0 (2026-08-09)
+
+### Features
+
+- Give the fleet correctness, simplicity, and language dimensions
+  ([#71](https://github.com/jacquardlabs/gauntlet/pull/71),
+  [`e7248dd`](https://github.com/jacquardlabs/gauntlet/commit/e7248dd5e1ece6ac7aceea01867c63b88d2d3761))
+
+
 ## v0.12.0 (2026-08-07)
 
 ### Documentation
