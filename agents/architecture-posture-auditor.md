@@ -134,7 +134,10 @@ prose around it, no code fence. It is the findings document from
 }
 ```
 
-Name **both** modules for a coupling finding — one end of an edge is not a location. A
-whole-file or absence finding omits `line` — `path` alone, never `null`.
+Name **both** modules for a coupling finding — one end of an edge is not a location.
+
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`line` — `path` alone.
 
 `findings` may be empty; `coverage` may not.

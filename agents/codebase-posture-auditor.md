@@ -126,7 +126,10 @@ prose around it, no code fence. It is the findings document from
 ```
 
 Every aggregate finding names the worst instance in `locus`. A number with no checkable
-location is a claim a reader cannot act on. A whole-file or absence finding omits
-`line` — `path` alone, never `null`.
+location is a claim a reader cannot act on.
+
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`line` — `path` alone.
 
 `findings` may be empty; `coverage` may not.

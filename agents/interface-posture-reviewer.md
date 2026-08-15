@@ -136,7 +136,10 @@ prose around it, no code fence. It is the findings document from
 ```
 
 Name **every** surface involved in a cross-surface finding. One surface's rendering is
-not an inconsistency. A whole-file or absence finding omits `line` — `path` alone, never
-`null`.
+not an inconsistency.
+
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`line` — `path` alone.
 
 `findings` may be empty; `coverage` may not.

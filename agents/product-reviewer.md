@@ -143,7 +143,10 @@ prose around it, no code fence. It is the findings document from
 }
 ```
 
-Use `locus.section` when judging a document and `locus.path`/`line` when judging code. A
-whole-file or absence finding omits `line` — `path` alone, never `null`.
+Use `locus.section` when judging a document and `locus.path`/`line` when judging code.
+
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`line` — `path` alone.
 
 `findings` may be empty; `coverage` may not.

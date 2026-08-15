@@ -141,4 +141,8 @@ prose around it, no code fence. It is the findings document from
 `locus.section` beside it for orientation; a finding that sits in prose rather than a
 cell — the recommendation, an option's description — uses `section` alone.
 
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. `anchor` is where that bites here: a finding
+below `critical` that cites none carries no `anchor` key at all.
+
 `findings` may be empty; `coverage` may not.
