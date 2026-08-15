@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v0.13.1 (2026-08-15)
+
+### Bug Fixes
+
+- State the omit case in every judge's `anchor` placeholder
+  ([#74](https://github.com/jacquardlabs/gauntlet/pull/74),
+  [`1a890b4`](https://github.com/jacquardlabs/gauntlet/commit/1a890b485331b90597b3aefbea0a7ce9f4cddeac))
+
+- Teach every judge the omit-not-null rule for all optional fields
+  ([#74](https://github.com/jacquardlabs/gauntlet/pull/74),
+  [`1a890b4`](https://github.com/jacquardlabs/gauntlet/commit/1a890b485331b90597b3aefbea0a7ce9f4cddeac))
+
+
 ## v0.13.0 (2026-08-09)
 
 ### Features
