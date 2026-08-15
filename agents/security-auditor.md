@@ -135,7 +135,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/api/users.py", "line": 88 },
-      "anchor": "required on critical: named signature + traced path at file:line",
+      "anchor": "required on critical, omitted otherwise: named signature + traced path at file:line",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "concrete input or state, then the wrong outcome",
@@ -147,7 +147,9 @@ prose around it, no code fence. It is the findings document from
 }
 ```
 
-A whole-file or absence finding omits `locus.line` — `path` alone, never `null`.
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`locus.line` — `path` alone.
 
 `findings` may be empty; `coverage` may not. An empty list with a substantive coverage
 line is how a clean audit reports, and it is a complete result.

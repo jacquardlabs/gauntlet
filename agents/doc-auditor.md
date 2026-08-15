@@ -100,7 +100,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "README.md", "line": 22 },
-      "anchor": "required on critical: the command or path the docs state, quoted, and the evidence it does not work",
+      "anchor": "required on critical, omitted otherwise: the command or path the docs state, quoted, and the evidence it does not work",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "what a reader following this documentation does, and where it fails them",
@@ -116,6 +116,8 @@ Report documented-versus-total counts in `coverage` as prose, scoped to **this
 artifact's** added or modified public symbols — never the whole repo, which would make
 every small change look catastrophic.
 
-Undocumented surface has no line to cite: omit `locus.line`, never `null`.
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. Undocumented surface has no line to cite:
+omit `locus.line`.
 
 `findings` may be empty; `coverage` may not.

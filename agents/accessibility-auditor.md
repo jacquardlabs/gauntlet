@@ -111,7 +111,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/components/Dialog.tsx", "line": 34 },
-      "anchor": "required on critical: the named guideline that fails, and the core flow it fails on",
+      "anchor": "required on critical, omitted otherwise: the named guideline that fails, and the core flow it fails on",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "who is blocked, doing what, and where they get stuck",
@@ -123,7 +123,9 @@ prose around it, no code fence. It is the findings document from
 }
 ```
 
-A whole-file or absence finding omits `locus.line` — `path` alone, never `null`.
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`locus.line` — `path` alone.
 
 `findings` may be empty; `coverage` may not. An empty list with a substantive coverage
 line is how both a clean audit and a skipped lane report.

@@ -379,6 +379,11 @@ def test_every_judge_output_template_matches_the_contract():
 
     The template's placeholders are all strings, so it parses as JSON and its
     key set can be compared directly against what §4 requires.
+
+    The prose beside the template carries §4's omit-not-null rule verbatim, and
+    that copy is checked against the contract's own bytes: a rule paraphrased
+    down to one field teaches the omit case for that field alone, which is how
+    #52's `locus.line` fix left `anchor` to recur as #72.
     """
     required_top = {
         "contract_version",
@@ -401,9 +406,22 @@ def test_every_judge_output_template_matches_the_contract():
         "recommendation",
         "receipts",
     }
+    contract = " ".join((REPO / "docs/findings-contract.md").read_text().split())
+    omit_rule = re.search(r"An optional field[^.]*\.", contract)
+    assert omit_rule, (
+        "§4 no longer states the omit-not-null rule in the form the fleet copies — "
+        "this guard derives the sentence from the contract so the copies cannot drift"
+    )
     judges, _ = check.parse_charter((REPO / "reference/charter.md").read_text())
     for j in judges:
         text = (REPO / j["path"]).read_text()
+        assert omit_rule.group(0) in " ".join(text.split()), (
+            f"{j['judge']} does not state §4's general omit rule verbatim: "
+            f"{omit_rule.group(0)!r}. A rule scoped to one field teaches the omit "
+            f"case for that field only — #52 taught it for `locus.line`, and #72 "
+            f"was a judge sending `anchor: null`, losing eight findings and a "
+            f"critical. Every optional field is exposed identically"
+        )
         blocks = re.findall(r"```json\n(.*?)```", text, re.DOTALL)
         assert blocks, f"{j['judge']} documents no JSON output template"
         doc = json.loads(blocks[-1])
@@ -418,6 +436,13 @@ def test_every_judge_output_template_matches_the_contract():
             f"{j['judge']}'s template must state the recommendation cap — a field "
             f"with no stated cap drifts (measured: summary caps at 15 and lands at "
             f"11; recommendation capped at nothing landed at 42)"
+        )
+        anchor = doc["findings"][0].get("anchor", "")
+        assert "omitted otherwise" in anchor, (
+            f"{j['judge']}'s template shows `anchor` populated and states only when "
+            f"it is required — a judge writing below `critical` reads a row that is "
+            f"always present and reaches for `null`, which loses the whole findings "
+            f"document (#72). The prose rule alone did not carry it"
         )
         if "line" in doc["findings"][0]["locus"]:
             assert re.search(

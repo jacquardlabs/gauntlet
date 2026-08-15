@@ -121,7 +121,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "README.md", "line": 42 },
-      "anchor": "required on critical: the command or path the docs state, quoted, plus the evidence it does not resolve",
+      "anchor": "required on critical, omitted otherwise: the command or path the docs state, quoted, plus the evidence it does not resolve",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "what a reader following this does, and where it fails them",
@@ -133,8 +133,9 @@ prose around it, no code fence. It is the findings document from
 }
 ```
 
-An absence finding — a capability nowhere documented, a section that does not exist —
-has no line: omit `locus.line`, never `null`.
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. An absence finding — a capability nowhere
+documented, a section that does not exist — has no line: omit `locus.line`.
 
 `findings` may be empty; `coverage` may not. Docs that still tell the truth report as an
 empty list with a substantive coverage line, and that is the best possible result.

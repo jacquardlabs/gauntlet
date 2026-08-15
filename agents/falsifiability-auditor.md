@@ -130,7 +130,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "section": "Phase 2 — cutover" },
-      "anchor": "required on critical: a verbatim quote from the document, inside double quotation marks — the uncheckable commitment, or the enclosing unit that makes none",
+      "anchor": "required on critical, omitted otherwise: a verbatim quote from the document, inside double quotation marks — the uncheckable commitment, or the enclosing unit that makes none",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "who proceeds on this document's word, and what they hit",
@@ -144,5 +144,9 @@ prose around it, no code fence. It is the findings document from
 
 `locus.section` names the heading or step the finding sits in — a document has no
 `file:line` worth citing.
+
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. `anchor` is where that bites here: a finding
+below `critical` that cites none carries no `anchor` key at all.
 
 `findings` may be empty; `coverage` may not.

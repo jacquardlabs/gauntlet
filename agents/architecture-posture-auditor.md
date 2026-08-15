@@ -122,7 +122,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/orders/service.py", "line": 42 },
-      "anchor": "required on critical: both ends of the edge, the verified import or call proving it, and the cost it imposes",
+      "anchor": "required on critical, omitted otherwise: both ends of the edge, the verified import or call proving it, and the cost it imposes",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "the change that becomes expensive, and what it has to touch",
@@ -134,7 +134,10 @@ prose around it, no code fence. It is the findings document from
 }
 ```
 
-Name **both** modules for a coupling finding — one end of an edge is not a location. A
-whole-file or absence finding omits `line` — `path` alone, never `null`.
+Name **both** modules for a coupling finding — one end of an edge is not a location.
+
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`line` — `path` alone.
 
 `findings` may be empty; `coverage` may not.

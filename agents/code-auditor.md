@@ -139,7 +139,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/checkout/total.ts", "line": 118 },
-      "anchor": "required on critical: the input, the path at file:line, and the wrong output or crash",
+      "anchor": "required on critical, omitted otherwise: the input, the path at file:line, and the wrong output or crash",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "concrete input or state, then the wrong result",
@@ -155,6 +155,8 @@ Style preferences you cannot ground in a documented convention, a linter rule, o
 language rubric are `basis: taste` — which the consumer caps at `track`. Say it as taste
 rather than dressing it as a defect.
 
-A whole-file or absence finding omits `locus.line` — `path` alone, never `null`.
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`locus.line` — `path` alone.
 
 `findings` may be empty; `coverage` may not.

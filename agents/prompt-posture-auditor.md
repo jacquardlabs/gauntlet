@@ -126,7 +126,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim with its number, 15 words or fewer",
       "locus": { "path": "agents/reviewer.md", "line": 12 },
-      "anchor": "required on critical: the instruction or invariant contradicted, quoted, with its file — both sides for a seam",
+      "anchor": "required on critical, omitted otherwise: the instruction or invariant contradicted, quoted, with its file — both sides for a seam",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "what the model does instead, and what that costs",
@@ -139,7 +139,10 @@ prose around it, no code fence. It is the findings document from
 ```
 
 Every aggregate finding names its worst instance in `locus`. A count with no checkable
-location is a claim a reader cannot act on. A whole-file or absence finding omits
-`line` — `path` alone, never `null`.
+location is a claim a reader cannot act on.
+
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`line` — `path` alone.
 
 `findings` may be empty; `coverage` may not.

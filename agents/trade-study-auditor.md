@@ -125,7 +125,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "cell": "Cost at 10k rps × DynamoDB", "section": "Matrix" },
-      "anchor": "required on critical: a verbatim quote from the document, inside double quotation marks — the cell as written, or the recommendation or criterion row a whole-matrix finding indicts — plus the checkable fact it misstates or omits",
+      "anchor": "required on critical, omitted otherwise: a verbatim quote from the document, inside double quotation marks — the cell as written, or the recommendation or criterion row a whole-matrix finding indicts — plus the checkable fact it misstates or omits",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "who commits on this recommendation's word, and what the matrix actually supports",
@@ -140,5 +140,9 @@ prose around it, no code fence. It is the findings document from
 `locus.cell` is `"<criterion> × <option>"`, the format's addressing. Add
 `locus.section` beside it for orientation; a finding that sits in prose rather than a
 cell — the recommendation, an option's description — uses `section` alone.
+
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. `anchor` is where that bites here: a finding
+below `critical` that cites none carries no `anchor` key at all.
 
 `findings` may be empty; `coverage` may not.

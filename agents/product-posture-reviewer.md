@@ -115,7 +115,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "section": "Personas", "path": "PRODUCT.md" },
-      "anchor": "required on critical: the documented claim quoted, plus the evidence that contradicts it",
+      "anchor": "required on critical, omitted otherwise: the documented claim quoted, plus the evidence that contradicts it",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "who reads this and acts wrongly on it, and what it costs them",
@@ -128,7 +128,10 @@ prose around it, no code fence. It is the findings document from
 ```
 
 Use `locus.section` with `locus.path` when the finding is about a document, and
-`locus.path`/`line` when it is about code that contradicts one. A whole-file or absence
-finding omits `line` — `path` alone, never `null`.
+`locus.path`/`line` when it is about code that contradicts one.
+
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`line` — `path` alone.
 
 `findings` may be empty; `coverage` may not.

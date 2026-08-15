@@ -117,7 +117,8 @@ Each entry in `findings`:
 
 An optional field that does not apply is omitted, never `null` — a null is a type error,
 and one costs the whole document. `locus.line` is where that bites: a finding about a
-whole file carries `path` alone.
+whole file carries `path` alone. `anchor` bites hardest — required on `critical`,
+optional everywhere else, so every mixed-tier document faces the choice (#72).
 
 Compact example:
 

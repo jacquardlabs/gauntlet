@@ -123,7 +123,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/cli/render.py", "line": 62 },
-      "anchor": "required on critical: the reproducible flow, or the concept and each surface's differing rendering quoted at file:line",
+      "anchor": "required on critical, omitted otherwise: the reproducible flow, or the concept and each surface's differing rendering quoted at file:line",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "which user, on which surface, sees what — and why it misleads them",
@@ -136,7 +136,10 @@ prose around it, no code fence. It is the findings document from
 ```
 
 Name **every** surface involved in a cross-surface finding. One surface's rendering is
-not an inconsistency. A whole-file or absence finding omits `line` — `path` alone, never
-`null`.
+not an inconsistency.
+
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`line` — `path` alone.
 
 `findings` may be empty; `coverage` may not.

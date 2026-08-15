@@ -110,7 +110,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/queue/consume.py", "line": 88 },
-      "anchor": "required on critical: the register item id marked REALIZED, and the evidence that realized it",
+      "anchor": "required on critical, omitted otherwise: the register item id marked REALIZED, and the evidence that realized it",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "the failure mode as the register described it, and how the artifact exhibits it",
@@ -122,7 +122,9 @@ prose around it, no code fence. It is the findings document from
 }
 ```
 
-A whole-file or absence finding omits `locus.line` — `path` alone, never `null`.
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`locus.line` — `path` alone.
 
 `findings` may be empty — a register whose every item came back NOT REALIZED is the
 best possible result, and reports as an empty list with a substantive coverage line.

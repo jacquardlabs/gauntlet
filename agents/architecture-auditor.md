@@ -116,7 +116,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer — for coupling, name both ends",
       "locus": { "path": "src/api/orders.py", "line": 12 },
-      "anchor": "required on critical: the contract that broke and the consumer relying on it, by path",
+      "anchor": "required on critical, omitted otherwise: the contract that broke and the consumer relying on it, by path",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "what becomes expensive or impossible once this ships",
@@ -128,6 +128,8 @@ prose around it, no code fence. It is the findings document from
 }
 ```
 
-A whole-file or absence finding omits `locus.line` — `path` alone, never `null`.
+An optional field that does not apply is omitted, never `null` — a null is a type
+error, and one costs the whole document. A whole-file or absence finding omits
+`locus.line` — `path` alone.
 
 `findings` may be empty; `coverage` may not.
