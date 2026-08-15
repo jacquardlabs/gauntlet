@@ -135,7 +135,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/api/users.py", "line": 88 },
-      "anchor": "required on critical: named signature + traced path at file:line",
+      "anchor": "required on critical, omitted otherwise: named signature + traced path at file:line",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "concrete input or state, then the wrong outcome",

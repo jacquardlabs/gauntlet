@@ -131,7 +131,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "section": "Rollout", "path": "src/checkout/Confirm.tsx", "line": 40 },
-      "anchor": "required on critical: the criterion, principle, persona, or journey quoted inside double quotation marks — on a document, plus the failing span quoted the same way from the judged document, each quote named for its source",
+      "anchor": "required on critical, omitted otherwise: the criterion, principle, persona, or journey quoted inside double quotation marks — on a document, plus the failing span quoted the same way from the judged document, each quote named for its source",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "which user, doing what, hits what",

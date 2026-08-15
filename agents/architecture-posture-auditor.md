@@ -122,7 +122,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/orders/service.py", "line": 42 },
-      "anchor": "required on critical: both ends of the edge, the verified import or call proving it, and the cost it imposes",
+      "anchor": "required on critical, omitted otherwise: both ends of the edge, the verified import or call proving it, and the cost it imposes",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "the change that becomes expensive, and what it has to touch",

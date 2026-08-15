@@ -125,7 +125,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "cell": "Cost at 10k rps × DynamoDB", "section": "Matrix" },
-      "anchor": "required on critical: a verbatim quote from the document, inside double quotation marks — the cell as written, or the recommendation or criterion row a whole-matrix finding indicts — plus the checkable fact it misstates or omits",
+      "anchor": "required on critical, omitted otherwise: a verbatim quote from the document, inside double quotation marks — the cell as written, or the recommendation or criterion row a whole-matrix finding indicts — plus the checkable fact it misstates or omits",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "who commits on this recommendation's word, and what the matrix actually supports",

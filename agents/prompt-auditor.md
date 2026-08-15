@@ -111,7 +111,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "agents/reviewer.md", "line": 12 },
-      "anchor": "required on critical: the instruction or invariant contradicted, quoted, and the file it comes from",
+      "anchor": "required on critical, omitted otherwise: the instruction or invariant contradicted, quoted, and the file it comes from",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "what the model does instead, and what that costs",

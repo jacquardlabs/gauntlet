@@ -117,11 +117,8 @@ Each entry in `findings`:
 
 An optional field that does not apply is omitted, never `null` — a null is a type error,
 and one costs the whole document. `locus.line` is where that bites: a finding about a
-whole file carries `path` alone. `anchor` is where it bites hardest — required on
-`critical`, optional everywhere else, so every mixed-tier document faces the choice, and
-one `anchor: null` on a `track` finding lost eight findings and a `critical` (#72). The
-rule is the field's, not `line`'s: every judge charter states it in this general form,
-guarded by `tests/test_independence.py`.
+whole file carries `path` alone. `anchor` bites hardest — required on `critical`,
+optional everywhere else, so every mixed-tier document faces the choice (#72).
 
 Compact example:
 

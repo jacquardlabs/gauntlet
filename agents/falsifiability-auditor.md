@@ -130,7 +130,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "section": "Phase 2 — cutover" },
-      "anchor": "required on critical: a verbatim quote from the document, inside double quotation marks — the uncheckable commitment, or the enclosing unit that makes none",
+      "anchor": "required on critical, omitted otherwise: a verbatim quote from the document, inside double quotation marks — the uncheckable commitment, or the enclosing unit that makes none",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "who proceeds on this document's word, and what they hit",

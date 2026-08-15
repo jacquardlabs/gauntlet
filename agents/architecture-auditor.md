@@ -116,7 +116,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer — for coupling, name both ends",
       "locus": { "path": "src/api/orders.py", "line": 12 },
-      "anchor": "required on critical: the contract that broke and the consumer relying on it, by path",
+      "anchor": "required on critical, omitted otherwise: the contract that broke and the consumer relying on it, by path",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "what becomes expensive or impossible once this ships",

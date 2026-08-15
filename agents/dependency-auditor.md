@@ -131,7 +131,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "package-lock.json", "line": 4120 },
-      "anchor": "required on critical: a named CVE/GHSA reachable from the code, or the exact version delta introduced",
+      "anchor": "required on critical, omitted otherwise: a named CVE/GHSA reachable from the code, or the exact version delta introduced",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "how the vulnerable or malicious code is reached, and what it costs",

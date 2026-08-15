@@ -123,7 +123,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/cli/render.py", "line": 62 },
-      "anchor": "required on critical: the reproducible flow, or the concept and each surface's differing rendering quoted at file:line",
+      "anchor": "required on critical, omitted otherwise: the reproducible flow, or the concept and each surface's differing rendering quoted at file:line",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "which user, on which surface, sees what — and why it misleads them",

@@ -113,7 +113,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim with its number, 15 words or fewer",
       "locus": { "path": "src/orders/service.py", "line": 1 },
-      "anchor": "required on critical: the measured total and the instance that makes it urgent, at file:line",
+      "anchor": "required on critical, omitted otherwise: the measured total and the instance that makes it urgent, at file:line",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "what this total costs the next change that touches it",

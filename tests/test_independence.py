@@ -437,6 +437,13 @@ def test_every_judge_output_template_matches_the_contract():
             f"with no stated cap drifts (measured: summary caps at 15 and lands at "
             f"11; recommendation capped at nothing landed at 42)"
         )
+        anchor = doc["findings"][0].get("anchor", "")
+        assert "omitted otherwise" in anchor, (
+            f"{j['judge']}'s template shows `anchor` populated and states only when "
+            f"it is required — a judge writing below `critical` reads a row that is "
+            f"always present and reaches for `null`, which loses the whole findings "
+            f"document (#72). The prose rule alone did not carry it"
+        )
         if "line" in doc["findings"][0]["locus"]:
             assert re.search(
                 r"omits? .{0,40}?`(?:locus\.)?line`|`(?:locus\.)?line`.{0,40}?\bomits?\b",

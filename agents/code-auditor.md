@@ -139,7 +139,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/checkout/total.ts", "line": 118 },
-      "anchor": "required on critical: the input, the path at file:line, and the wrong output or crash",
+      "anchor": "required on critical, omitted otherwise: the input, the path at file:line, and the wrong output or crash",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "concrete input or state, then the wrong result",

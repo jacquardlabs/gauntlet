@@ -115,7 +115,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "section": "Personas", "path": "PRODUCT.md" },
-      "anchor": "required on critical: the documented claim quoted, plus the evidence that contradicts it",
+      "anchor": "required on critical, omitted otherwise: the documented claim quoted, plus the evidence that contradicts it",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "who reads this and acts wrongly on it, and what it costs them",

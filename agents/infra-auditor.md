@@ -125,7 +125,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "infra/rds.tf", "line": 24 },
-      "anchor": "required on critical: the resource or property at file:line, and the failure it produces",
+      "anchor": "required on critical, omitted otherwise: the resource or property at file:line, and the failure it produces",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "concrete state or event, then the outage, loss, or exposure",

@@ -100,7 +100,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "README.md", "line": 22 },
-      "anchor": "required on critical: the command or path the docs state, quoted, and the evidence it does not work",
+      "anchor": "required on critical, omitted otherwise: the command or path the docs state, quoted, and the evidence it does not work",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "what a reader following this documentation does, and where it fails them",

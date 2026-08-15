@@ -118,7 +118,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/components/Card.tsx", "line": 18 },
-      "anchor": "required on critical: the steps, the expected result, and the observed one",
+      "anchor": "required on critical, omitted otherwise: the steps, the expected result, and the observed one",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "what the user sees or cannot do",

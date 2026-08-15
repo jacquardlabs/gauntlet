@@ -128,7 +128,7 @@ prose around it, no code fence. It is the findings document from
       "tier": "critical | important | track",
       "summary": "the claim, 15 words or fewer",
       "locus": { "path": "src/worker/consume.py", "line": 61 },
-      "anchor": "required on critical: the failure made undetectable or unrecoverable, and the missing alarm, log, or rollback path by name",
+      "anchor": "required on critical, omitted otherwise: the failure made undetectable or unrecoverable, and the missing alarm, log, or rollback path by name",
       "basis": "sourced | inferred | taste",
       "level": "high | medium | low",
       "failure_scenario": "concrete event, then what the operator cannot see or undo",
