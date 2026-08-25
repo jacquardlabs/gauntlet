@@ -228,6 +228,11 @@ def _artifact_id(artifact: dict) -> str:
     return artifact.get("path", "?")
 
 
+def _distinct(values) -> List[str]:
+    """Unique, in first-seen order — a report whose order churns cannot be diffed."""
+    return list(dict.fromkeys(values))
+
+
 def merge_by_locus(findings: List[dict]) -> List[dict]:
     """Collapse findings that name the same place into one.
 
@@ -241,6 +246,17 @@ def merge_by_locus(findings: List[dict]) -> List[dict]:
     anchored critical says more than an unanchored one, and a `sourced` finding
     more than an `inferred` one. Findings with no `path` are never merged: a
     document locus is too coarse to prove two lanes mean the same thing.
+
+    **The collapse keeps the losing lanes' evidence, not just their names** (#69).
+    A merge that kept `judges` alone told a reader the lanes converged while
+    deleting what they converged with: an `anchor` is the checkable fact that
+    earns a `critical` its tier (contract §4), and `receipts` are the citations
+    that keep capturer ≠ claimant checkable (§6) — a merged-away receipt is an
+    unciteable one. Both survive here, as `also_anchored` and a receipts union.
+    What the collapse still drops is the losing lane's wording — its
+    `failure_scenario`, `dimension`, and `basis`. That is the merge working: the
+    survivor is chosen for the longest failure scenario and the best grounds, so
+    the wording kept is the wording that says most.
     """
     TIER = {tier: i for i, tier in enumerate(schema.TIERS)}
     BASIS = {"sourced": 0, "inferred": 1, "taste": 2}
@@ -280,6 +296,25 @@ def merge_by_locus(findings: List[dict]) -> List[dict]:
         ]
         if others:
             winner["also_recommended"] = others
+        # A losing lane's anchor is a second, independently derived checkable
+        # fact, and one the survivor's own anchor does not contain. Kept rather
+        # than noted: a verdict whose evidence the report mentions having
+        # deleted is no more checkable than one that never had it.
+        also_anchored = _distinct(
+            f["anchor"]
+            for f in group
+            if f is not best and f.get("anchor") and f["anchor"] != best.get("anchor")
+        )
+        if also_anchored:
+            winner["also_anchored"] = also_anchored
+        # Union, not the survivor's alone: receipts are harness-captured, so two
+        # lanes citing one locus cite different records, and dropping either
+        # makes it uncitable. The union cannot mislead — every record in it was
+        # captured for this artifact, and the caption names every lane it came
+        # from.
+        receipts = _distinct(r for f in group for r in f.get("receipts", []))
+        if receipts:
+            winner["receipts"] = receipts
         merged.append(winner)
 
     return merged + singles
@@ -337,6 +372,10 @@ def _comment_body(finding: dict) -> str:
         detail.append(f"**Anchor.** {finding['anchor']}")
     if finding.get("failure_scenario"):
         detail.append(f"**Fails when.** {finding['failure_scenario']}")
+    detail.extend(
+        f"**Also anchored.** {extra}"
+        for extra in finding.get("also_anchored", [])
+    )
     detail.extend(
         f"**Also suggested.** {extra}"
         for extra in finding.get("also_recommended", [])
@@ -427,6 +466,8 @@ def render_markdown(
             ):
                 if f.get(key):
                     lines.append(f"\n**{label}.** {f[key]}")
+            for extra in f.get("also_anchored", []):
+                lines.append(f"\n**Also anchored.** {extra}")
             for extra in f.get("also_recommended", []):
                 lines.append(f"\n**Also.** {extra}")
             if f.get("receipts"):

@@ -295,9 +295,12 @@ def test_cli_emits_valid_invocations_for_the_real_roster():
     with tempfile.TemporaryDirectory() as tmp:
         paths = Path(tmp) / "paths.txt"
         paths.write_text("scripts/report.py\ntests/test_report.py\n")
+        tree = Path(tmp) / "tree"
+        tree.mkdir()
+        head = _git_repo(tree)
         proc = subprocess.run(
             [sys.executable, str(REPO / "scripts/dispatch.py"),
-             "--base", "a1b2c3d4e5f6", "--head", "f6e5d4c3b2a1",
+             "--base", "a1b2c3d4e5f6", "--head", head, "--root", str(tree),
              "--paths", str(paths), "--context", "PRODUCT.md"],
             capture_output=True, text=True,
         )
@@ -494,17 +497,38 @@ def test_cli_refuses_a_posture_run_whose_root_is_not_the_ref():
         assert not proc.stdout.strip(), "a refused run still emitted invocations"
 
 
-def test_a_changeset_run_never_pays_for_the_tree_check():
-    """The check is scoped to `repository`: a changeset names two shas and a PR
-    consumer already builds its worktree, so a git-less caller keeps working.
+def test_cli_refuses_a_changeset_run_whose_root_is_not_the_head():
+    """The changeset twin of the posture check (#75): a bare branch review
+    resolves `head` as `git rev-parse HEAD` and builds no worktree, so a dirty
+    tree got judged while every finding cited the sha.
     """
     with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp) / "tree"
+        root.mkdir()
+        head = _git_repo(root)
         paths = Path(tmp) / "paths.txt"
         paths.write_text("scripts/report.py\n")
+        (root / "untracked.py").write_text("# never committed\n")
         proc = subprocess.run(
             [sys.executable, str(REPO / "scripts/dispatch.py"),
-             "--base", "a1b2c3d4e5f6", "--head", "f6e5d4c3b2a1",
+             "--base", "a1b2c3d4e5f6", "--head", head, "--root", str(root),
              "--paths", str(paths)],
+            capture_output=True, text=True,
+        )
+        assert proc.returncode == 1, proc.stdout
+        assert "uncommitted changes" in proc.stderr, proc.stderr
+        assert not proc.stdout.strip(), "a refused run still emitted invocations"
+
+
+def test_a_document_run_never_pays_for_the_tree_check():
+    """A document's artifact is one named file's content — what the judges read
+    is what the artifact is, so there is no second tree to disagree with, and a
+    caller outside a git repo keeps working.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        proc = subprocess.run(
+            [sys.executable, str(REPO / "scripts/dispatch.py"),
+             "--document", "docs/plan.md"],
             capture_output=True, text=True, cwd=tmp,
         )
         assert proc.returncode == 0, proc.stderr
@@ -523,7 +547,8 @@ def test_the_cli_reaches_every_mount_the_contract_defines():
         tree.mkdir()
         sha = _git_repo(tree)
         runs = (
-            ["--base", "a1b2c3d4e5f6", "--head", "f6e5d4c3b2a1", "--paths", str(paths)],
+            ["--base", "a1b2c3d4e5f6", "--head", sha, "--root", str(tree),
+             "--paths", str(paths)],
             ["--document", "docs/plan.md"],
             ["--ref", sha, "--root", str(tree), "--paths", str(paths)],
         )

@@ -137,6 +137,28 @@ def test_repository_artifact_is_not_validated_as_a_document():
     _raises(schema.validate_invocation, inv, "artifact.ref")
 
 
+def test_an_explicit_null_on_an_optional_field_is_still_a_type_error():
+    """Asked and settled (#73): ingest does not normalize `null` to absent.
+
+    A null carries no information, so repairing it could not change a finding —
+    which is exactly the argument this test exists to refuse. The strict
+    boundary is the product: an ingest that repairs judge output teaches judges
+    nothing, and the defect this was raised over was a prompt defect, fixed in
+    the prompts (#72). Omitting is the rule (contract §4); this is the cost of
+    breaking it, held in place deliberately.
+    """
+    inv = _invocation()
+    inv["artifact"]["root"] = None
+    _raises(schema.validate_invocation, inv, "artifact.root")
+
+    doc = _findings_doc()
+    doc["findings"][0]["anchor"] = None
+    _raises(schema.validate_findings, doc, "anchor")
+
+    doc = _findings_doc()
+    doc["findings"][0]["locus"]["line"] = None
+    _raises(schema.validate_findings, doc, "locus")
+
 def test_invocation_rejections():
     _raises(schema.validate_invocation, [], "JSON object")
     for mutate, fragment in [

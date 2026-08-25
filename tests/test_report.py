@@ -298,6 +298,63 @@ def test_merge_keeps_the_other_lanes_recommendation():
     assert merged["also_recommended"], "the losing lane's advice is not discarded"
 
 
+def test_merge_keeps_the_losing_lanes_anchor():
+    """An anchor is the checkable fact that earns a critical its tier, and the
+    losing lane derived its own independently. Deleting it to say the lanes
+    converged leaves a merge-blocking verdict with half its evidence (#69).
+    """
+    a = _finding("critical", path="a.py")
+    a["anchor"] = "the code path at a.py:10 returns None"
+    b = _finding("critical", path="a.py")
+    b["anchor"] = "no test covers a.py:10"
+    merged = report.flatten([_doc("code-auditor", [a]), _doc("test-auditor", [b])])[0]
+    kept = [merged["anchor"], *merged.get("also_anchored", [])]
+    assert sorted(kept) == sorted([a["anchor"], b["anchor"]]), kept
+
+
+def test_merge_does_not_repeat_an_anchor_both_lanes_gave():
+    a = _finding("critical", path="a.py")
+    b = _finding("critical", path="a.py")
+    merged = report.flatten([_doc("code-auditor", [a]), _doc("test-auditor", [b])])[0]
+    assert "also_anchored" not in merged, "the same fact twice is not two facts"
+
+
+def test_merge_unions_the_receipts():
+    """A receipt is harness-captured, so two lanes at one locus cite different
+    records; a merged-away receipt is an uncitable one (contract §6).
+    """
+    a = _finding("important", path="a.py", receipts=["sha256:aaa", "sha256:shared"])
+    b = _finding("important", path="a.py", receipts=["sha256:shared", "sha256:bbb"])
+    merged = report.flatten([_doc("code-auditor", [a]), _doc("test-auditor", [b])])[0]
+    assert merged["receipts"] == ["sha256:aaa", "sha256:shared", "sha256:bbb"], (
+        "receipts are the union, deduped, in first-seen order"
+    )
+
+
+def test_a_survivor_with_no_receipts_still_carries_the_losing_lanes():
+    a = _finding("critical", path="a.py")
+    b = _finding("important", path="a.py", receipts=["sha256:bbb"])
+    merged = report.flatten([_doc("code-auditor", [a]), _doc("test-auditor", [b])])[0]
+    assert merged["tier"] == "critical"
+    assert merged["receipts"] == ["sha256:bbb"]
+
+
+def test_an_unmerged_finding_gains_no_merge_fields():
+    lone = report.flatten([_doc("code-auditor", [_finding("critical", path="a.py")])])[0]
+    assert "also_anchored" not in lone and "also_recommended" not in lone
+
+
+def test_the_renderers_show_the_losing_lanes_anchor():
+    a = _finding("critical", path="a.py")
+    a["anchor"] = "the code path at a.py:10 returns None"
+    b = _finding("critical", path="a.py")
+    b["anchor"] = "no test covers a.py:10"
+    docs = [_doc("code-auditor", [a]), _doc("test-auditor", [b])]
+    body = report.render_markdown(docs, [], [])
+    assert "Also anchored." in body and b["anchor"] in body, body
+    comment = report._comment_body(report.flatten(docs)[0])
+    assert "Also anchored." in comment and b["anchor"] in comment, comment
+
 def test_merge_prefers_the_anchored_finding_among_equals():
     plain = _finding("important", path="a.py")
     anchored = _finding("important", path="a.py")
