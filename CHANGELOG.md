@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v0.14.0 (2026-08-25)
+
+### Bug Fixes
+
+- Refuse the invocations dispatch cannot judge honestly
+  ([#76](https://github.com/jacquardlabs/gauntlet/pull/76),
+  [`b44c3d0`](https://github.com/jacquardlabs/gauntlet/commit/b44c3d066271b975aa6d992e7bd0b7b878cba724))
+
+### Breaking Changes
+
+- `--mount` is an assertion, not a choice — a mount disagreeing with the artifact kind now exits 1
+  instead of dispatching off-mount lanes, and a `--ref` run whose `--root` is not that ref exits 1
+  instead of judging the working directory.
+
+
 ## v0.13.1 (2026-08-15)
 
 ### Bug Fixes
