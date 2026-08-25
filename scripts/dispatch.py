@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -166,6 +167,77 @@ def build_artifact(
     return artifact
 
 
+#: The one mount each artifact kind can honestly be judged at. Mount is derived
+#: from the kind, never picked by the consumer: a mount is a claim about where a
+#: judge's standard applies (`reference/charter.md`), and the standards that read
+#: a proposal, a diff, and a whole tree are different standards. Dispatching the
+#: `acceptance` roster at a document sends eleven lanes whose standards read code
+#: to judge prose — the same reasoning the charter already uses for why
+#: `security-auditor` declares no `intake` mount, one artifact kind over (#67).
+MOUNT_FOR_KIND: Dict[str, str] = {
+    "changeset": "acceptance",
+    "document": "intake",
+    "repository": "posture",
+}
+
+
+def mount_for(kind: str, requested: Optional[str] = None) -> str:
+    """The mount this artifact kind is judged at.
+
+    `requested` is an assertion, not a choice — it may agree with the kind or be
+    absent. Refusing the disagreement is what keeps a mount honest: the
+    alternative is teaching every off-mount lane a rule for an artifact its
+    standard was never written against, which is a copy that drifts (#67).
+    """
+    mount = MOUNT_FOR_KIND[kind]
+    if requested and requested != mount:
+        raise ValueError(
+            f"a {kind} artifact is judged at {mount!r}, not {requested!r} — "
+            f"the lanes declaring {requested!r} judge a different kind of thing"
+        )
+    return mount
+
+
+def tree_fidelity(ref: str, root: Optional[str]) -> Optional[str]:
+    """Why the tree at `root` is not the repository at `ref`, or None when it is.
+
+    Judges read `artifact.root`, which defaults to the working directory, while
+    every finding they file cites `ref` (contract §3) — so a run whose root is
+    not the ref reports one tree and names another. The consumer's answer is a
+    worktree at the ref passed as `--root`; this is the check that makes it
+    mandatory rather than prose, because a condition the model evaluates wrong
+    silently judges the wrong tree (#65).
+
+    Refusal is the fallback on every failure path, unlike `report.py::diff_lines`
+    where degrading to "anchor nothing" is safe: a ref git cannot resolve is
+    exactly the case where the run would judge whatever is on disk instead.
+    """
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=root or None,
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+
+    where = root or "the working directory"
+    try:
+        head = git("rev-parse", "HEAD")
+        named = git("rev-parse", "--verify", f"{ref}^{{commit}}")
+        dirty = git("status", "--porcelain")
+    except (OSError, subprocess.CalledProcessError):
+        return f"git cannot resolve {ref} against the tree at {where}"
+    if named != head:
+        return (
+            f"{ref} is {named[:12]}, but the tree at {where} is at {head[:12]} — "
+            f"the judges would read one tree and cite another"
+        )
+    if dirty:
+        return (
+            f"the tree at {where} is at {ref} with uncommitted changes — "
+            f"the judges would read edits the ref does not contain"
+        )
+    return None
+
+
 def selected(
     judges: List[dict],
     paths: Optional[List[str]],
@@ -245,8 +317,9 @@ def main() -> int:
         "--mount",
         default=None,
         choices=schema.MOUNTS,
-        help="Defaults to intake with --document, posture with --ref, "
-        "acceptance otherwise",
+        help="Assert the mount the artifact kind is judged at — intake for "
+        "--document, posture for --ref, acceptance otherwise. A mount that "
+        "disagrees with the kind is refused, never honoured",
     )
     parser.add_argument(
         "--paths",
@@ -275,20 +348,32 @@ def main() -> int:
         print("gauntlet: the charter registers no judges", file=sys.stderr)
         return 1
 
-    mount = args.mount or (
-        "intake" if args.document else "posture" if args.ref else "acceptance"
-    )
     context = [c.strip() for c in args.context.split(",") if c.strip()]
     try:
         artifact = build_artifact(
             args.ref, args.base, args.head, args.root, args.pr, args.document
         )
+        mount = mount_for(artifact["kind"], args.mount)
         built = invocations(
             judges, paths, mount, artifact, context, args.receipts_path
         )
     except ValueError as exc:
         print(f"gauntlet: invalid invocation — {exc}", file=sys.stderr)
         return 1
+
+    # The one check that reads the world rather than the arguments, so it lives
+    # in the shell: a programmatic caller building invocations through
+    # `build_artifact` and `invocations` never acquires a git dependency.
+    if artifact["kind"] == "repository":
+        mismatch = tree_fidelity(args.ref, args.root)
+        if mismatch:
+            print(
+                f"gauntlet: {mismatch}. Build a worktree at the ref "
+                f"(git worktree add --detach <tmp>/tree {args.ref}) and pass it "
+                f"as --root.",
+                file=sys.stderr,
+            )
+            return 1
 
     if not built:
         # Say why, truthfully: "no judge declares the mount" and "every judge

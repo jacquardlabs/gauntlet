@@ -87,6 +87,15 @@ intake-mounted run would produce inferred findings dressed as sourced ones. A la
 `intake` by having a standard that reads a proposal; the product lane will, this one
 does not.
 
+**Why the artifact kind picks the mount, not the consumer (#67).** `scripts/dispatch.py`
+derives the mount from the kind — a `document` is judged at `intake`, a `changeset` at
+`acceptance`, a `repository` at `posture` — and refuses a `--mount` that disagrees. The
+reason is the security ruling above pointed at artifacts instead of lanes: an
+acceptance-mounted document run dispatches eleven lanes whose standards read code, so
+every finding it returns is inferred and dressed as sourced. Refusing the combination
+costs one error; teaching eleven lanes a rule for an artifact their standard was never
+written against costs twenty-two copies that drift.
+
 **Why `posture` is a mount and not a cadence (#13).** The periodic `review-*` family
 asks a third question — not "should this be built" and not "does this deliver", but
 "what is the state of this repository". That is a mount. What it is *not* is a schedule:
