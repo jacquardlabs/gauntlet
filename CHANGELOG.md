@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v0.15.0 (2026-08-25)
+
+### Bug Fixes
+
+- Keep the losing lane's evidence, and guard the changeset tree
+  ([#77](https://github.com/jacquardlabs/gauntlet/pull/77),
+  [`b6317b7`](https://github.com/jacquardlabs/gauntlet/commit/b6317b7439af7b4e002ef261762ce29194c1487a))
+
+### Breaking Changes
+
+- A `--base`/`--head` run whose `--root` is not `head` now exits 1 instead of judging the working
+  directory.
+
+
 ## v0.14.0 (2026-08-25)
 
 ### Bug Fixes
