@@ -89,6 +89,18 @@ def _require_str(obj: dict, field: str, where: str) -> None:
 
 
 def _optional_str(obj: dict, field: str, where: str) -> None:
+    """Present-and-wrong is an error; absent is fine. `null` is present.
+
+    Asked and settled (#73): an explicit `null` on an optional field is a type
+    error like any other, and it costs the whole document. The accommodation was
+    tempting — `null` carries no information, so normalizing it to absent could
+    not change a finding, and #61's fence unwrap is precedent for tolerating
+    packaging with no content. It stays refused because the strict boundary is
+    the product: ingest that repairs judge output teaches judges nothing, and
+    every accommodation is a rule the fleet stops having to follow. The defect
+    was at the prompt layer and was fixed there — every charter now states §4's
+    omit rule verbatim, guarded by `test_independence.py` (#72).
+    """
     if field in obj and not isinstance(obj.get(field), str):
         raise ValueError(f"{where}.{field} must be a string")
 

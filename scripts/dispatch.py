@@ -202,11 +202,18 @@ def tree_fidelity(ref: str, root: Optional[str]) -> Optional[str]:
     """Why the tree at `root` is not the repository at `ref`, or None when it is.
 
     Judges read `artifact.root`, which defaults to the working directory, while
-    every finding they file cites `ref` (contract §3) — so a run whose root is
-    not the ref reports one tree and names another. The consumer's answer is a
-    worktree at the ref passed as `--root`; this is the check that makes it
+    every finding they file cites a sha (contract §3) — so a run whose root is
+    not that sha reports one tree and names another. The consumer's answer is a
+    worktree at the sha passed as `--root`; this is the check that makes it
     mandatory rather than prose, because a condition the model evaluates wrong
     silently judges the wrong tree (#65).
+
+    Both kinds that name a tree face it: a `repository` at its `ref`, and a
+    `changeset` at its `head`. The PR path already built its worktree, but a
+    bare branch review resolved `head` as `git rev-parse HEAD` and read whatever
+    was on disk beside it — the same defect, and after #65 an inconsistent one
+    (#75). A `document` is exempt: its artifact is one named file's content,
+    which is what the judges read, so there is no second tree to disagree with.
 
     Refusal is the fallback on every failure path, unlike `report.py::diff_lines`
     where degrading to "anchor nothing" is safe: a ref git cannot resolve is
@@ -233,7 +240,7 @@ def tree_fidelity(ref: str, root: Optional[str]) -> Optional[str]:
     if dirty:
         return (
             f"the tree at {where} is at {ref} with uncommitted changes — "
-            f"the judges would read edits the ref does not contain"
+            f"the judges would read edits that sha does not contain"
         )
     return None
 
@@ -364,12 +371,13 @@ def main() -> int:
     # The one check that reads the world rather than the arguments, so it lives
     # in the shell: a programmatic caller building invocations through
     # `build_artifact` and `invocations` never acquires a git dependency.
-    if artifact["kind"] == "repository":
-        mismatch = tree_fidelity(args.ref, args.root)
+    cited = artifact.get("ref") or artifact.get("head")
+    if cited:
+        mismatch = tree_fidelity(cited, args.root)
         if mismatch:
             print(
-                f"gauntlet: {mismatch}. Build a worktree at the ref "
-                f"(git worktree add --detach <tmp>/tree {args.ref}) and pass it "
+                f"gauntlet: {mismatch}. Build a worktree at it "
+                f"(git worktree add --detach <tmp>/tree {cited}) and pass it "
                 f"as --root.",
                 file=sys.stderr,
             )

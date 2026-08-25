@@ -18,12 +18,21 @@ and a branch name are all valid file paths, so only a token tells the two apart.
 
 ## 1. Resolve the artifact
 
-**No arguments** — diff the current branch against its merge-base:
+**No arguments** — diff the current branch against its merge-base, and read it from a
+worktree at the head, for the reason the PR branch gives below:
 
 ```bash
 BASE=$(git merge-base HEAD "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)")
 HEAD=$(git rev-parse HEAD)
+ROOT=<tmp>/tree
+git worktree add --detach $ROOT $HEAD
 ```
+
+This is the invocation where the tree is most likely to be dirty, and the one where a
+false citation is easiest to miss: uncommitted edits get judged while every finding names
+`$HEAD`. `scripts/dispatch.py` refuses the run when the tree at `--root` is not `$HEAD`,
+so a skipped worktree fails loudly (#75). Say which tree you read, and remove it when you
+are done (`git worktree remove --force $ROOT`), even if the run failed.
 
 **A standing review was asked for** (`posture`, or `posture <ref>`) — the artifact is the
 whole repository at one ref:
@@ -81,6 +90,11 @@ under review.
 worktree. Without it they read whatever is on disk and the run pays for a checkout it
 never uses. Remove the worktree when you are done (`git worktree remove --force $ROOT`),
 even if the run failed.
+
+**Every artifact that names a sha is read from a worktree at that sha** — branch, PR, and
+posture alike. One rule, no condition to evaluate, and `scripts/dispatch.py` enforces it
+rather than trusting this paragraph. A document is the exception that proves it: its
+artifact is the file's content, so there is no second tree to disagree with.
 
 Get the changed paths (`git diff --name-only $BASE..$HEAD`, or the PR's `files`). Report
 the artifact and the file count before dispatching anything, and say which tree the
