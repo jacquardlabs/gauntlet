@@ -463,9 +463,10 @@ def test_every_judge_output_template_matches_the_contract():
 
 def test_every_intake_lane_states_the_document_quote_rule():
     """Quote-or-demote matches only spans inside double quotation marks, and
-    `scripts/dispatch.py` mounts a `--document` run at `intake` — so the intake
-    declarers are today exactly the lanes that face the rule. A new declarer
-    means this guard covers one more lane, not that it is stale.
+    `scripts/dispatch.py::mount_for` judges a `document` artifact at `intake` and
+    refuses every other mount (#67) — so the intake declarers are exactly the
+    lanes that can face the rule, not merely the ones that do by default. A new
+    declarer means this guard covers one more lane, not that it is stale.
 
     A lane told to quote the document but not to delimit the quote, or told to
     quote some other file and never the artifact, files a compliant critical

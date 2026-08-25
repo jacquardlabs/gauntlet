@@ -30,12 +30,23 @@ whole repository at one ref:
 
 ```bash
 REF=$(git rev-parse --verify <ref>)   # HEAD when the keyword stands alone
+ROOT=<tmp>/tree
+git worktree add --detach $ROOT $REF
 ```
 
-Judges read `artifact.root`, which defaults to the working directory, so a ref that is not
-the tree on disk needs a worktree at it, its path in `ROOT` — same mechanism, same
-cleanup, and the same reason as the PR branch below. Report the ref and the tracked-file
-count, and skip the rest of this step: no base, no diff.
+**Always the worktree, never a condition.** Judges read `artifact.root`, which defaults to
+the working directory, while every finding they file cites `REF` — so a run whose root is
+not the ref reads one tree and names another. The worktree is unconditional because the
+alternative is a cleanliness test you evaluate, and a consumer that evaluates state to
+decide what to do is the line `PRODUCT.md` draws. It costs a checkout on the common case
+and buys one rule with nothing to get wrong; `scripts/dispatch.py` refuses the run
+outright when the tree at `--root` is not `REF`, so a skipped worktree fails loudly rather
+than judging your uncommitted edits. Remove it when you are done
+(`git worktree remove --force $ROOT`), even if the run failed.
+
+A bare `posture` on a dirty tree therefore judges HEAD, not the work in progress. Say so
+when you report the artifact. Report the ref and the tracked-file count, and skip the rest
+of this step: no base, no diff.
 
 **A document was named** (the argument is a path, not a PR) — the file itself is the
 artifact, whole. Confirm it exists, report it as the artifact, and skip the rest of
@@ -91,7 +102,10 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
 
 For a document, `--document <path>` replaces the shas and there is no `--paths` — a
 document has no diff to sniff, so path signals do not apply and selection is declared
-mount (`intake` unless you pass `--mount`) plus the same context gates:
+mount plus the same context gates. The mount is `intake` and cannot be anything else: the
+`acceptance` and `posture` lanes judge against standards that read code, so dispatching
+them at a document yields inferred findings dressed as sourced ones, and `--mount` is an
+assertion the script refuses when it disagrees with the artifact kind (#67):
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \

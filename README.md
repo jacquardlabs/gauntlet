@@ -157,6 +157,11 @@ git ls-tree -r --name-only HEAD \
   | python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" --ref HEAD --paths -
 ```
 
+The judges read the tree at `--root`, which defaults to the working directory, so a ref
+that is not that tree — another sha, or `HEAD` with uncommitted edits — is refused rather
+than judged: build a worktree at the ref (`git worktree add --detach <tmp>/tree <ref>`)
+and pass it as `--root`. The command does this for you on every standing review.
+
 **Every run is a baseline, and that is the design.** These lanes measure the repository
 as it stands; they do not remember the last run, because a judge that kept its own
 history would need a report store, and judges do not write. Continuity belongs in your

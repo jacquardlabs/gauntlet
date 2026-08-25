@@ -36,6 +36,28 @@ def _judge(name, mounts="`acceptance`", standard="`security-checklist`"):
     }
 
 
+def _git_repo(root: Path) -> str:
+    """A one-commit repository at `root`, returning its sha.
+
+    The tree-fidelity check reads the world, so the tests that exercise it need
+    a world of their own — running them against this repo would pass or fail on
+    whether the developer happened to have uncommitted work.
+    """
+    def git(*args):
+        subprocess.run(
+            ["git", "-c", "user.email=t@t", "-c", "user.name=t", *args],
+            cwd=root, check=True, capture_output=True, text=True,
+        )
+
+    git("init", "-q", "-b", "main")
+    (root / "scripts").mkdir()
+    (root / "scripts" / "report.py").write_text("# a tracked file\n")
+    git("add", "-A")
+    git("commit", "-qm", "one")
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True,
+    ).stdout.strip()
+
 # ── standard resolution (the ruling that prose got wrong) ─────────────────────
 def test_inline_standard_becomes_judge_name_plus_plugin_version():
     resolved = dispatch.standard_for("test-auditor", "(inline)")
@@ -356,6 +378,138 @@ def test_cli_bare_document_run_dispatches_the_ungated_document_lanes():
     )
 
 
+
+# ── mount is derived from the kind, never picked (#67) ────────────────────────
+def _mount_raises(kind, requested, fragment):
+    try:
+        dispatch.mount_for(kind, requested)
+    except ValueError as exc:
+        assert fragment in str(exc), exc
+    else:
+        raise AssertionError(f"a {kind} at {requested} was not refused")
+
+
+def test_every_artifact_kind_has_exactly_one_mount():
+    """The table is the doctrine `test_the_cli_reaches_every_mount` states, made
+    enforceable: a kind with no mount is undispatchable, and a kind admitting two
+    would put the choice back in the consumer's hands.
+    """
+    assert set(dispatch.MOUNT_FOR_KIND) == {"changeset", "document", "repository"}
+    assert set(dispatch.MOUNT_FOR_KIND.values()) == set(schema.MOUNTS)
+
+
+def test_an_asserted_mount_that_agrees_is_kept():
+    assert dispatch.mount_for("document", "intake") == "intake"
+    assert dispatch.mount_for("document") == "intake"
+
+
+def test_a_document_is_refused_at_acceptance():
+    """`--document --mount acceptance` dispatched the whole acceptance roster —
+    eleven lanes whose standards read code, every one of them facing a document
+    they were never told the quote rule for, so every critical demoted (#67).
+    """
+    for mount in ("acceptance", "posture"):
+        _mount_raises("document", mount, "judged at 'intake'")
+
+
+def test_a_changeset_and_a_repository_refuse_each_other_s_mount():
+    for kind, wrong in (("changeset", "posture"), ("repository", "acceptance")):
+        _mount_raises(kind, wrong, f"judged at {dispatch.MOUNT_FOR_KIND[kind]!r}")
+
+
+def test_cli_refuses_an_off_mount_document_run():
+    proc = subprocess.run(
+        [sys.executable, str(REPO / "scripts/dispatch.py"),
+         "--document", "docs/plan.md", "--mount", "acceptance"],
+        capture_output=True, text=True,
+    )
+    assert proc.returncode == 1, proc.stdout
+    assert "judged at 'intake'" in proc.stderr, proc.stderr
+    assert not proc.stdout.strip(), "a refused run still emitted invocations"
+
+
+# ── the tree a posture run cites is the tree it reads (#65) ───────────────────
+def test_tree_fidelity_passes_when_the_root_is_the_ref():
+    with tempfile.TemporaryDirectory() as tmp:
+        sha = _git_repo(Path(tmp))
+        assert dispatch.tree_fidelity(sha, tmp) is None
+        assert dispatch.tree_fidelity("HEAD", tmp) is None
+
+
+def test_tree_fidelity_refuses_a_ref_that_is_not_the_tree():
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        first = _git_repo(root)
+        (root / "second.txt").write_text("later\n")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "two"],
+            cwd=root, check=True, capture_output=True,
+        )
+        mismatch = dispatch.tree_fidelity(first, tmp)
+        assert mismatch and "cite another" in mismatch, mismatch
+
+
+def test_tree_fidelity_refuses_a_dirty_tree_at_the_ref():
+    """An untracked file is on disk and in no ref, so a judge reading
+    `artifact.root` sees what the citation does not cover.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        sha = _git_repo(root)
+        (root / "untracked.py").write_text("# never committed\n")
+        mismatch = dispatch.tree_fidelity(sha, tmp)
+        assert mismatch and "uncommitted changes" in mismatch, mismatch
+
+
+def test_tree_fidelity_refuses_what_git_cannot_resolve():
+    """Refusal, not `report.py::diff_lines`'s degrade-to-empty: an unresolvable
+    ref is exactly when the run would judge whatever is on disk.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        _git_repo(Path(tmp))
+        assert "cannot resolve" in (dispatch.tree_fidelity("v9.9.9", tmp) or "")
+    with tempfile.TemporaryDirectory() as tmp:
+        assert "cannot resolve" in (dispatch.tree_fidelity("HEAD", tmp) or "")
+
+
+def test_cli_refuses_a_posture_run_whose_root_is_not_the_ref():
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp) / "tree"
+        root.mkdir()
+        sha = _git_repo(root)
+        paths = Path(tmp) / "paths.txt"
+        paths.write_text("scripts/report.py\n")
+        (root / "untracked.py").write_text("# never committed\n")
+        proc = subprocess.run(
+            [sys.executable, str(REPO / "scripts/dispatch.py"),
+             "--ref", sha, "--root", str(root), "--paths", str(paths)],
+            capture_output=True, text=True,
+        )
+        assert proc.returncode == 1, proc.stdout
+        assert "uncommitted changes" in proc.stderr, proc.stderr
+        assert "git worktree add --detach" in proc.stderr, (
+            "the refusal never names the fix"
+        )
+        assert not proc.stdout.strip(), "a refused run still emitted invocations"
+
+
+def test_a_changeset_run_never_pays_for_the_tree_check():
+    """The check is scoped to `repository`: a changeset names two shas and a PR
+    consumer already builds its worktree, so a git-less caller keeps working.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        paths = Path(tmp) / "paths.txt"
+        paths.write_text("scripts/report.py\n")
+        proc = subprocess.run(
+            [sys.executable, str(REPO / "scripts/dispatch.py"),
+             "--base", "a1b2c3d4e5f6", "--head", "f6e5d4c3b2a1",
+             "--paths", str(paths)],
+            capture_output=True, text=True, cwd=tmp,
+        )
+        assert proc.returncode == 0, proc.stderr
+
+
 def test_the_cli_reaches_every_mount_the_contract_defines():
     """Mount is derived from the artifact kind, never picked by the consumer, so
     a mount no kind defaults to is a mount no entrypoint reaches without an
@@ -365,10 +519,13 @@ def test_the_cli_reaches_every_mount_the_contract_defines():
     with tempfile.TemporaryDirectory() as tmp:
         paths = Path(tmp) / "paths.txt"
         paths.write_text("scripts/report.py\n")
+        tree = Path(tmp) / "tree"
+        tree.mkdir()
+        sha = _git_repo(tree)
         runs = (
             ["--base", "a1b2c3d4e5f6", "--head", "f6e5d4c3b2a1", "--paths", str(paths)],
             ["--document", "docs/plan.md"],
-            ["--ref", "a1b2c3d4e5f6", "--paths", str(paths)],
+            ["--ref", sha, "--root", str(tree), "--paths", str(paths)],
         )
         reached = set()
         for args in runs:
