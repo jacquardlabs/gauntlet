@@ -240,6 +240,10 @@ validators called on dispatch and on ingest. A judge emits findings; a consumer 
 dispatches, validates, and renders. **A consumer never decides what happens next** — no
 gate, no ledger, no retry policy, no episode state.
 
+A consumer that is itself a Claude Code plugin reaches the same two scripts through
+`/gauntlet:where` — see "Consumer transport for a co-installed plugin" in
+`docs/findings-contract.md`.
+
 ## Why the findings are worth anything
 
 Two rules, and `scripts/check_independence.py` enforces the mechanically checkable half
