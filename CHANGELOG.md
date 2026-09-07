@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v0.15.1 (2026-09-07)
+
+### Bug Fixes
+
+- Release /gauntlet:where — #82 shipped a command under a docs title
+  ([#83](https://github.com/jacquardlabs/gauntlet/pull/83),
+  [`a8353de`](https://github.com/jacquardlabs/gauntlet/commit/a8353de8d9fa2b8dd008acf5d000c9a0dd91778b))
+
+### Documentation
+
+- State consumer transport for a co-installed plugin
+  ([#82](https://github.com/jacquardlabs/gauntlet/pull/82),
+  [`f2ded89`](https://github.com/jacquardlabs/gauntlet/commit/f2ded89f66d23fa0ea7b684d4658dbac6b8aa6c8))
+
+
 ## v0.15.0 (2026-08-25)
 
 ### Bug Fixes
