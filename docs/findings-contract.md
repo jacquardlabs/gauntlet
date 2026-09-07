@@ -185,11 +185,37 @@ the validators carry the enforced rules; tests pin both. No JSON Schema dependen
 one validation idiom across the portfolio, and the module doubles as the reference
 implementation of anchor-or-demote and the taste-tier rule.
 
+## Consumer transport for a co-installed plugin
+
+A documented affordance beside the versioned surface above, not part of it — prose,
+so never a bump (§1). It exists because `${CLAUDE_PLUGIN_ROOT}` names only the plugin
+whose file is being loaded: a consumer that is itself a Claude Code plugin has no
+variable that names gauntlet's root.
+
+It learns the root by loading one gauntlet command or skill — `/gauntlet:where` exists
+for exactly this; `/gauntlet:review` works too — because every `${CLAUDE_PLUGIN_ROOT}`
+in the loaded text arrives already substituted. Read it once per session. A Glob over
+the plugin cache (`~/.claude/plugins/cache/…`) is **not a supported path**: that layout
+is the installer's, unversioned here, and a consumer that reads it has crossed the
+boundary on a convention rather than a contract.
+
+Two entrypoints under that root are stable: `<root>/scripts/dispatch.py` and
+`<root>/scripts/report.py`, both stdlib, 3.9-compatible, run bare with the project's
+`python3` (`commands/review.md` §2 and §4–5 show the calls). `dispatch.py` emits one
+validated invocation per selected judge; a consumer may dispatch any subset of them
+and pass exactly that subset to `report.py --expect` — selection is the consumer's,
+and filtering the emitted array is how a second round narrows, so no flag exists for
+it. Exactly that subset: `--expect` reports every named judge that wrote nothing as a
+lane that did not report, so a roster wider than what was dispatched fails the run
+for lanes the consumer chose not to run.
+
 ## Out of scope
 
 - **Telemetry** — routing/dispatch records are a consumer's private concern, not part
   of this contract.
 - **Transport and orchestration** — how judges get dispatched, retried, or paralleled.
+  The one documented affordance beside it is "Consumer transport for a co-installed
+  plugin" above — prose, not surface.
 - **The charter's format** — issue #3; this contract only requires that registered
   names and declared mounts exist.
 - **Prompt posture** — injection defense, read-only discipline, calibration, style

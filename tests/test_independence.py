@@ -568,6 +568,19 @@ def test_every_dispatch_block_passes_the_worktree_root():
         )
 
 
+def test_where_names_the_transport_entrypoints():
+    """`commands/where.md` is how a co-installed plugin learns gauntlet's root
+    (contract, "Consumer transport for a co-installed plugin"): its
+    `${CLAUDE_PLUGIN_ROOT}` lines arrive substituted, and the two scripts it
+    names are the stable entrypoints. A renamed script would leave the command
+    pointing at nothing, and no consumer could tell that from a bad install."""
+    text = (REPO / "commands/where.md").read_text()
+    assert "${CLAUDE_PLUGIN_ROOT}\n" in text, "where.md never prints the bare root"
+    for script in ("dispatch.py", "report.py"):
+        assert f"${{CLAUDE_PLUGIN_ROOT}}/scripts/{script}" in text
+        assert (REPO / "scripts" / script).is_file()
+
+
 def test_surface_is_derived_from_the_roster():
     judges, _ = check.parse_charter(_charter(ROW, ANCHOR))
     paths = check.surface_paths(judges)
