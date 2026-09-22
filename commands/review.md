@@ -17,7 +17,7 @@ path (`docs/plan.md`), a file to judge at `intake`. Empty is the current branch,
 and a branch name are all valid file paths, so only a token tells the two apart.
 
 A document path may carry the flag `--premortem`, which also writes a pre-mortem
-register for it (§6). The flag means nothing on any other artifact: a register predicts
+register for it (§6); strip the flag before the path goes anywhere else. The flag means nothing on any other artifact: a register predicts
 failures of work not yet built, and a changeset or a repository already is. Say so and
 stop rather than dropping it.
 
@@ -290,7 +290,8 @@ say that and stop; committing it is the human's call.
 
 Then dispatch **three `Task` calls in one message**, one per lens in
 `${CLAUDE_PLUGIN_ROOT}/reference/premortem-lenses.md`. Each gets the frame, its own
-lens paragraph, the document path, and the `--context` files from §2 — nothing else.
+lens paragraph, the document path, and the `--context` files from §2 minus any
+pre-mortem register — nothing else. A lens that reads earlier predictions is not independent.
 Read-only work: tell each its reply is the stories and it writes no file.
 
 When all three return, dispatch **one more fresh `Task`** for the merge pass in that

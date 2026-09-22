@@ -16,7 +16,8 @@ the rest of the staff-engineering artifact surface.
 
 ## Non-goals
 
-- Authoring or fixing — judges never produce
+- Authoring or fixing — judges never produce. The one producer, the pre-mortem
+  generator, sits outside the judge fleet (charter, "The two rules")
 - Methodology — gates, episodes, ledgers, retry policy, routing between doors. That
   was studious's mass, deliberately shed. See "Consumers are thin" for the line
 - Numeric confidence — recommendations are grounds-classed (sourced / inferred /
