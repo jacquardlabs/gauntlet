@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v0.16.0 (2026-09-22)
+
+### Bug Fixes
+
+- Name the script calls review.md shows, and survive a non-dict manifest
+  ([#93](https://github.com/jacquardlabs/gauntlet/pull/93),
+  [`a263a01`](https://github.com/jacquardlabs/gauntlet/commit/a263a01871c2ae84664e643c8bd7181d995b0385))
+
+### Features
+
+- Ship bin/gauntlet on PATH so consumers find gauntlet with command -v
+  ([#93](https://github.com/jacquardlabs/gauntlet/pull/93),
+  [`a263a01`](https://github.com/jacquardlabs/gauntlet/commit/a263a01871c2ae84664e643c8bd7181d995b0385))
+
+
 ## v0.15.2 (2026-09-22)
 
 ### Performance Improvements
