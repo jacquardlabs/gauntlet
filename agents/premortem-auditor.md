@@ -3,7 +3,7 @@ name: premortem-auditor
 description: Verifies a pre-mortem register against the finished artifact — for each failure mode recorded at design time, whether it materialized. Returns a findings document; never free-hunts, never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Pre-mortem lane

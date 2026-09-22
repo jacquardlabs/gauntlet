@@ -3,7 +3,7 @@ name: security-auditor
 description: Judges an artifact for security defects — injection, auth, authorization, secrets, headers, CSRF, data exposure, unsafe dependency use. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Security lane

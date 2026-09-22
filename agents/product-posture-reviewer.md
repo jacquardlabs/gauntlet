@@ -3,7 +3,7 @@ name: product-posture-reviewer
 description: Judges whether a project's stated product is still true and still coherent — personas, principles, scope creep, stale known problems, onboarding friction. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Product posture lane

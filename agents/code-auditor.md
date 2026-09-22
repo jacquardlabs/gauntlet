@@ -3,7 +3,7 @@ name: code-auditor
 description: Judges an artifact for correctness and code-quality defects — logic errors, type safety, complexity, maintainability, consistency, language idioms, error handling, hygiene. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Code lane

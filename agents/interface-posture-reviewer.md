@@ -2,7 +2,7 @@
 name: interface-posture-reviewer
 description: Judges a product's entire user-facing surface at once — cross-surface consistency, per-surface design-system adherence, accessibility, responsive behavior. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
-model: sonnet
+model: opus
 effort: medium
 ---
 

@@ -3,7 +3,7 @@ name: security-posture-auditor
 description: Judges a whole repository's standing security posture — pre-existing vulnerabilities, secrets anywhere in history, security-config baseline. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Security posture lane

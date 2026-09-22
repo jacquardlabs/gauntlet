@@ -3,7 +3,7 @@ name: architecture-auditor
 description: Judges an artifact for structural fit — pattern fit, coupling, complexity distribution, simplicity, backend runtime bottlenecks, data and migration safety. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Architecture lane

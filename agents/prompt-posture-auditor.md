@@ -2,7 +2,7 @@
 name: prompt-posture-auditor
 description: Judges a whole repository's model-facing instruction surface — trigger coverage, instruction conflicts, contract drift across seams, duplication, injection posture, token economy. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
-model: sonnet
+model: opus
 effort: medium
 ---
 

@@ -3,7 +3,7 @@ name: prompt-auditor
 description: Judges an artifact's model-facing instruction surface — trigger reliability, instruction conflicts, output-contract drift, duplication, injection safety, runtime identity, token economy. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Prompt lane
