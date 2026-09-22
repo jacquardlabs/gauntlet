@@ -27,6 +27,14 @@ Both rules are about credibility, not purity. Findings land in the left margin o
 consumer's workspace as machine facts; a fact whose author had a stake in the outcome
 is not a fact.
 
+**The rules bind judges, and gauntlet ships one producer outside them (#88).**
+`--premortem` on a document run writes a pre-mortem register: predictions, not
+findings. It lives in `commands/review.md` §6 and `reference/premortem-lenses.md`, never
+in `agents/` — a file there is a registered judge or a failed check — and it holds rule
+1 from the writing side: the lenses that name the failure modes never verify them, and
+`premortem-auditor` reads the register cold, in its own context, against the built
+change.
+
 ## Judges
 
 The roster. Columns are load-bearing:

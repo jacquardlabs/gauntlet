@@ -94,6 +94,7 @@ What a judge returns. Top level:
 | `standard` | yes | Echoes the invocation. |
 | `findings` | yes | List, **may be empty** — a clean result is a valid, complete result. |
 | `coverage` | yes | 2–3 sentences: what was verified clean, assumptions made, limitations hit. Required precisely so an empty `findings` list is distinguishable from a shallow run. |
+| `verdicts` | no | List of `{id, verdict}`, one per register item, from a lane that verifies a pre-mortem register (`premortem-auditor`). `verdict` is `REALIZED` \| `NOT REALIZED` \| `CAN'T VERIFY`; ids are unique. It carries the NOT REALIZED items, which never become findings, so a consumer can count a hit rate. Omitted when no register was judged (#88). |
 
 **There is no verdict field, deliberately.** Judges emit findings; consumers derive
 verdicts from open findings (all criticals resolved → passable). A verdict is a

@@ -689,6 +689,80 @@ def test_cli_rejects_a_missing_or_empty_directory():
         assert code == 1
 
 
+# ── register verdicts (#88) ───────────────────────────────────────────────────
+def _premortem(*pairs, findings=None):
+    doc = _doc("premortem-auditor", findings=findings)
+    doc["verdicts"] = [{"id": i, "verdict": v} for i, v in pairs]
+    return doc
+
+
+def _register_run():
+    """A premortem run whose findings agree with its verdicts: item 1 realized,
+    item 3 unverifiable, items 2 and 4 not realized — and a second lane with none."""
+    return (
+        _premortem(
+            ("1", "REALIZED"), ("2", "NOT REALIZED"), ("3", "CAN'T VERIFY"), ("4", "NOT REALIZED"),
+            findings=[_finding(judge_dim="1"), _finding(tier="track", judge_dim="3", line=20)],
+        ),
+        _doc("code-auditor"),
+    )
+
+
+def test_verdicts_are_counted_across_documents():
+    assert report.verdict_counts(list(_register_run())) == {
+        "REALIZED": 1, "NOT REALIZED": 2, "CAN'T VERIFY": 1,
+    }
+
+
+def test_no_register_judged_is_not_zero_hits():
+    assert report.verdict_counts([_doc()]) is None
+
+
+def test_agreeing_verdicts_leave_no_note():
+    with tempfile.TemporaryDirectory() as tmp:
+        _write(tmp, *_register_run())
+        _, notes, failures = report.load(Path(tmp))
+        assert notes == [] and failures == [], notes
+
+
+def test_verdicts_that_disagree_with_findings_are_named():
+    with tempfile.TemporaryDirectory() as tmp:
+        _write(tmp, _premortem(
+            ("1", "REALIZED"), ("2", "NOT REALIZED"), findings=[_finding(judge_dim="2")]
+        ))
+        _, notes, _ = report.load(Path(tmp))
+        _has(notes, "'1' is REALIZED but no finding names it")
+        _has(notes, "'2' is NOT REALIZED but a finding names it")
+
+
+def test_markdown_prints_the_register_tally_only_when_one_was_judged():
+    docs = list(_register_run())
+    assert "Register: 1 REALIZED · 2 NOT REALIZED · 1 CAN'T VERIFY" in report.render_markdown(docs, [], [])
+    assert "Register:" not in report.render_markdown([_doc()], [], [])
+
+
+def test_cli_tally_format_emits_the_counts_as_json():
+    with tempfile.TemporaryDirectory() as tmp:
+        _write(tmp, *_register_run())
+        code, out = _run("--findings", tmp, "--format", "tally")
+        assert code == 0, out
+        tally = json.loads(out)
+        assert tally["verdicts"] == {"REALIZED": 1, "NOT REALIZED": 2, "CAN'T VERIFY": 1}
+        assert tally["tiers"] == {"critical": 0, "important": 1, "track": 1}
+        assert tally["judges"] == ["code-auditor", "premortem-auditor"]
+        assert tally["failures"] == []
+
+
+def test_cli_tally_omits_verdicts_without_a_register_and_carries_failures():
+    with tempfile.TemporaryDirectory() as tmp:
+        _write(tmp, _doc())
+        code, out = _run("--findings", tmp, "--format", "tally", "--expect", "security-auditor,test-auditor")
+        assert code == 1
+        tally = json.loads(out)
+        assert "verdicts" not in tally
+        _has(tally["failures"], "test-auditor")
+
+
 def main():
     tests = [
         (name, fn)

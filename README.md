@@ -112,9 +112,11 @@ two judge a document before the work exists (see "Judging documents" below).
 
 Two lanes need something beyond the code and stay silent without it: `product-reviewer`
 wants your PRODUCT.md, and `premortem-auditor` wants a pre-mortem register — plain
-markdown, three fields, written by whoever you like. Gauntlet never writes one: a judge
+markdown, three fields, written by whoever you like. No judge ever writes one: a judge
 that invents the failure modes and then checks them finds exactly the ones it thought of.
-Keep neither and neither lane is ever dispatched.
+Gauntlet can write one for you at design time (see [Judging documents](#judging-documents)),
+in a different context from the judge that checks it. Keep neither and neither lane is
+ever dispatched.
 
 `product-reviewer` is the only lane that fires **before** the work as well as after —
 at intake it judges a proposal, at acceptance it judges what shipped. Every other lane
@@ -206,6 +208,25 @@ else.
 On a document, a critical's anchor is a verbatim quote in double quotation marks, and
 ingest checks that the quote actually appears — a fabricated anchor demotes the same way
 a missing one does.
+
+### Writing a pre-mortem register
+
+```text
+/gauntlet:review docs/migration-plan.md --premortem
+```
+
+Runs the document lanes, then writes the register `premortem-auditor` will check once
+the work is built. Three fresh subagents each get the plan and one lens — product and
+user, technical and data, operations and security — and one prompt: *it's three weeks
+after merge; this failed; write what happened.* None sees another's answer. A fourth
+merges them into five to eight past-tense predictions, each with an id and a place to
+look, and `scripts/schema.py register` checks the result before you choose where it
+lives (`docs/premortems/` by default).
+
+This is the one thing gauntlet writes, and it is a prediction, not a finding. The
+writers never verify and the verifier never wrote. Whether the predictions come true is
+counted: `report.py --format tally` emits REALIZED, NOT REALIZED, and CAN'T VERIFY as
+JSON, so you can track a hit rate — and drop the habit if it stays near zero.
 
 ## How to read a finding
 
