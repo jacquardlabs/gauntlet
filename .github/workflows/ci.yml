@@ -49,6 +49,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - name: Ruff
-        run: uv run --no-project --with ruff==0.16.0 ruff check scripts tests
+        run: uv run --no-project --with ruff==0.16.0 ruff check scripts tests bin/gauntlet
       - name: Runtime version floor for shipped scripts
-        run: uv run --no-project --with vermin==1.8.0 vermin --no-tips -t=3.9- scripts/
+        run: uv run --no-project --with vermin==1.8.0 vermin --no-tips -t=3.9- scripts/ bin/

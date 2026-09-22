@@ -37,16 +37,17 @@ The full CI suite, all stdlib except the linters:
 for t in tests/test_*.py; do python3 "$t"; done
 python3 scripts/check_independence.py
 python3 scripts/validate_plugin.py
-uv run --no-project --with ruff==0.16.0 ruff check scripts tests
-uv run --no-project --with vermin==1.8.0 vermin --no-tips -t=3.9- scripts/
+uv run --no-project --with ruff==0.16.0 ruff check scripts tests bin/gauntlet
+uv run --no-project --with vermin==1.8.0 vermin --no-tips -t=3.9- scripts/ bin/
 ```
 
 ## Conventions
 
 - **Conventional Commits** for commit subjects and PR titles.
-- **3.9 floor for `scripts/`**, enforced by vermin: those files ship to consuming
-  projects and run on whatever `python3` is there. `tests/` may use anything the CI
-  matrix covers.
+- **3.9 floor for `scripts/` and `bin/`**, enforced by vermin: those files ship to
+  consuming projects and run on whatever `python3` is there. `tests/` may use anything
+  the CI matrix covers. Ruff walks directories by extension, so `bin/gauntlet` is named
+  outright; vermin finds it by its shebang.
 - **Ruff's rule set is pinned explicitly** in `pyproject.toml`, not extended from the
   defaults — a floating rule set turns a pinned linter into an unpinned one.
 - **The version line is 0.x, deliberately.** `allow_zero_version = true` is set because
