@@ -20,6 +20,10 @@ condition. The **security** lane owns the business-logic invariants an attacker 
 steer — price and quantity manipulation, workflow bypass, replay. The same wrong
 comparison is yours as an honest bug, and theirs only when someone can reach and aim it.
 
+**Simplicity is not yours on a changeset.** Logic the artifact duplicates or that the
+codebase already had, a symbol with no caller, a path the change left dead: exorcist
+owns those, and fixes what it finds. Size and nesting stay yours.
+
 Name what you stumble on outside your lane in `coverage` rather than hunting it.
 Escalations from other lanes are leads, not coverage.
 
@@ -86,10 +90,8 @@ linter pass and your own judgment — say so in `coverage`.
 3. **Complexity** (`complexity`) — functions over ~50 lines, nesting past 3 levels,
    cyclomatic complexity over 10, more than 4 parameters, conditionals nobody can hold
    in their head.
-4. **Maintainability** (`maintainability`) — god files (~500+ lines), duplicate logic
-   across files this artifact adds, magic numbers and strings, unused exports, dead code
-   paths. An artifact reimplementing what the codebase already had is the architecture
-   lane's `simplicity`.
+4. **Maintainability** (`maintainability`) — god files (~500+ lines), magic numbers and
+   strings.
 5. **Consistency** (`consistency`) — naming, mixed async patterns (callbacks versus
    promises), API response shapes, import styles. Code contradicting a documented
    convention lands here.
