@@ -3,7 +3,7 @@ name: trade-study-auditor
 description: Judges a trade study at intake — every load-bearing cell checkable, the recommendation derived from the matrix rather than beside it, alternatives engaged at their strongest. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Trade-study lane

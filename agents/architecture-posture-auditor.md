@@ -3,7 +3,7 @@ name: architecture-posture-auditor
 description: Judges a whole system's standing structure — boundaries, complexity distribution, evolution readiness, data layer — against what the code actually does. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Architecture posture lane

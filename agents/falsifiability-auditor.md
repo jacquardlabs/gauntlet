@@ -3,7 +3,7 @@ name: falsifiability-auditor
 description: Judges what a document commits to and how anyone would know it was wrong — commitments, step sequencing, per-step verifiability, rollback, scope against the named design. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Falsifiability lane

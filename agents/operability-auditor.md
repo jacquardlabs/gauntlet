@@ -3,7 +3,7 @@ name: operability-auditor
 description: Judges an artifact for operability defects — production failure signal, resilience, runtime hygiene, concurrency safety, and delivery of stated operational commitments. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Operability lane

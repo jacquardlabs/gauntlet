@@ -3,7 +3,7 @@ name: infra-auditor
 description: Judges an artifact for infrastructure defects — IaC misconfiguration, change blast radius, CI/CD pipeline risk, container hygiene, cost and availability signals. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Infrastructure lane

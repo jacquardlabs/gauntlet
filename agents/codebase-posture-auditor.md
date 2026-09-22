@@ -2,7 +2,7 @@
 name: codebase-posture-auditor
 description: Judges a whole codebase's standing health — debt totals, dead code, dependency health, test health, interface consistency — as aggregates and direction. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
-model: sonnet
+model: opus
 effort: medium
 ---
 

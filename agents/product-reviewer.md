@@ -3,7 +3,7 @@ name: product-reviewer
 description: Judges an artifact from the user's perspective — whether a proposal solves a real problem for a named persona, or whether an implementation delivers the experience it promised. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: medium
 ---
 
 # Product lane
