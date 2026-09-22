@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""gauntlet — the one entrypoint a co-installed consumer finds on PATH (#87).
+
+    gauntlet <verb> [args …]
+
+Claude Code puts an enabled plugin's `bin/` on the Bash tool's PATH, so a consumer
+finds gauntlet with `command -v gauntlet` and never needs its install root.
+`root` prints that root; `dispatch` and `report` exec their scripts with this
+interpreter. No argument changes shape here: this file dispatches, it never
+interprets.
+
+Exit codes are the target's own. `-h`, `--help`, or `help` prints the verbs and
+exits 0; no verb or an unknown one prints them to stderr and exits 2.
+`--version` prints the plugin manifest's version.
+
+Standard library only, 3.9-compatible: this ships to consuming projects.
+"""
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+MANIFEST = ROOT / ".claude-plugin" / "plugin.json"
+VERBS = {
+    "dispatch": ROOT / "scripts" / "dispatch.py",
+    "report": ROOT / "scripts" / "report.py",
+}
+
+
+def usage() -> str:
+    return (
+        "usage: gauntlet <verb> [args …]\n"
+        "  root       print gauntlet's install root\n"
+        "  dispatch   scripts/dispatch.py — the invocations to dispatch\n"
+        "  report     scripts/report.py — compile the judges' findings"
+    )
+
+
+def version() -> str:
+    try:
+        return json.loads(MANIFEST.read_text(encoding="utf-8"))["version"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return "unknown"
+
+
+def main(argv: list[str]) -> int:
+    if argv and argv[0] in ("-h", "--help", "help"):
+        print(usage())
+        return 0
+    if argv and argv[0] == "--version":
+        print(version())
+        return 0
+    if argv and argv[0] == "root":
+        print(ROOT)
+        return 0
+    if not argv or argv[0] not in VERBS:
+        if argv:
+            print(f"gauntlet: unknown verb {argv[0]!r}", file=sys.stderr)
+        print(usage(), file=sys.stderr)
+        return 2
+    target = str(VERBS[argv[0]])
+    os.execv(sys.executable, [sys.executable, target, *argv[1:]])
+    return 0  # unreachable: execv replaces the process
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

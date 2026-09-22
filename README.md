@@ -241,7 +241,8 @@ dispatches, validates, and renders. **A consumer never decides what happens next
 gate, no ledger, no retry policy, no episode state.
 
 A consumer that is itself a Claude Code plugin reaches the same two scripts through
-`/gauntlet:where` — see "Consumer transport for a co-installed plugin" in
+`gauntlet`, on its PATH while gauntlet is enabled: `gauntlet root`, `gauntlet dispatch`,
+`gauntlet report` — see "Consumer transport for a co-installed plugin" in
 `docs/findings-contract.md`.
 
 ## Why the findings are worth anything

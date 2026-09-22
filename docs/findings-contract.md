@@ -192,16 +192,16 @@ so never a bump (§1). It exists because `${CLAUDE_PLUGIN_ROOT}` names only the 
 whose file is being loaded: a consumer that is itself a Claude Code plugin has no
 variable that names gauntlet's root.
 
-It learns the root by loading one gauntlet command or skill — `/gauntlet:where` exists
-for exactly this; `/gauntlet:review` works too — because every `${CLAUDE_PLUGIN_ROOT}`
-in the loaded text arrives already substituted. Read it once per session. A Glob over
-the plugin cache (`~/.claude/plugins/cache/…`) is **not a supported path**: that layout
-is the installer's, unversioned here, and a consumer that reads it has crossed the
-boundary on a convention rather than a contract.
+Claude Code puts an enabled plugin's `bin/` on the Bash tool's PATH, so the consumer
+finds gauntlet with `command -v gauntlet`, and `gauntlet root` prints the root. A Glob
+over the plugin cache (`~/.claude/plugins/cache/…`) is **not a supported path**: that
+layout is the installer's, unversioned here, and a consumer that reads it has crossed
+the boundary on a convention rather than a contract.
 
-Two entrypoints under that root are stable: `<root>/scripts/dispatch.py` and
-`<root>/scripts/report.py`, both stdlib, 3.9-compatible, run bare with the project's
-`python3` (`commands/review.md` §2 and §4–5 show the calls). `dispatch.py` emits one
+Two entrypoints are stable: `gauntlet dispatch` and `gauntlet report`, which exec
+`<root>/scripts/dispatch.py` and `<root>/scripts/report.py` with the arguments and exit
+codes untouched. Both are stdlib, 3.9-compatible, and run on the project's `python3`
+(`commands/review.md` §2 and §4–5 show the underlying script calls). `dispatch.py` emits one
 validated invocation per selected judge; a consumer may dispatch any subset of them
 and pass exactly that subset to `report.py --expect` — selection is the consumer's,
 and filtering the emitted array is how a second round narrows, so no flag exists for
