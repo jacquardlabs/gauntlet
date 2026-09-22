@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v0.17.0 (2026-09-22)
+
+### Bug Fixes
+
+- Keep earlier registers from the lenses, strip --premortem, and admit the producer in PRODUCT.md
+  ([#94](https://github.com/jacquardlabs/gauntlet/pull/94),
+  [`9a1ad03`](https://github.com/jacquardlabs/gauntlet/commit/9a1ad03ec0d55d15297b7308b192a350feaeaf25))
+
+### Features
+
+- Write a pre-mortem register from three independent lenses, and count its hit rate
+  ([#94](https://github.com/jacquardlabs/gauntlet/pull/94),
+  [`9a1ad03`](https://github.com/jacquardlabs/gauntlet/commit/9a1ad03ec0d55d15297b7308b192a350feaeaf25))
+
+
 ## v0.16.0 (2026-09-22)
 
 ### Bug Fixes
