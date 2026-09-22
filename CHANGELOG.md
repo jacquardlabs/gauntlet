@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.15.2 (2026-09-22)
+
+### Performance Improvements
+
+- Run every opus judge at medium effort, and move the sonnet posture lanes to opus
+  ([#86](https://github.com/jacquardlabs/gauntlet/pull/86),
+  [`c8e80e2`](https://github.com/jacquardlabs/gauntlet/commit/c8e80e2126e1fd8c673aaa1174c2b76cc3ffcaa2))
+
+
 ## v0.15.1 (2026-09-07)
 
 ### Bug Fixes
