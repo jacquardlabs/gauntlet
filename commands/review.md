@@ -16,6 +16,11 @@ path (`docs/plan.md`), a file to judge at `intake`. Empty is the current branch,
 `acceptance`. The keyword is matched exactly and a ref is never sniffed: `HEAD`, a sha,
 and a branch name are all valid file paths, so only a token tells the two apart.
 
+A document path may carry the flag `--premortem`, which also writes a pre-mortem
+register for it (§6); strip the flag before the path goes anywhere else. The flag means nothing on any other artifact: a register predicts
+failures of work not yet built, and a changeset or a repository already is. Say so and
+stop rather than dropping it.
+
 ## 1. Resolve the artifact
 
 **No arguments** — diff the current branch against its merge-base, and read it from a
@@ -157,7 +162,10 @@ named an evidence log — never invent one.
 before you build the invocations: `product-reviewer` needs the project's PRODUCT.md, and
 `premortem-auditor` needs a pre-mortem register for this work (`reference/premortem-format.md`
 is the shape; projects keep them wherever they keep them, often `docs/**/premortems/`).
-Add whichever exist to `--context`. A project that keeps neither never pays for those two
+Add whichever exist to `--context`. Before passing a register, run
+`python3 "${CLAUDE_PLUGIN_ROOT}/scripts/schema.py" register <path>` and relay what it
+prints — those are the problems the judge would spend its run warning about. It is
+advice, not a gate: the lane dispatches either way. A project that keeps neither never pays for those two
 lanes — that is the intent, not a gap to work around, and inventing a path to open the
 gate would dispatch a judge that can only self-skip. The script reads the charter roster, drops a
 lane whose path signals nothing in the changeset matches, resolves each Standard cell
@@ -211,13 +219,19 @@ artifact they judged, orders findings most-severe-first, and renders. A non-zero
 means at least one lane did not report — pass that on; it is not a failure of the run to
 hide.
 
+When `premortem-auditor` ran, the report also prints its register tally — how many items
+came back REALIZED, NOT REALIZED, and CAN'T VERIFY. `--format tally` emits the same
+counts as data, for a caller that aggregates a hit rate across runs; keeping that history
+is the caller's business, not this command's.
+
 Show the report. **Do not summarize it into a verdict of your own** — "3 critical, 2
 important" is the tally the compiler already printed; whether that ships is the human's
 call, and stating it as one would make this a gate.
 
 ## 5. Post to the PR — only if a PR was named, and only on confirmation
 
-A document run and a standing review stop at §4: neither names a PR, and `pr-comments`
+A document run and a standing review skip this section (a document run with
+`--premortem` goes on to §6): neither names a PR, and `pr-comments`
 derives its anchorable lines from `base..head`, which a `repository` artifact does not
 carry.
 
@@ -253,5 +267,53 @@ Anything other than an explicit yes: stop, and leave the report on screen.
 the human from open findings, never posted by a consumer — that is the no-verdict rule in
 `docs/findings-contract.md` §4, and posting an approval would launder a tally into a
 judgment nobody made.
+
+## 6. Write a pre-mortem register — only with `--premortem` on a document
+
+The one thing this command produces, and it is not a finding (#88). A register is a set
+of predictions about work not yet built; `premortem-auditor` checks them against the
+built change later. **The writers never verify and the verifier never wrote**: the
+lenses below are fresh subagents that never see a judge's findings, each other, or this
+conversation, and nothing in this run grades what they write.
+
+Provenance first. The register cites the document at a commit, so the text the lenses
+read must be that commit's:
+
+```bash
+git status --porcelain -- <doc>           # must print nothing
+SHA=$(git log -1 --format=%H -- <doc>)    # must be non-empty
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+```
+
+An uncommitted or untracked document has no sha a verifier could compare against, so
+say that and stop; committing it is the human's call.
+
+Then dispatch **three `Task` calls in one message**, one per lens in
+`${CLAUDE_PLUGIN_ROOT}/reference/premortem-lenses.md`. Each gets the frame, its own
+lens paragraph, the document path, and the `--context` files from §2 minus any
+pre-mortem register — nothing else. A lens that reads earlier predictions is not independent.
+Read-only work: tell each its reply is the stories and it writes no file.
+
+When all three return, dispatch **one more fresh `Task`** for the merge pass in that
+file: the three replies verbatim and labelled, `reference/premortem-format.md`, the
+title (`# Pre-mortem — <the document's own title>`), `Branch: $BRANCH`, `SHA: $SHA`,
+and `<tmp>/register.md` as the path to write. Do not merge them yourself — this session
+has read the judges' findings, and a merge that inherits them is not independent.
+
+Check what it wrote:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/schema.py" register <tmp>/register.md --generated
+```
+
+Show the register and everything the check printed. A problem is shown, never fixed by
+re-dispatching: a register rewritten until a script passes it is the check grading its
+own production. Then propose a destination — `docs/premortems/<doc-stem>.md` by
+default, a path `premortem-auditor`'s context gate in `scripts/dispatch.py` recognizes —
+and on an explicit yes, copy it there (`mkdir -p` and `cp`). Anything else: leave it in
+the scratch directory, say where, and do not clean that directory up.
+
+A lens that returned nothing, or a merge that wrote no file, is a register that was not
+generated. Say which, and write nothing.
 
 Clean up the scratch directory when you are done, unless the human asked to keep it.

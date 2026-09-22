@@ -4,9 +4,15 @@ The shape `premortem-auditor` verifies. **Deliberately minimal, and deliberately
 producer-agnostic** — a register is markdown a human can write by hand in five minutes,
 and nothing here assumes a tool made it.
 
-Gauntlet does not produce registers and never will: a judge that writes the failure modes
-and then checks them finds exactly the ones it thought of, which breaks both charter
-rules at once. Who writes it is the project's business.
+No judge writes a register: a judge that writes the failure modes and then checks them
+finds exactly the ones it thought of, which breaks both charter rules at once. Who
+writes it is the project's business. Gauntlet offers one writer — `--premortem` on a
+document run, three independent lenses merged by a fourth (`reference/premortem-lenses.md`)
+— and keeps it in a different context from the verifier, never the same one (#88).
+
+Whoever wrote it, `python3 scripts/schema.py register <path>` checks it against this
+file and prints what the verifier would warn about: a missing id, detection hint, or
+provenance line, an item not stated in the past tense, a suppression phrase.
 
 **No register, no lane.** `premortem-auditor` is dispatched only when a register is
 passed to it. A project that does not keep pre-mortems never pays for this lane, and
@@ -51,6 +57,10 @@ observable statically — and it says what manual check would settle it).
 
 Only items needing action become findings. An all-NOT-REALIZED register is the best
 possible result and reports as an empty findings list with a substantive coverage line.
+
+Every verdict, NOT REALIZED included, also comes back as data — the findings document's
+`verdicts` list (`docs/findings-contract.md` §4) — and `scripts/report.py --format tally`
+counts them, so a register's hit rate can be tracked across runs.
 
 ## One thing the verifier will not do
 

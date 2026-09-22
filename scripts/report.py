@@ -6,12 +6,15 @@ validate it at the boundary, apply the ingest rules, order the result, and
 render it. Prompts carry judgment; this file carries none — it never decides
 whether a finding is right, only where it belongs and how it reads.
 
-Two renderings:
+Three renderings:
 
 - `markdown` (default) — the report a human reads in a terminal.
 - `pr-comments` — JSON a consumer can post as PR review comments, split into the
   findings that can anchor to a diff line and those that cannot. Emitting is not
   posting; the consumer still asks first.
+- `tally` — the counts alone as JSON: findings per tier, and register verdicts
+  when a lane judged a register — what a caller aggregates across runs into a
+  pre-mortem hit rate (#88). Aggregating is the caller's; this run keeps no history.
 
 Standard library only, 3.9-compatible: this ships to consuming projects.
 """
@@ -123,6 +126,7 @@ def load(
             )
             continue
         documents.append(normalized)
+        notes.extend(_verdict_notes(normalized))
         if unfenced:
             notes.append(
                 f"{normalized['judge']}: fence-unwrapped: {path.name} arrived inside "
@@ -348,6 +352,43 @@ def counts(findings: List[dict]) -> Dict[str, int]:
     return {tier: tallied[tier] for tier in schema.TIERS}
 
 
+def verdict_counts(documents: List[dict]) -> Optional[Dict[str, int]]:
+    """Register verdicts across every document that carried them, zero-filled, or
+    `None` when none did — no register judged is not a register with zero hits,
+    and a hit rate averaged over both would be a number about nothing."""
+    carried = [d["verdicts"] for d in documents if "verdicts" in d]
+    if not carried:
+        return None
+    tallied = Counter(v["verdict"] for verdicts in carried for v in verdicts)
+    return {verdict: tallied[verdict] for verdict in schema.REGISTER_VERDICTS}
+
+
+def _verdict_notes(doc: dict) -> List[str]:
+    """Where a document's verdicts and its findings disagree.
+
+    A REALIZED or CAN'T VERIFY item becomes a finding whose `dimension` is its
+    id; a NOT REALIZED one never does. A tally that disagrees with the findings
+    beside it is one of the two misreporting, and a hit rate built on it
+    inherits whichever one lied — so the disagreement is named, never repaired.
+    """
+    dimensions = {f["dimension"] for f in doc["findings"]}
+    judge = doc["judge"]
+    return [
+        f"{judge}: verdict-mismatch: register item {v['id']!r} is {v['verdict']} "
+        + (
+            "but no finding names it"
+            if v["verdict"] != "NOT REALIZED"
+            else "but a finding names it"
+        )
+        for v in doc.get("verdicts", [])
+        if (v["id"] in dimensions) == (v["verdict"] == "NOT REALIZED")
+    ]
+
+
+def _verdict_line(verdicts: Dict[str, int]) -> str:
+    return "Register: " + " · ".join(f"{n} {verdict}" for verdict, n in verdicts.items())
+
+
 def _comment_body(finding: dict) -> str:
     """One finding as a PR comment: the claim and the fix, evidence collapsed.
 
@@ -442,6 +483,9 @@ def render_markdown(
         f"{tally['track']} track — from {len(documents)} judges: {judges}",
         "",
     ]
+    verdicts = verdict_counts(documents)
+    if verdicts is not None:
+        lines += [_verdict_line(verdicts), ""]
 
     if failures:
         lines += ["## Judges that did not report", ""]
@@ -602,6 +646,31 @@ def render_pr_comments(
     )
 
 
+def render_tally(
+    documents: List[dict], notes: List[str], failures: List[str]
+) -> str:
+    """The counts, as data. `verdicts` is omitted, never zero-filled, when no
+    lane judged a register — see `verdict_counts`. `failures` rides along
+    because a tally from a run with an unreported lane undercounts, and a caller
+    aggregating tallies must be able to tell."""
+    out: Dict[str, object] = {
+        "judges": sorted(d["judge"] for d in documents),
+        "tiers": counts(flatten(documents)),
+    }
+    verdicts = verdict_counts(documents)
+    if verdicts is not None:
+        out["verdicts"] = verdicts
+    out["failures"] = failures
+    return json.dumps(out, indent=2)
+
+
+RENDERERS = {
+    "markdown": render_markdown,
+    "pr-comments": render_pr_comments,
+    "tally": render_tally,
+}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -610,7 +679,7 @@ def main() -> int:
         help="Directory of findings documents, one JSON file per judge",
     )
     parser.add_argument(
-        "--format", choices=("markdown", "pr-comments"), default="markdown"
+        "--format", choices=tuple(RENDERERS), default="markdown"
     )
     parser.add_argument(
         "--expect",
@@ -633,8 +702,7 @@ def main() -> int:
         print(f"gauntlet: no findings documents in {directory}", file=sys.stderr)
         return 1
 
-    render = render_markdown if args.format == "markdown" else render_pr_comments
-    print(render(documents, notes, failures))
+    print(RENDERERS[args.format](documents, notes, failures))
     # A judge that could not be read leaves a lane unjudged, which the report
     # says out loud — and says again here, so a caller that only checks the exit
     # code cannot mistake a partial run for a complete one.

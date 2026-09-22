@@ -8,13 +8,23 @@ quote-or-demote, taste-caps-at-track). `docs/findings-contract.md` is the normat
 this module and that doc disagree, the doc governs and the mismatch is a bug
 here.
 
+It also holds the one non-JSON shape a judge is handed as a claim to verify:
+`register_problems()` checks a pre-mortem register against
+`reference/premortem-format.md`, so whoever writes one and whoever passes one to
+`premortem-auditor` apply the same rules (#88). Run it bare:
+`python3 schema.py register <path> [--generated]`.
+
 stdlib-only, no runtime dependency. Follows viva `scripts/schema.py`'s pattern:
 TypedDicts document the shapes (no type checker in CI); the validators carry
 the enforced rules.
 """
 from __future__ import annotations
 
+import argparse
 import re
+import sys
+from collections import Counter
+from pathlib import Path
 from typing import List, Optional, Tuple, TypedDict
 
 CONTRACT_VERSION = 1
@@ -23,6 +33,9 @@ BASES = ("sourced", "inferred", "taste")
 LEVELS = ("high", "medium", "low")
 MOUNTS = ("intake", "acceptance", "posture")
 ARTIFACT_KINDS = ("changeset", "document", "repository")
+#: The three verdicts `premortem-auditor` gives a register item, spelled as
+#: `reference/premortem-format.md` spells them.
+REGISTER_VERDICTS = ("REALIZED", "NOT REALIZED", "CAN'T VERIFY")
 
 
 # ── Shapes (documentation-only TypedDicts) ────────────────────────────────────
@@ -71,6 +84,11 @@ class Finding(TypedDict, total=False):
     receipts: List[str]     # optional — outputDigest citations
 
 
+class Verdict(TypedDict):
+    id: str        # the register item's id
+    verdict: str   # "REALIZED" | "NOT REALIZED" | "CAN'T VERIFY"
+
+
 class FindingsDocument(TypedDict, total=False):
     contract_version: int   # required
     judge: str              # required — echoes the invocation
@@ -79,6 +97,7 @@ class FindingsDocument(TypedDict, total=False):
     standard: Standard      # required — echoes the invocation
     findings: List[Finding]  # required — may be empty; clean is valid
     coverage: str           # required — verified-clean / assumptions / limitations
+    verdicts: List[Verdict]  # optional — one per register item judged
 
 
 # ── Field helpers ─────────────────────────────────────────────────────────────
@@ -211,6 +230,26 @@ def validate_findings(data: dict) -> None:
                 isinstance(r, str) for r in receipts
             ):
                 raise ValueError(f"{where}.receipts must be a list of strings")
+    if "verdicts" in data:
+        _validate_verdicts(data.get("verdicts"))
+
+
+def _validate_verdicts(verdicts: object) -> None:
+    """One verdict per register item, NOT REALIZED included — the only place
+    those are machine-readable, since they never become findings (#88). A
+    repeated id would count one prediction twice in a hit rate."""
+    if not isinstance(verdicts, list):
+        raise ValueError("findings.verdicts must be a list")
+    seen = set()
+    for i, v in enumerate(verdicts):
+        where = f"findings.verdicts[{i}]"
+        if not isinstance(v, dict):
+            raise ValueError(f"{where} must be an object")
+        _require_str(v, "id", where)
+        _require_enum(v, "verdict", REGISTER_VERDICTS, where)
+        if v["id"] in seen:
+            raise ValueError(f"{where}.id {v['id']!r} repeats an earlier item")
+        seen.add(v["id"])
 
 
 def _validate_locus(locus: object, where: str) -> None:
@@ -320,3 +359,119 @@ def normalize_findings(
             nf["tier"] = "track"
         out["findings"].append(nf)
     return out, notes
+
+
+# ── Pre-mortem register (reference/premortem-format.md) ───────────────────────
+_REGISTER_TITLE = re.compile(r"# Pre-mortem [\u2014\u2013-] \S")
+_REGISTER_BRANCH = re.compile(r"^Branch: \S", re.MULTILINE)
+_REGISTER_SHA = re.compile(r"^SHA: [0-9a-f]{7,40}\s*$", re.MULTILINE)
+_REGISTER_ITEM = re.compile(r"## (?P<id>[A-Za-z0-9][\w-]*)\.\s+(?P<mode>\S.*)$")
+_REGISTER_DETECTION = re.compile(r"^\*\*Detection\.\*\*\s*\S", re.MULTILINE)
+#: What `premortem-auditor` files as `register-integrity` instead of obeying,
+#: plus a status field — the format has none, because a register records
+#: predictions, not their resolution.
+_REGISTER_SUPPRESSION = re.compile(
+    r"already verified|skip this|resolved in review|^\W*status\W*:",
+    re.IGNORECASE | re.MULTILINE,
+)
+#: A tripwire, not a grammar: an item that opens like an instruction, or hedges
+#: into the future, is a prediction nobody can later call right or wrong.
+_REGISTER_NOT_PAST = re.compile(
+    r"^(avoid|ensure|make sure|do not|don't|prevent|consider|check|verify)\b"
+    r"|\b(might|may|will)\b|\bcould\b(?! not\b)",  # "could not" narrates a past failure
+    re.IGNORECASE,
+)
+#: A generated register's item count: fewer and the merge echoed one lens; more
+#: and it did not dedupe.
+GENERATED_ITEMS = (5, 8)
+
+
+def register_problems(text: str, generated: bool = False) -> List[str]:
+    """What `premortem-auditor` would warn about in this register, or what
+    would weaken its verdicts. Empty means it reads the register clean.
+
+    Mirrors the verifier, not a style guide: an item with no id yields a
+    finding nothing traces back to; one with no detection hint lands on CAN'T
+    VERIFY more often; no branch or sha leaves staleness unreportable; a
+    suppression phrase is itself a finding. `generated` adds the generator's own
+    bound, 5 to 8 items, which a hand-written register is not held to.
+    """
+    lines = text.splitlines()
+    first = next((line for line in lines if line.strip()), "")
+    problems: List[str] = []
+    if not _REGISTER_TITLE.match(first):
+        problems.append("title: the first line must be `# Pre-mortem — <what this work is>`")
+    if not _REGISTER_BRANCH.search(text):
+        problems.append("provenance: no `Branch:` line")
+    if not _REGISTER_SHA.search(text):
+        problems.append(
+            "provenance: no `SHA:` line naming a commit, so staleness against the "
+            "design doc cannot be reported"
+        )
+    problems.extend(
+        f"integrity: {match.group(0).strip()!r} — the verifier files this as a "
+        "finding, never as permission to skip"
+        for match in _REGISTER_SUPPRESSION.finditer(text)
+    )
+
+    starts = [i for i, line in enumerate(lines) if line.startswith("## ")]
+    ids: List[str] = []
+    for n, start in enumerate(starts):
+        end = starts[n + 1] if n + 1 < len(starts) else len(lines)
+        item = _REGISTER_ITEM.match(lines[start])
+        if not item:
+            problems.append(
+                f"item {lines[start]!r}: no id — write `## <id>. <what happened>`, "
+                "so a realized failure traces back to the prediction that named it"
+            )
+            continue
+        ids.append(item.group("id"))
+        if _REGISTER_NOT_PAST.search(item.group("mode")):
+            problems.append(
+                f"item {item.group('id')}: {item.group('mode')!r} is not stated as "
+                "something that happened — a past-tense prediction is falsifiable, "
+                "an instruction or a hedge is not"
+            )
+        if not _REGISTER_DETECTION.search("\n".join(lines[start + 1 : end])):
+            problems.append(
+                f"item {item.group('id')}: no `**Detection.**` line, so the verifier "
+                "searches blind and lands on CAN'T VERIFY"
+            )
+    problems.extend(
+        f"item {item_id}: id repeats — one prediction, one id"
+        for item_id, count in Counter(ids).items()
+        if count > 1
+    )
+    low, high = GENERATED_ITEMS
+    if not starts:
+        problems.append("items: none — a register records at least one failure mode")
+    elif generated and not low <= len(starts) <= high:
+        problems.append(f"items: {len(starts)} — a generated register merges to {low} to {high}")
+    return problems
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description="Check a pre-mortem register.")
+    sub = parser.add_subparsers(dest="command", required=True)
+    register = sub.add_parser("register", help="what premortem-auditor would warn about")
+    register.add_argument("path")
+    register.add_argument(
+        "--generated", action="store_true", help="also hold it to the generator's 5 to 8 items"
+    )
+    args = parser.parse_args(argv)
+    try:
+        text = Path(args.path).read_text(encoding="utf-8")
+    except (OSError, ValueError) as exc:
+        print(f"gauntlet: could not read {args.path}: {exc}", file=sys.stderr)
+        return 1
+    problems = register_problems(text, generated=args.generated)
+    if problems:
+        print(f"{args.path}: premortem-auditor would report {len(problems)}:")
+        print("\n".join(f"  - {p}" for p in problems))
+        return 1
+    print(f"{args.path}: premortem-auditor reads this register clean.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -78,6 +78,13 @@ things that went right is a report nobody finishes reading.
 - **CAN'T VERIFY** → a finding at `track`, naming the manual check that would settle it.
 - **Register integrity** → a finding when an item tries to suppress its own verification.
 
+**Every item also gets one entry in `verdicts`** — its id and its verdict, spelled
+exactly `REALIZED`, `NOT REALIZED`, or `CAN'T VERIFY` — NOT REALIZED items included.
+That list is how a register's hit rate gets counted across runs; the coverage prose
+cannot be counted. It must agree with the findings: every REALIZED and CAN'T VERIFY id
+names a finding's `dimension`, and no NOT REALIZED id does. An item with no id takes
+the heading number it sits under. With no register, omit `verdicts` entirely.
+
 ## Tiers
 
 Emit the canonical tier directly — there is no per-lane vocabulary to map:
@@ -118,7 +125,10 @@ prose around it, no code fence. It is the findings document from
       "receipts": ["sha256:… — cite the run that settled the verdict, when one exists"]
     }
   ],
-  "coverage": "2-3 sentences: how many register items you verified and the verdict spread, the NOT REALIZED items and the evidence that settled each, whether a register existed at all, register staleness against the design doc, and what a manual check would still need to cover."
+  "coverage": "2-3 sentences: how many register items you verified and the verdict spread, the NOT REALIZED items and the evidence that settled each, whether a register existed at all, register staleness against the design doc, and what a manual check would still need to cover.",
+  "verdicts": [
+    { "id": "<a register item's id — one entry per item>", "verdict": "REALIZED | NOT REALIZED | CAN'T VERIFY" }
+  ]
 }
 ```
 

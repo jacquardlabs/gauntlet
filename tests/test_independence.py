@@ -394,6 +394,9 @@ def test_every_judge_output_template_matches_the_contract():
         "findings",
         "coverage",
     }
+    # §4's optional top-level fields. A template may show one; it may not show a
+    # key the contract never defined.
+    optional_top = {"verdicts"}
     finding_fields = {
         "dimension",
         "tier",
@@ -425,7 +428,15 @@ def test_every_judge_output_template_matches_the_contract():
         blocks = re.findall(r"```json\n(.*?)```", text, re.DOTALL)
         assert blocks, f"{j['judge']} documents no JSON output template"
         doc = json.loads(blocks[-1])
-        assert set(doc) == required_top, f"{j['judge']} template keys: {set(doc)}"
+        assert required_top <= set(doc) <= required_top | optional_top, (
+            f"{j['judge']} template keys: {set(doc)}"
+        )
+        for verdict in doc.get("verdicts", []):
+            offered = {v.strip() for v in verdict["verdict"].split("|")}
+            assert offered == set(schema.REGISTER_VERDICTS), (
+                f"{j['judge']} offers verdicts {offered}, contract has "
+                f"{set(schema.REGISTER_VERDICTS)}"
+            )
         assert doc["contract_version"] == schema.CONTRACT_VERSION
         assert doc["judge"] == j["judge"]
         assert set(doc["findings"][0]) <= finding_fields, (

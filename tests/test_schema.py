@@ -441,6 +441,43 @@ def test_taste_document_critical_lands_at_track_after_quote_demotion():
     assert len(notes) == 2
 
 
+# ── verdicts (optional, #88) ──────────────────────────────────────────────────
+def _with_verdicts(*pairs):
+    doc = _findings_doc()
+    doc["verdicts"] = [{"id": i, "verdict": v} for i, v in pairs]
+    return doc
+
+
+def test_verdicts_are_optional_and_valid_when_well_formed():
+    schema.validate_findings(_findings_doc())
+    schema.validate_findings(
+        _with_verdicts(("1", "REALIZED"), ("2", "NOT REALIZED"), ("3", "CAN'T VERIFY"))
+    )
+    schema.validate_findings(_with_verdicts())
+
+
+def test_verdicts_must_be_a_list_of_known_verdicts():
+    doc = _findings_doc()
+    doc["verdicts"] = None
+    _raises(schema.validate_findings, doc, "findings.verdicts must be a list")
+    _raises(schema.validate_findings, _with_verdicts(("1", "realized")), "verdict must be one of")
+    _raises(schema.validate_findings, _with_verdicts(("", "REALIZED")), "id must be a non-empty")
+
+
+def test_a_repeated_verdict_id_is_rejected():
+    _raises(
+        schema.validate_findings,
+        _with_verdicts(("1", "REALIZED"), ("1", "NOT REALIZED")),
+        "repeats an earlier item",
+    )
+
+
+def test_the_contract_names_every_register_verdict():
+    contract = (Path(__file__).resolve().parent.parent / "docs/findings-contract.md").read_text()
+    row = next(line for line in contract.splitlines() if line.startswith("| `verdicts`"))
+    assert all(f"`{v}`" in row for v in schema.REGISTER_VERDICTS), row
+
+
 def main():
     tests = [
         (name, fn)
