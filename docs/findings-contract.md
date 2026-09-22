@@ -201,7 +201,7 @@ the boundary on a convention rather than a contract.
 Two entrypoints are stable: `gauntlet dispatch` and `gauntlet report`, which exec
 `<root>/scripts/dispatch.py` and `<root>/scripts/report.py` with the arguments and exit
 codes untouched. Both are stdlib, 3.9-compatible, and run on the project's `python3`
-(`commands/review.md` §2 and §4–5 show the calls). `dispatch.py` emits one
+(`commands/review.md` §2 and §4–5 show the underlying script calls). `dispatch.py` emits one
 validated invocation per selected judge; a consumer may dispatch any subset of them
 and pass exactly that subset to `report.py --expect` — selection is the consumer's,
 and filtering the emitted array is how a second round narrows, so no flag exists for

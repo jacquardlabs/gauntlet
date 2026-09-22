@@ -42,7 +42,7 @@ def usage() -> str:
 def version() -> str:
     try:
         return json.loads(MANIFEST.read_text(encoding="utf-8"))["version"]
-    except (OSError, ValueError, KeyError):
+    except (OSError, ValueError, KeyError, TypeError):
         return "unknown"
 
 
