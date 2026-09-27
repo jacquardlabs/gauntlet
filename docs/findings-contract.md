@@ -199,13 +199,13 @@ over the plugin cache (`~/.claude/plugins/cache/…`) is **not a supported path*
 layout is the installer's, unversioned here, and a consumer that reads it has crossed
 the boundary on a convention rather than a contract.
 
-No install of gauntlet lacks that PATH entry. Claude Code's plugins reference: "claude.ai
-and Cowork don't install a plugin that has this directory, including one you distribute
-through claude.ai organization settings" — organization sync rejects it with `Plugin
-contains a top-level bin/ directory`. Gauntlet ships `bin/`, so no org-distributed
-gauntlet exists to find. The fallback those docs offer, `${CLAUDE_PLUGIN_ROOT}/scripts/`,
-names the consumer's own root, and "the variables aren't present in the environment of
-commands Claude runs through the Bash tool".
+On claude.ai, Cowork, and organization sync there is no gauntlet to find. Claude Code's
+plugins reference: "claude.ai and Cowork don't install a plugin that has this directory,
+including one you distribute through claude.ai organization settings"; the org-sync docs
+name the rejection, `Plugin contains a top-level bin/ directory`. Their suggested
+fallback, `${CLAUDE_PLUGIN_ROOT}/scripts/`, names the consumer's own root, and the
+plugins reference adds that "the variables aren't present in the environment of commands
+Claude runs through the Bash tool".
 
 Two entrypoints are stable: `gauntlet dispatch` and `gauntlet report`, which exec
 `<root>/scripts/dispatch.py` and `<root>/scripts/report.py` with the arguments and exit

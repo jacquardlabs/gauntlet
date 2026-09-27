@@ -113,7 +113,7 @@ def test_the_contract_names_the_entrypoint():
         assert call in text, call
     assert "gauntlet:where" not in text
     # #90: the channel that would strip bin/ refuses the plugin outright.
-    assert "organization settings" in text
+    assert "Plugin contains a top-level bin/ directory" in text
 
 
 def main():
