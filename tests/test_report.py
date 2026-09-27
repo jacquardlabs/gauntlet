@@ -751,6 +751,20 @@ def test_cli_tally_format_emits_the_counts_as_json():
         assert tally["tiers"] == {"critical": 0, "important": 1, "track": 1}
         assert tally["judges"] == ["code-auditor", "premortem-auditor"]
         assert tally["failures"] == []
+        assert tally["verdict_mismatches"] == []
+
+
+def test_cli_tally_carries_verdict_mismatches_so_a_run_can_be_discounted():
+    with tempfile.TemporaryDirectory() as tmp:
+        _write(tmp, _premortem(
+            ("1", "REALIZED"), ("2", "NOT REALIZED"), findings=[_finding(judge_dim="2")]
+        ))
+        code, out = _run("--findings", tmp, "--format", "tally")
+        assert code == 0, out
+        mismatches = json.loads(out)["verdict_mismatches"]
+        assert len(mismatches) == 2, mismatches
+        _has(mismatches, "'1' is REALIZED but no finding names it")
+        _has(mismatches, "'2' is NOT REALIZED but a finding names it")
 
 
 def test_cli_tally_omits_verdicts_without_a_register_and_carries_failures():
@@ -759,7 +773,7 @@ def test_cli_tally_omits_verdicts_without_a_register_and_carries_failures():
         code, out = _run("--findings", tmp, "--format", "tally", "--expect", "security-auditor,test-auditor")
         assert code == 1
         tally = json.loads(out)
-        assert "verdicts" not in tally
+        assert "verdicts" not in tally and "verdict_mismatches" not in tally
         _has(tally["failures"], "test-auditor")
 
 

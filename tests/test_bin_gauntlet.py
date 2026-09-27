@@ -108,7 +108,8 @@ def test_version_is_the_manifests():
 
 def test_the_contract_names_the_entrypoint():
     text = CONTRACT.read_text(encoding="utf-8")
-    for call in ("command -v gauntlet", "gauntlet root", "gauntlet dispatch", "gauntlet report"):
+    for call in ("command -v gauntlet", "gauntlet root", "gauntlet dispatch", "gauntlet report",
+                 "gauntlet report --format tally", 'scripts/schema.py" register'):
         assert call in text, call
     assert "gauntlet:where" not in text
 

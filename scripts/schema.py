@@ -364,22 +364,32 @@ def normalize_findings(
 # ── Pre-mortem register (reference/premortem-format.md) ───────────────────────
 _REGISTER_TITLE = re.compile(r"# Pre-mortem [\u2014\u2013-] \S")
 _REGISTER_BRANCH = re.compile(r"^Branch: \S", re.MULTILINE)
-_REGISTER_SHA = re.compile(r"^SHA: [0-9a-f]{7,40}\s*$", re.MULTILINE)
-_REGISTER_ITEM = re.compile(r"## (?P<id>[A-Za-z0-9][\w-]*)\.\s+(?P<mode>\S.*)$")
+_REGISTER_SHA = re.compile(r"^SHA: [0-9a-fA-F]{7,40}\s*$", re.MULTILINE)
+#: Any stable token, then `.`, `:`, or a spaced dash — a bare space cannot tell
+#: an id from the first word of the failure mode.
+_REGISTER_ITEM = re.compile(
+    r"## (?P<id>[A-Za-z0-9][\w-]*?)(?:[.:]|\s+[\u2014\u2013-])\s+(?P<mode>\S.*)$"
+)
 _REGISTER_DETECTION = re.compile(r"^\*\*Detection\.\*\*\s*\S", re.MULTILINE)
 #: What `premortem-auditor` files as `register-integrity` instead of obeying,
 #: plus a status field — the format has none, because a register records
-#: predictions, not their resolution.
+#: predictions, not their resolution. A marker, not narrative: "already
+#: verified" and "resolved in review" claim a resolution wherever they sit;
+#: "skip this" is an instruction only where an imperative opens (a line or a
+#: clause), so "users had to skip this step" is a failure mode; and `Status` is
+#: a field only as a capitalized key, like `Branch:` and `SHA:`.
 _REGISTER_SUPPRESSION = re.compile(
-    r"already verified|skip this|resolved in review|^\W*status\W*:",
+    r"(?P<claim>already verified|resolved in review)"
+    r"|(?:^|[.!?;:(\[\u2014\u2013])[\s*_>\"'`-]*(?P<skip>skip this)\b"
+    r"|^[^\w\n]*(?P<status>(?-i:Status|STATUS)[^\w\n]*:)",
     re.IGNORECASE | re.MULTILINE,
 )
 #: A tripwire, not a grammar: an item that opens like an instruction, or hedges
-#: into the future, is a prediction nobody can later call right or wrong.
+#: into the future, is a prediction nobody can later call right or wrong. The
+#: modals are lowercase only, so "The May release shipped" is a month.
 _REGISTER_NOT_PAST = re.compile(
-    r"^(avoid|ensure|make sure|do not|don't|prevent|consider|check|verify)\b"
+    r"^(?i:avoid|ensure|make sure|do not|don't|prevent|consider|check|verify)\b"
     r"|\b(might|may|will)\b|\bcould\b(?! not\b)",  # "could not" narrates a past failure
-    re.IGNORECASE,
 )
 #: A generated register's item count: fewer and the merge echoed one lens; more
 #: and it did not dedupe.
@@ -409,7 +419,7 @@ def register_problems(text: str, generated: bool = False) -> List[str]:
             "design doc cannot be reported"
         )
     problems.extend(
-        f"integrity: {match.group(0).strip()!r} — the verifier files this as a "
+        f"integrity: {match.group(match.lastgroup)!r} — the verifier files this as a "
         "finding, never as permission to skip"
         for match in _REGISTER_SUPPRESSION.finditer(text)
     )

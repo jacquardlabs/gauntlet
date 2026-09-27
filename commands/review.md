@@ -221,8 +221,8 @@ hide.
 
 When `premortem-auditor` ran, the report also prints its register tally — how many items
 came back REALIZED, NOT REALIZED, and CAN'T VERIFY. `--format tally` emits the same
-counts as data, for a caller that aggregates a hit rate across runs; keeping that history
-is the caller's business, not this command's.
+counts as data, with any verdict-mismatch notes, for a caller that aggregates a hit rate
+across runs; keeping that history is the caller's business, not this command's.
 
 Show the report. **Do not summarize it into a verdict of your own** — "3 critical, 2
 important" is the tally the compiler already printed; whether that ships is the human's

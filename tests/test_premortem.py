@@ -138,6 +138,39 @@ def test_suppression_phrases_are_integrity_problems():
     _has(schema.register_problems(_register("1. It broke") + "\n**Status:** done\n"), "integrity")
 
 
+def test_any_stable_token_is_an_id():
+    """premortem-format.md: "Any stable token — `1`, `2`, `db-lock`" (#91)."""
+    for heading in ("db-lock — The migration locked the orders table",
+                    "db-lock - The migration locked the orders table",
+                    "db-lock: The migration locked the orders table",
+                    "A1. The migration locked the orders table"):
+        assert schema.register_problems(_register(heading)) == [], heading
+    twice = _register("db-lock — It broke", "db-lock — It broke again")
+    _has(schema.register_problems(twice), "item db-lock: id repeats")
+
+
+def test_an_uppercase_sha_names_a_commit():
+    head = "# Pre-mortem — x\n\nBranch: b\nSHA: 3F9A2C1\n"
+    assert schema.register_problems(_register("1. It broke", head=head)) == []
+
+
+def test_a_capitalized_month_is_not_a_hedge():
+    assert schema.register_problems(_register("1. The May release shipped the bug")) == []
+    _has(schema.register_problems(_register("1. The release may ship the bug")), "not stated as something")
+
+
+def test_narrative_that_uses_a_suppression_word_is_not_a_marker():
+    """The auditor judges intent (#91): the words in a story are not a status."""
+    for line in ("Users had to skip this step, and the export ran half-empty.",
+                 "status: queued rows stayed queued after the worker died."):
+        text = _register("1. It broke") + f"\n{line}\n"
+        assert schema.register_problems(text) == [], line
+    for line in ("Skip this — the tests cover it.", "- skip this item", "(skip this)",
+                 "Status: done", "STATUS: resolved"):
+        text = _register("1. It broke") + f"\n{line}\n"
+        _has(schema.register_problems(text), "integrity")
+
+
 def test_the_format_example_satisfies_the_check_once_filled_in():
     """`reference/premortem-format.md`'s own example is the shape; filled with a
     real branch and sha, it must pass — or the doc and the check have drifted."""
