@@ -110,6 +110,10 @@ two judge a document before the work exists (see "Judging documents" below).
 | `premortem-auditor` | every failure mode recorded at design time, checked against what was built | `premortem-format` |
 | `prompt-auditor` | trigger reliability, instruction conflicts, contract drift, duplication, injection safety, token economy | `prompt-checklist` |
 
+On a changeset, gauntlet no longer checks for duplicated logic, symbols with no caller,
+paths the change left dead, or scope nothing asked for: exorcist's `/exorcist:exorcise`
+(v0.7.0+) owns them. Run gauntlet without exorcist and nothing checks them.
+
 Two lanes need something beyond the code and stay silent without it: `product-reviewer`
 wants your PRODUCT.md, and `premortem-auditor` wants a pre-mortem register — plain
 markdown, three fields, written by whoever you like. No judge ever writes one: a judge

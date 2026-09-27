@@ -2,14 +2,16 @@
 """Changeset simplicity and diff-vs-intent belong to exorcist, not these lanes (#89).
 
 Each ceded check is gone from its lane's rubric and output enum, and each lane names
-the boundary so it escalates rather than hunts. The intake mount is not a changeset:
+the boundary so it escalates rather than hunts; the README tells a consumer without
+exorcist what goes unchecked (#92). The intake mount is not a changeset:
 product-reviewer's intake `simplicity` stays. Self-running:
 `python3 tests/test_ceded_checks.py` prints OK.
 """
 import re
 from pathlib import Path
 
-AGENTS = Path(__file__).resolve().parent.parent / "agents"
+ROOT = Path(__file__).resolve().parent.parent
+AGENTS = ROOT / "agents"
 
 
 def _text(judge):
@@ -54,6 +56,14 @@ def test_code_keeps_complexity_and_drops_the_overlap():
     assert "god files" in maintainability
 
 
+
+def test_code_separates_what_stays_from_what_exorcist_owns():
+    text = _text("code-auditor")
+    boundary = " ".join(text.split("## Posture")[0].split())
+    assert "An unused local variable (`hygiene`) and a branch whose own condition" in boundary
+    assert "a symbol with no caller and a path the change left dead" in boundary
+    assert "unused local variables" in " ".join(_section(text, "## What you check").split())
+
 def test_product_acceptance_cedes_spec_fidelity_but_keeps_dropped_capabilities():
     acceptance = _section(_text("product-reviewer"), "## What you check at `acceptance`")
     assert _checks(acceptance) == [
@@ -71,6 +81,12 @@ def test_each_ceding_lane_names_the_owner():
     for judge in ("architecture-auditor", "code-auditor", "product-reviewer"):
         assert "exorcist" in _text(judge), judge
 
+
+
+def test_readme_names_what_exorcist_owns_on_a_changeset():
+    readme = " ".join((ROOT / "README.md").read_text(encoding="utf-8").split())
+    assert "gauntlet no longer checks for duplicated logic" in readme
+    assert "`/exorcist:exorcise`" in readme
 
 def main():
     tests = [

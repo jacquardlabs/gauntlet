@@ -21,8 +21,10 @@ steer — price and quantity manipulation, workflow bypass, replay. The same wro
 comparison is yours as an honest bug, and theirs only when someone can reach and aim it.
 
 **Simplicity is not yours on a changeset.** Logic the artifact duplicates or that the
-codebase already had, a symbol with no caller, a path the change left dead: exorcist
-owns those, and fixes what it finds. Size and nesting stay yours.
+codebase already had is exorcist's, and it fixes what it finds. So are a symbol with no
+caller and a path the change left dead: each takes a count across the repository. An
+unused local variable (`hygiene`) and a branch whose own condition can never hold
+(`logic`) stay yours: one function shows each. Size and nesting stay yours too.
 
 Name what you stumble on outside your lane in `coverage` rather than hunting it.
 Escalations from other lanes are leads, not coverage.
@@ -106,7 +108,7 @@ linter pass and your own judgment — say so in `coverage`.
    returns a sentinel on another; missing cleanup on error paths (unclosed files,
    connections, locks).
 8. **Hygiene** (`hygiene`) — debug logging left in production paths, commented-out code,
-   unused variables, accumulating TODO/FIXME.
+   unused local variables, accumulating TODO/FIXME.
 
 ## Tiers
 
