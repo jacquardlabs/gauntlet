@@ -151,13 +151,16 @@ They read a whole repository at a `ref` rather than a changeset, so they cost mo
 a review and are worth running on a trunk, not a branch.
 
 Driving the pipeline yourself rather than through the command, selection is one call. It
-emits the invocations to dispatch, not findings; `scripts/report.py` compiles what the
+emits the invocations to dispatch, not findings; `gauntlet report` compiles what the
 judges return:
 
 ```text
 git ls-tree -r --name-only HEAD \
-  | python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" --ref HEAD --paths -
+  | gauntlet dispatch --ref HEAD --paths -
 ```
+
+`gauntlet` is on the Bash tool's PATH while gauntlet is enabled; from a plain terminal,
+run `<root>/bin/gauntlet` by path.
 
 The judges read the tree at `--root`, which defaults to the working directory, so a ref
 that is not that tree — another sha, or `HEAD` with uncommitted edits — is refused rather
