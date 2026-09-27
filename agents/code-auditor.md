@@ -83,7 +83,7 @@ linter pass and your own judgment — say so in `coverage`.
 1. **Logic** (`logic`) — does the code compute what its name, callers, tests, and
    docstring say it does? Wrong-polarity conditions, off-by-one bounds, a copy-pasted
    block with one identifier left unchanged, a state transition or enum case dropped, a
-   default that contradicts its own docstring, a branch that cannot be taken, a missing
+   default that contradicts its own docstring, a branch whose own condition can never hold, a missing
    `await`. **Ground "wrong" in stated intent** — read the caller and the test first; a
    disagreement you cannot pin to one of them is `basis: inferred` at best. The success
    path is yours, where `error-handling` owns how failures propagate.
