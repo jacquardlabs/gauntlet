@@ -159,14 +159,25 @@ def test_a_capitalized_month_is_not_a_hedge():
     _has(schema.register_problems(_register("1. The release may ship the bug")), "not stated as something")
 
 
+def test_a_hedge_opening_the_failure_mode_is_caught_in_any_case():
+    for mode in ("Might lock the orders table", "May lock the orders table",
+                 "Will lock the orders table", "Could lock the table"):
+        _has(schema.register_problems(_register(f"1. {mode}")), "not stated as something")
+    assert schema.register_problems(_register("1. Could not reach the queue")) == []
+
+
 def test_narrative_that_uses_a_suppression_word_is_not_a_marker():
     """The auditor judges intent (#91): the words in a story are not a status."""
     for line in ("Users had to skip this step, and the export ran half-empty.",
-                 "status: queued rows stayed queued after the worker died."):
+                 "status: queued rows stayed queued after the worker died.",
+                 "The team assumed it was already verified and shipped.",
+                 "The bug was resolved in review, then regressed."):
         text = _register("1. It broke") + f"\n{line}\n"
         assert schema.register_problems(text) == [], line
     for line in ("Skip this — the tests cover it.", "- skip this item", "(skip this)",
-                 "Status: done", "STATUS: resolved"):
+                 "Status: done", "STATUS: resolved", "status: done",
+                 "Please skip this item.", "Reviewer: you can skip this one.",
+                 "Already verified.", "(resolved in review)"):
         text = _register("1. It broke") + f"\n{line}\n"
         _has(schema.register_problems(text), "integrity")
 

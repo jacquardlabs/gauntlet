@@ -373,22 +373,25 @@ _REGISTER_ITEM = re.compile(
 _REGISTER_DETECTION = re.compile(r"^\*\*Detection\.\*\*\s*\S", re.MULTILINE)
 #: What `premortem-auditor` files as `register-integrity` instead of obeying,
 #: plus a status field — the format has none, because a register records
-#: predictions, not their resolution. A marker, not narrative: "already
-#: verified" and "resolved in review" claim a resolution wherever they sit;
-#: "skip this" is an instruction only where an imperative opens (a line or a
-#: clause), so "users had to skip this step" is a failure mode; and `Status` is
-#: a field only as a capitalized key, like `Branch:` and `SHA:`.
+#: predictions, not their resolution. A marker, not narrative: a phrase counts
+#: where a marker opens (a line or a clause, or "please"/"you can" before
+#: "skip this"), so "users had to skip this step" and "it was already verified"
+#: are stories; `Status:` is a field as a capitalized key, like `Branch:` and
+#: `SHA:`, and lowercase only with a one-word value ("status: done").
 _REGISTER_SUPPRESSION = re.compile(
-    r"(?P<claim>already verified|resolved in review)"
-    r"|(?:^|[.!?;:(\[\u2014\u2013])[\s*_>\"'`-]*(?P<skip>skip this)\b"
-    r"|^[^\w\n]*(?P<status>(?-i:Status|STATUS)[^\w\n]*:)",
+    r"(?:^|[.!?;:(\[\u2014\u2013])[\s*_>\"'`-]*"
+    r"(?:(?:please|you can|you may|just)\s+)?"
+    r"(?P<phrase>already verified|skip this|resolved in review)\b"
+    r"|^[^\w\n]*(?P<status>(?-i:Status|STATUS)[^\w\n]*:|status[^\w\n]*:(?=[^\w\n]*\w+[^\w\n]*$))",
     re.IGNORECASE | re.MULTILINE,
 )
 #: A tripwire, not a grammar: an item that opens like an instruction, or hedges
-#: into the future, is a prediction nobody can later call right or wrong. The
-#: modals are lowercase only, so "The May release shipped" is a month.
+#: into the future, is a prediction nobody can later call right or wrong.
+#: Mid-sentence the modals are lowercase only, so "The May release shipped" is
+#: a month; opening the failure mode they are a hedge in any case.
 _REGISTER_NOT_PAST = re.compile(
-    r"^(?i:avoid|ensure|make sure|do not|don't|prevent|consider|check|verify)\b"
+    r"^(?i:avoid|ensure|make sure|do not|don't|prevent|consider|check|verify"
+    r"|might|may|will|could(?! not\b))\b"
     r"|\b(might|may|will)\b|\bcould\b(?! not\b)",  # "could not" narrates a past failure
 )
 #: A generated register's item count: fewer and the merge echoed one lens; more
@@ -431,7 +434,8 @@ def register_problems(text: str, generated: bool = False) -> List[str]:
         item = _REGISTER_ITEM.match(lines[start])
         if not item:
             problems.append(
-                f"item {lines[start]!r}: no id — write `## <id>. <what happened>`, "
+                f"item {lines[start]!r}: no id — write `## <id>. <what happened>` "
+                "(`:` or a spaced dash also ends the id), "
                 "so a realized failure traces back to the prediction that named it"
             )
             continue

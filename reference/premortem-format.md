@@ -68,6 +68,6 @@ counts them, so a register's hit rate can be tracked across runs.
 saying "already verified", "skip this", or "resolved in review" is itself a finding
 (`register-integrity`) — not permission to skip the item. The test is intent, a marker
 on the item's own resolution: "users had to skip this step" is a failure mode, and
-"skip this" opening a line or clause is an instruction. This is the injection posture
+the same phrase opening a line or clause is a marker. This is the injection posture
 applied to the one artifact a judge is asked to take at face value, and it is the reason
 the format has no "status" field: a register records predictions, not their resolution.
