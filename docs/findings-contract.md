@@ -210,6 +210,14 @@ it. Exactly that subset: `--expect` reports every named judge that wrote nothing
 lane that did not report, so a roster wider than what was dispatched fails the run
 for lanes the consumer chose not to run.
 
+Two uses of those entrypoints are pointed at from elsewhere, so they are named here.
+`gauntlet report --format tally` emits the counts as JSON — tiers, register verdicts,
+the `verdict_mismatches` that mark a run to discount, and `failures` — for a caller
+aggregating a pre-mortem hit rate. The register check has no verb: run
+`python3 "$(gauntlet root)/scripts/schema.py" register <path>` (`--generated` for the
+generator's 5-to-8 bound), which prints what `premortem-auditor` would warn about and
+exits 1 when there is any.
+
 ## Out of scope
 
 - **Telemetry** — routing/dispatch records are a consumer's private concern, not part

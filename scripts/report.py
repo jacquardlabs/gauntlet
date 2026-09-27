@@ -13,8 +13,9 @@ Three renderings:
   findings that can anchor to a diff line and those that cannot. Emitting is not
   posting; the consumer still asks first.
 - `tally` — the counts alone as JSON: findings per tier, and register verdicts
-  when a lane judged a register — what a caller aggregates across runs into a
-  pre-mortem hit rate (#88). Aggregating is the caller's; this run keeps no history.
+  and their mismatches when a lane judged a register — what a caller aggregates
+  across runs into a pre-mortem hit rate (#88). Aggregating is the caller's; this
+  run keeps no history.
 
 Standard library only, 3.9-compatible: this ships to consuming projects.
 """
@@ -650,9 +651,11 @@ def render_tally(
     documents: List[dict], notes: List[str], failures: List[str]
 ) -> str:
     """The counts, as data. `verdicts` is omitted, never zero-filled, when no
-    lane judged a register — see `verdict_counts`. `failures` rides along
-    because a tally from a run with an unreported lane undercounts, and a caller
-    aggregating tallies must be able to tell."""
+    lane judged a register — see `verdict_counts` — and `verdict_mismatches`
+    with it: a run whose verdicts disagree with its findings is one to discount
+    (`_verdict_notes`). `failures` rides along because a tally from a run with an
+    unreported lane undercounts, and a caller aggregating tallies must be able to
+    tell."""
     out: Dict[str, object] = {
         "judges": sorted(d["judge"] for d in documents),
         "tiers": counts(flatten(documents)),
@@ -660,6 +663,7 @@ def render_tally(
     verdicts = verdict_counts(documents)
     if verdicts is not None:
         out["verdicts"] = verdicts
+        out["verdict_mismatches"] = [n for d in documents for n in _verdict_notes(d)]
     out["failures"] = failures
     return json.dumps(out, indent=2)
 
