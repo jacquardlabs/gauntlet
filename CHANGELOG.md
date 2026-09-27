@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v0.17.1 (2026-09-27)
+
+### Bug Fixes
+
+- Align register_problems with premortem-format.md and surface verdict-mismatch in the tally
+  ([#96](https://github.com/jacquardlabs/gauntlet/pull/96),
+  [`f0cc347`](https://github.com/jacquardlabs/gauntlet/commit/f0cc34736c4f545fb08d923b0453c1de8ec2b0c3))
+
+- Catch a capitalized hedge opening a failure mode, and judge every suppression phrase by position
+  ([#96](https://github.com/jacquardlabs/gauntlet/pull/96),
+  [`f0cc347`](https://github.com/jacquardlabs/gauntlet/commit/f0cc34736c4f545fb08d923b0453c1de8ec2b0c3))
+
+
 ## v0.17.0 (2026-09-22)
 
 ### Bug Fixes
