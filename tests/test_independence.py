@@ -593,6 +593,11 @@ def test_no_dispatch_block_hardcodes_the_context_files():
         assert not re.search(r'--context\s+"[^$]', block), (
             f"this dispatch block hardcodes its context files:\n{block}"
         )
+        if "$CONTEXT" in block:
+            assert "CONTEXT=" in block, (
+                f"this dispatch block reads $CONTEXT without setting it, so a "
+                f"literal run passes no --context and drops gated lanes:\n{block}"
+            )
 
 
 def test_the_contract_names_the_entrypoints_the_command_calls():
