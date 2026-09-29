@@ -230,8 +230,10 @@ What the sessions it starts can do:
   prompt. To take shell away from the judges on a run you do not trust, forward
   `--disallowedTools Bash`. Those lanes then judge with file tools alone.
 - **Each starts in your working directory, never in the tree it judges.** The worktree
-  is reached through `--add-dir`, which grants file access and loads nothing from it.
-  A PR's own CLAUDE.md or `.claude/` hooks are therefore never loaded as trusted config.
+  is reached through `--add-dir`, which grants file access without loading the tree's
+  CLAUDE.md or `.claude/` settings and hooks. It does load the tree's `.claude/skills/`,
+  so the runner also passes `--disable-slash-commands`: a judge uses no skill, and a
+  PR's skill is then never loaded as trusted context.
 - **Each loads your own Claude Code settings, plugins, and hooks**, the same as any
   `claude -p` you would start. A plugin or hook that changes how the model phrases its
   replies, such as one that stamps a timestamp on each message, changes every judge's

@@ -27,7 +27,9 @@ Every session starts in the caller's working directory, never in the tree it
 judges: a session started inside a PR's worktree would load that tree's
 CLAUDE.md and `.claude/` settings — hooks included — as trusted project config.
 The tree is reached through `--add-dir` instead, which grants file access and
-loads nothing.
+loads neither. It does load the tree's `.claude/skills/`, so every session also
+runs with `--disable-slash-commands`: a judge needs no skill, and a PR's skill
+description would otherwise reach the judge as trusted context.
 
 Standard library only, 3.9-compatible: this ships to consuming projects.
 """
@@ -97,6 +99,7 @@ def command(
         "--output-format",
         "json",
         "--no-session-persistence",
+        "--disable-slash-commands",
         "--allowedTools",
         ",".join(tools),
         *(["--add-dir", root] if root else []),

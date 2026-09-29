@@ -159,6 +159,9 @@ def test_the_session_reaches_the_artifact_root_without_starting_in_it():
         assert (fake.parent / "security-auditor.cwd").read_text() == str(Path(tmp).resolve())
         argv = json.loads((fake.parent / "security-auditor.argv").read_text())
         assert argv[argv.index("--add-dir") + 1] == str(tree)
+        # --add-dir still loads the tree's .claude/skills/; only this flag keeps a
+        # PR's skill out of the judge's context.
+        assert "--disable-slash-commands" in argv
 
 
 def test_an_empty_reply_is_a_lane_that_did_not_report():
