@@ -1,7 +1,7 @@
 # Sonnet 5.5 vs Opus 5.5 — judge comparison
 
 ## Method
-- **Arms:** each of 9 lanes ran once on `opus` (Opus 5.5) and once with a `sonnet` override (Sonnet 5.5). Frontmatter `effort: medium` held for both. The transcripts confirm the served model IDs (`claude-opus-5-5`, `claude-sonnet-5-5`). Plugin 0.17.3.
+- **Arms:** each of 9 lanes ran once on `opus` (Opus 5.5) and once with a `sonnet` override (Sonnet 5.5). Frontmatter `effort: medium` held for both. Sonnet 5.5's API default is `high`, and its effort levels are recalibrated from Sonnet 5, so this tests Sonnet at one level below its own default. The transcripts confirm the served model IDs (`claude-opus-5-5`, `claude-sonnet-5-5`). Plugin 0.17.3.
 - **Candidates:** the 3 posture lanes #86 moved off sonnet (codebase, interface, prompt), plus 6 change lanes that do more mechanical checks (frontend, ux, accessibility, doc, dependency, infra). Security, code, architecture, test, operability, product, premortem, falsifiability, trade-study and docs-posture were out of scope.
 - **Artifacts:**
   - jacquardlabs/winnow `9120a04..4ef29e9` (#55, UI views, +1526/-24, 17 files): frontend, ux, accessibility, doc.
@@ -48,9 +48,11 @@ Fewer tool calls tracked lost findings. Sonnet read about half as much, and on t
 **Counts:** 9 lanes: 1 parity, 2 near parity, 6 losses. Sonnet made 2 false factual claims; Opus made 0 that I found. Opus's "only file over 500" misses 3 test files, but its point about the shipped script holds.
 
 ## Conclusion
-No lane with real findings to catch should move. Sonnet 5.5 is 4-6x faster and about a quarter of the cost, but it reads less and files less. On the 6 lanes with the most to find, it filed 1 critical and 12 important findings fewer, and it stated 2 falsehoods as sourced facts.
+At `medium`, no lane with real findings to catch should move. Sonnet 5.5 is 4-6x faster and about a quarter of the cost, but it reads less and files less. On the 6 lanes with the most to find, it filed 1 critical and 12 important findings fewer, and it stated 2 falsehoods as sourced facts.
 
 The 3 parity lanes (infra, frontend, doc) ran on small changesets, one sample each. They are also the cheapest lanes, so moving them saves least. A move needs a second changeset first, ideally a larger one.
+
+The untested arm is Sonnet 5.5 at `high` on the 6 losing lanes. At `medium`, the model makes fewer and more consolidated tool calls, which is the shortfall observed here. At `high` it may read more and close part of the gap, at under half Opus's per-token price.
 
 ## Incidental findings on gauntlet itself
 All confirmed at `4448859`:
