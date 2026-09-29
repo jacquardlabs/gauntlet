@@ -58,7 +58,9 @@ PLUGIN = "gauntlet"
 #: path in `commands/review.md` §3 gives it.
 INSTRUCTION = (
     "Your entire reply must be the findings document, one JSON object and "
-    "nothing else. The invocation follows."
+    "nothing else. Your working directory is an empty scratch directory: resolve "
+    "every relative path in the invocation (the document, context files, git "
+    "commands) against its artifact.root. The invocation follows."
 )
 
 #: Exit status when the CLI cannot be found — distinct from a lane failing (1)

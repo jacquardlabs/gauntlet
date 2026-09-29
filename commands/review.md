@@ -231,7 +231,8 @@ What the sessions it starts can do:
   `--disallowedTools Bash`. Those lanes then judge with file tools alone.
 - **Each starts in an empty scratch directory, never in the tree it judges.** So the
   runner needs `--root` on every dispatch, a document run's included: it refuses an
-  invocation without an absolute `artifact.root` rather than guess one. The tree is
+  invocation without an absolute `artifact.root` rather than guess one, so make
+  `<tmp>` absolute (`mktemp -d`). The tree is
   reached through `--add-dir`, which grants file access without loading the tree's
   CLAUDE.md or `.claude/` settings and hooks. It does load the tree's `.claude/skills/`,
   so the runner also passes `--disable-slash-commands`: a judge uses no skill, and a
