@@ -104,7 +104,7 @@ def standard_for(judge: str, cell: str) -> dict:
     citable at a version. Copying the literal `(inline)` through, as prose
     instructions did, cites nothing.
     """
-    tokens = [t for t in charter._cell_tokens(cell) if t != charter.INLINE_STANDARD]
+    tokens = [t for t in charter.cell_tokens(cell) if t != charter.INLINE_STANDARD]
     if not tokens:
         return {"name": judge, "version": plugin_version()}
     return {"name": tokens[0].rstrip("/")}
@@ -267,7 +267,7 @@ def selected(
     chosen = []
     for judge in judges:
         name = judge["judge"]
-        if mount not in charter._cell_tokens(judge["mounts"]):
+        if mount not in charter.cell_tokens(judge["mounts"]):
             continue
         signals = PATH_SIGNALS.get(name)
         if paths is not None and signals and not any(
@@ -391,7 +391,7 @@ def main() -> int:
         # open. The reason comes from which signal table holds the judge — a
         # judge in neither is never dropped, and the tables share no key.
         declaring = sorted(
-            j["judge"] for j in judges if mount in charter._cell_tokens(j["mounts"])
+            j["judge"] for j in judges if mount in charter.cell_tokens(j["mounts"])
         )
         if not declaring:
             print(f"gauntlet: no judge declares mount {mount!r}", file=sys.stderr)

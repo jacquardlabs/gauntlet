@@ -251,7 +251,7 @@ def parse_charter(text: str) -> Tuple[List[Dict[str, str]], Dict[str, str]]:
     return judges, anchors
 
 
-def _cell_tokens(cell: str) -> List[str]:
+def cell_tokens(cell: str) -> List[str]:
     """Backticked tokens in a table cell, in order."""
     return re.findall(r"`([^`]+)`", cell)
 
@@ -273,7 +273,7 @@ def _standard_problems(judge: str, cell: str) -> List[str]:
       splits a judge from its own identity and leaves both halves thinner.
     """
     problems: List[str] = []
-    tokens = _cell_tokens(cell)
+    tokens = cell_tokens(cell)
     # `(inline)` is legal bare or backticked, and both go through the same token
     # parse — a raw substring test would also match a Standard cell that merely
     # mentioned the word in a parenthetical.
@@ -341,7 +341,7 @@ def charter_problems(text: str) -> List[str]:
     )
 
     for j in judges:
-        mounts = _cell_tokens(j["mounts"])
+        mounts = cell_tokens(j["mounts"])
         if not mounts:
             problems.append(
                 f"charter: `{j['judge']}` declares no mount — a consumer would have "
