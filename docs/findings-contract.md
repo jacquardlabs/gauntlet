@@ -193,36 +193,26 @@ so never a bump (§1). It exists because `${CLAUDE_PLUGIN_ROOT}` names only the 
 whose file is being loaded: a consumer that is itself a Claude Code plugin has no
 variable that names gauntlet's root.
 
-Claude Code puts an enabled plugin's `bin/` on the Bash tool's PATH, so the consumer
-finds gauntlet with `command -v gauntlet`, and `gauntlet root` prints the root. A Glob
-over the plugin cache (`~/.claude/plugins/cache/…`) is **not a supported path**: that
-layout is the installer's, unversioned here, and a consumer that reads it has crossed
-the boundary on a convention rather than a contract.
+Gauntlet ships no cross-plugin discovery mechanism, so a co-installed consumer is not a
+supported shape today. A Glob over the plugin cache (`~/.claude/plugins/cache/…`) is
+**not a supported path** either: that layout is the installer's, unversioned here, and a
+consumer that reads it has crossed the boundary on a convention rather than a contract.
 
-On claude.ai, Cowork, and organization sync there is no gauntlet to find. Claude Code's
-plugins reference: "claude.ai and Cowork don't install a plugin that has this directory,
-including one you distribute through claude.ai organization settings"; the org-sync docs
-name the rejection, `Plugin contains a top-level bin/ directory`. Their suggested
-fallback, `${CLAUDE_PLUGIN_ROOT}/scripts/`, names the consumer's own root, and the
-plugins reference adds that "the variables aren't present in the environment of commands
-Claude runs through the Bash tool".
-
-Two entrypoints are stable: `gauntlet dispatch` and `gauntlet report`, which exec
-`<root>/scripts/dispatch.py` and `<root>/scripts/report.py` with the arguments and exit
-codes untouched. Both are stdlib, 3.9-compatible, and run on the project's `python3`
-(`commands/review.md` §2 and §4–5 show the underlying script calls). `dispatch.py` emits one
-validated invocation per selected judge; a consumer may dispatch any subset of them
-and pass exactly that subset to `report.py --expect` — selection is the consumer's,
-and filtering the emitted array is how a second round narrows, so no flag exists for
-it. Exactly that subset: `--expect` reports every named judge that wrote nothing as a
+Two entrypoints under gauntlet's root are stable: `<root>/scripts/dispatch.py` and
+`<root>/scripts/report.py`, both stdlib, 3.9-compatible, run bare with the project's
+`python3` (`commands/review.md` §2 and §4–5 show the calls through
+`${CLAUDE_PLUGIN_ROOT}`). `dispatch.py` emits one validated invocation per selected
+judge; a consumer may dispatch any subset of them and pass exactly that subset to
+`report.py --expect` — selection is the consumer's, and filtering the emitted array is
+how a second round narrows, so no flag exists for it. Exactly that subset: `--expect` reports every named judge that wrote nothing as a
 lane that did not report, so a roster wider than what was dispatched fails the run
 for lanes the consumer chose not to run.
 
 Two uses of those entrypoints are pointed at from elsewhere, so they are named here.
-`gauntlet report --format tally` emits the counts as JSON — tiers, register verdicts,
+`report.py --format tally` emits the counts as JSON — tiers, register verdicts,
 the `verdict_mismatches` that mark a run to discount, and `failures` — for a caller
-aggregating a pre-mortem hit rate. The register check has no verb: run
-`python3 "$(gauntlet root)/scripts/schema.py" register <path>` (`--generated` for the
+aggregating a pre-mortem hit rate. The register check is a third script: run
+`python3 <root>/scripts/schema.py register <path>` (`--generated` for the
 generator's 5-to-8 bound), which prints what `premortem-auditor` would warn about and
 exits 1 when there is any.
 

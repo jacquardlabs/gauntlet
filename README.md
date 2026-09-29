@@ -151,16 +151,13 @@ They read a whole repository at a `ref` rather than a changeset, so they cost mo
 a review and are worth running on a trunk, not a branch.
 
 Driving the pipeline yourself rather than through the command, selection is one call. It
-emits the invocations to dispatch, not findings; `gauntlet report` compiles what the
-judges return:
+emits the invocations to dispatch, not findings; `scripts/report.py` compiles what the
+judges return (`<root>` is gauntlet's install root):
 
 ```text
 git ls-tree -r --name-only HEAD \
-  | gauntlet dispatch --ref HEAD --paths -
+  | python3 <root>/scripts/dispatch.py --ref HEAD --paths -
 ```
-
-`gauntlet` is on the Bash tool's PATH while gauntlet is enabled; from a plain terminal,
-run `<root>/bin/gauntlet` by path.
 
 The judges read the tree at `--root`, which defaults to the working directory, so a ref
 that is not that tree — another sha, or `HEAD` with uncommitted edits — is refused rather
@@ -265,9 +262,8 @@ validators called on dispatch and on ingest. A judge emits findings; a consumer 
 dispatches, validates, and renders. **A consumer never decides what happens next** — no
 gate, no ledger, no retry policy, no episode state.
 
-A consumer that is itself a Claude Code plugin reaches the same two scripts through
-`gauntlet`, on its PATH while gauntlet is enabled: `gauntlet root`, `gauntlet dispatch`,
-`gauntlet report` — see "Consumer transport for a co-installed plugin" in
+A consumer that is itself a Claude Code plugin has no supported way to find gauntlet's
+scripts today — see "Consumer transport for a co-installed plugin" in
 `docs/findings-contract.md`.
 
 ## Why the findings are worth anything

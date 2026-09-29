@@ -579,6 +579,18 @@ def test_every_dispatch_block_passes_the_worktree_root():
         )
 
 
+def test_the_contract_names_the_entrypoints_the_command_calls():
+    """The contract's "Consumer transport" names the stable script entrypoints and
+    points at commands/review.md for the calls. A renamed script leaves the contract
+    naming nothing, and a consumer cannot tell that from a bad install (#101)."""
+    contract = (REPO / "docs/findings-contract.md").read_text()
+    command = (REPO / "commands/review.md").read_text()
+    for script in ("dispatch.py", "report.py", "schema.py"):
+        assert f"<root>/scripts/{script}" in contract, script
+        assert f"${{CLAUDE_PLUGIN_ROOT}}/scripts/{script}" in command, script
+        assert (REPO / "scripts" / script).is_file(), script
+
+
 def test_surface_is_derived_from_the_roster():
     judges, _ = check.parse_charter(_charter(ROW, ANCHOR))
     paths = check.surface_paths(judges)
