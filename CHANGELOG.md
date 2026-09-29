@@ -2,6 +2,29 @@
 
 <!-- version list -->
 
+## v0.17.7 (2026-09-29)
+
+### Bug Fixes
+
+- Give premortem-auditor a NOT EXERCISED verdict and keep it out of the hit rate
+  ([#111](https://github.com/jacquardlabs/gauntlet/pull/111),
+  [`17487ab`](https://github.com/jacquardlabs/gauntlet/commit/17487ab3f52b4030fa47b5d21a13e849be134692))
+
+- Give premortem-auditor a verdict for a register item the artifact doesn't implement, and keep it
+  out of the hit rate ([#111](https://github.com/jacquardlabs/gauntlet/pull/111),
+  [`17487ab`](https://github.com/jacquardlabs/gauntlet/commit/17487ab3f52b4030fa47b5d21a13e849be134692))
+
+### Documentation
+
+- Count four register verdicts in the charter and rewrap the verdicts docstring
+  ([#111](https://github.com/jacquardlabs/gauntlet/pull/111),
+  [`17487ab`](https://github.com/jacquardlabs/gauntlet/commit/17487ab3f52b4030fa47b5d21a13e849be134692))
+
+- Define when review passes a pre-mortem register to premortem-auditor
+  ([#111](https://github.com/jacquardlabs/gauntlet/pull/111),
+  [`17487ab`](https://github.com/jacquardlabs/gauntlet/commit/17487ab3f52b4030fa47b5d21a13e849be134692))
+
+
 ## v0.17.6 (2026-09-29)
 
 ### Bug Fixes
