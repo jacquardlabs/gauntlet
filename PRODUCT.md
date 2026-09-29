@@ -19,7 +19,8 @@ the rest of the staff-engineering artifact surface.
 - Authoring or fixing — judges never produce. The one producer, the pre-mortem
   generator, sits outside the judge fleet (charter, "The two rules")
 - Methodology — gates, episodes, ledgers, retry policy, routing between doors. That
-  was studious's mass, deliberately shed. See "Consumers are thin" for the line
+  was the mass of studious (since retired), deliberately shed. See "Consumers are
+  thin" for the line
 - Numeric confidence — recommendations are grounds-classed (sourced / inferred /
   taste), never scored
 - Being a platform — no server, no daemon, no accounts; local and keyless
@@ -50,5 +51,5 @@ This is the line the methodology non-goal draws, not an exception to it.
 ## Existential rule
 
 A separate repo only while the findings contract is versioned **and** ≥2 consumers
-exist (boundary criterion (e), per studious's repo-boundary rule). If viva becomes the
-only caller, absorb this into viva's shell and delete the repo.
+exist (boundary criterion (e), from the repo-boundary rule studious set). If viva
+becomes the only caller, absorb this into viva's shell and delete the repo.
