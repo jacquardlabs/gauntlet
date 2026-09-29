@@ -47,12 +47,35 @@ Fewer tool calls tracked lost findings. Sonnet read about half as much, and on t
 
 **Counts:** 9 lanes: 1 parity, 2 near parity, 6 losses. Sonnet made 2 false factual claims; Opus made 0 that I found. Opus's "only file over 500" misses 3 test files, but its point about the shipped script holds.
 
+## Sonnet 5.5 at `high`
+- **Arm:** the 6 lanes Sonnet lost at `medium` ran once more on Sonnet 5.5 at `high`, on the same invocations and trees. The session did not load new agent files mid-run, so each ran headless: `claude -p --agent <copy> --model sonnet --effort high`. The copies were the 0.17.3 agent files with `model`/`effort` changed and `${CLAUDE_PLUGIN_ROOT}` made absolute.
+- **Confound:** these ran as a main session, not a subagent. The user's CLAUDE.md and output style were loaded, and every reply carried a `[hh:mm:ss]` prefix, which I stripped. Token counts from the two harnesses aren't comparable, so this table reports tool calls and time only.
+
+| Lane | Opus tools / s | Sonnet `medium` tools / s | Sonnet `high` tools / s |
+|---|---|---|---|
+| dependency-auditor | 8 / 58 | 5 / 20 | 6 / 40 |
+| accessibility-auditor | 8 / 94 | 5 / 33 | 10 / 88 |
+| ux-reviewer | 10 / 201 | 4 / 41 | 11 / 106 |
+| codebase-posture-auditor | 9 / 54 | 4 / 16 | 7 / 36 |
+| prompt-posture-auditor | 28 / 321 | 12 / 49 | 13 / 67 |
+| interface-posture-reviewer | 20 / 279 | 6 / 29 | 13 / 89 |
+| **Total** | **83 / 1,007** | **36 / 188** | **60 / 426** |
+
+At `high`, Sonnet made 72% of Opus's tool calls in 42% of its summed time. Run in parallel, the slowest lane took 106s against 321s. The API-equivalent cost of the 6 runs was $1.89.
+
+| Lane | Opus / Sonnet `high` findings (critical + important) | Verdict | Evidence |
+|---|---|---|---|
+| dependency-auditor | 2 (0) / 3 (1) | **parity** | Both carry the deprecated `prebuild-install` and the stale ^11 major; Sonnet rates the first `important`. Its license statement is now accurate: better-sqlite3 is MIT, and the project license is TBD. |
+| ux-reviewer | 14 (7) / 13 (7) | **parity** | Sonnet carries approve-without-claims, the badge bypass, high risk shown as medium, and the Vocabulary relabel. It misses claim-status labels reused on import edges and the unclickable island. It adds the unmapped bucket losing its attention treatment. |
+| codebase-posture-auditor | 3 (0) / 4 (0) | **near parity** | Sonnet carries the floating `ci.yml` tags and the correct 717-line `report.py`, but miscounts the tag uses as 4 (there are 6). It misses the private `_cell_tokens` import. It adds that the Python 3.9 floor is past EOL, and the `pyproject.toml` version drift that Opus noticed but didn't raise. |
+| accessibility-auditor | 10 (7) / 7 (6) | **Sonnet loses** | Sonnet now carries the tooltip-only claim text. It still misses both focus-loss findings: the chip click (`FlowView.tsx:311`) and the view switch (`App.tsx:540`). |
+| prompt-posture-auditor | 8 (2) / 5 (0) | **Sonnet loses** | Sonnet still misses both confirmed important findings (the signal-list gap and the observed-anchor conflict) and files nothing above `track`. Its "eleven lanes" vs 14 claim is probably not a defect: the charter says eleven lanes "whose standards read code". |
+| interface-posture-reviewer | 17 (11) / 10 (6) | **Sonnet loses** | Sonnet still misses the critical zoom-receipt defect. It also misses the unmapped bucket shown 3 ways, the claim labels on edges, and approve-without-claims. It now carries the zod-500 and duplicated-guard findings. |
+
 ## Conclusion
-At `medium`, no lane with real findings to catch should move. Sonnet 5.5 is 4-6x faster and about a quarter of the cost, but it reads less and files less. On the 6 lanes with the most to find, it filed 1 critical and 12 important findings fewer, and it stated 2 falsehoods as sourced facts.
+Effort explains about half the gap. At `high`, Sonnet 5.5 reaches parity on dependency and ux and near parity on codebase-posture, still in under half Opus's time. No false statements were found. It still loses on accessibility, prompt-posture and interface-posture. Those are the lanes where finding a defect means tracing one behavior across files or surfaces: focus after an unmount, a regex list against a checklist table, a key binding into a receipt.
 
-The 3 parity lanes (infra, frontend, doc) ran on small changesets, one sample each. They are also the cheapest lanes, so moving them saves least. A move needs a second changeset first, ideally a larger one.
-
-The untested arm is Sonnet 5.5 at `high` on the 6 losing lanes. At `medium`, the model makes fewer and more consolidated tool calls, which is the shortfall observed here. At `high` it may read more and close part of the gap, at under half Opus's per-token price.
+Across both arms, 6 lanes reached parity or near parity (infra, frontend and doc at `medium`; dependency, ux and codebase-posture at `high`), and 3 stayed with Opus. Every verdict is one sample on one artifact, so run-to-run variance is unmeasured. The migration candidates need a second artifact before any frontmatter changes.
 
 ## Incidental findings on gauntlet itself
 All confirmed at `4448859`:
