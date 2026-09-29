@@ -2,6 +2,57 @@
 
 <!-- version list -->
 
+## v0.18.0 (2026-09-29)
+
+### Bug Fixes
+
+- Keep a judged tree's skills out of judge sessions
+  ([#112](https://github.com/jacquardlabs/gauntlet/pull/112),
+  [`ffc985b`](https://github.com/jacquardlabs/gauntlet/commit/ffc985bafc893f7bcfb20116f4f989a9ab472bfa))
+
+- Keep judge sessions out of the judged tree, and harden the runner's failure paths
+  ([#112](https://github.com/jacquardlabs/gauntlet/pull/112),
+  [`ffc985b`](https://github.com/jacquardlabs/gauntlet/commit/ffc985bafc893f7bcfb20116f4f989a9ab472bfa))
+
+- Refuse an invocation without an absolute root instead of guessing one
+  ([#112](https://github.com/jacquardlabs/gauntlet/pull/112),
+  [`ffc985b`](https://github.com/jacquardlabs/gauntlet/commit/ffc985bafc893f7bcfb20116f4f989a9ab472bfa))
+
+- Start every judge session in a scratch directory, even with no --root
+  ([#112](https://github.com/jacquardlabs/gauntlet/pull/112),
+  [`ffc985b`](https://github.com/jacquardlabs/gauntlet/commit/ffc985bafc893f7bcfb20116f4f989a9ab472bfa))
+
+- Start the judge runner in the background so the Bash tool's timeout cannot cut a run short
+  ([#112](https://github.com/jacquardlabs/gauntlet/pull/112),
+  [`ffc985b`](https://github.com/jacquardlabs/gauntlet/commit/ffc985bafc893f7bcfb20116f4f989a9ab472bfa))
+
+### Documentation
+
+- Say a judge run can take minutes, not that it always does
+  ([#112](https://github.com/jacquardlabs/gauntlet/pull/112),
+  [`ffc985b`](https://github.com/jacquardlabs/gauntlet/commit/ffc985bafc893f7bcfb20116f4f989a9ab472bfa))
+
+- Tell each judge where relative paths resolve, and require an absolute <tmp>
+  ([#112](https://github.com/jacquardlabs/gauntlet/pull/112),
+  [`ffc985b`](https://github.com/jacquardlabs/gauntlet/commit/ffc985bafc893f7bcfb20116f4f989a9ab472bfa))
+
+### Features
+
+- Land each judge's reply in the findings directory through a runner, not a retyped Write
+  ([#112](https://github.com/jacquardlabs/gauntlet/pull/112),
+  [`ffc985b`](https://github.com/jacquardlabs/gauntlet/commit/ffc985bafc893f7bcfb20116f4f989a9ab472bfa))
+
+### Testing
+
+- An empty reply file is one failure for its lane, per #108's ingest
+  ([#112](https://github.com/jacquardlabs/gauntlet/pull/112),
+  [`ffc985b`](https://github.com/jacquardlabs/gauntlet/commit/ffc985bafc893f7bcfb20116f4f989a9ab472bfa))
+
+- Pin the background rule on run length, not on the runner's per-lane timeout
+  ([#112](https://github.com/jacquardlabs/gauntlet/pull/112),
+  [`ffc985b`](https://github.com/jacquardlabs/gauntlet/commit/ffc985bafc893f7bcfb20116f4f989a9ab472bfa))
+
+
 ## v0.17.7 (2026-09-29)
 
 ### Bug Fixes
