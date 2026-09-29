@@ -307,7 +307,7 @@ def test_reply_reads_both_output_shapes_and_refuses_the_rest():
 
 def test_review_starts_the_runner_in_the_background_not_under_the_bash_timeout():
     # Claude Code's Bash tool kills a foreground command at 120s by default and 600s
-    # at most; a real 11-lane run takes minutes, whatever the per-lane budget is.
+    # at most; a real 11-lane run has taken 167s, and each lane may take 1800s.
     text = (REPO / "commands" / "review.md").read_text(encoding="utf-8")
     dispatch = text.split("## 3. Dispatch", 1)[1].split("## 4.", 1)[0]
     primary = dispatch.split("**Exit 3", 1)[0]

@@ -209,8 +209,8 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_judges.py" \
   --invocations <tmp>/invocations.json --findings <tmp>/findings
 ```
 
-**Start it with `run_in_background`, and wait for it to exit before §4.** A run takes
-minutes, and a foreground Bash call is killed at the tool's timeout (two minutes by
+**Start it with `run_in_background`, and wait for it to exit before §4.** A run can take
+several minutes, and a foreground Bash call is killed at the tool's timeout (two minutes by
 default, ten at most), well inside the runner's own per-lane budget. A killed runner has
 written some lanes and not others, prints no summary, and returns no exit code, so §4
 would report the cut-off lanes as judges that did not report. Read its output once the
