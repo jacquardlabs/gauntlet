@@ -63,8 +63,9 @@ restate it.
 3. **Dead code** (`dead-code`) — exported symbols nothing imports, unused variables,
    unreachable branches. Report the count and the worst module, never each one.
 4. **Dependency health** (`dependencies`) — outdated packages, known vulnerabilities
-   (`osv-scanner`, `pip-audit`, or the repo's equivalent; "could not verify" when no
-   tool is available), packages untouched twelve or more months, and exact pins with no
+   (`osv-scanner`, `pip-audit`, or the package manager's own audit — `npm audit`,
+   `pnpm audit`, `yarn npm audit`, `cargo audit`, `bundle audit`; "could not verify"
+   only when none of them can run), packages untouched twelve or more months, and exact pins with no
    stated reason. **This lane owns the advisory sweep**; `security-posture-auditor`
    defers to it.
 5. **Test health** (`tests`) — coverage as reported by an existing artifact, the

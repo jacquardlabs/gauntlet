@@ -2,8 +2,8 @@
 name: ux-reviewer
 description: Judges a frontend artifact for user-experience quality — information hierarchy, layout and spacing, component consistency, interaction clarity, responsive behavior, visual polish. Returns a findings document; never modifies anything.
 tools: Read, Grep, Glob, Bash
-model: opus
-effort: medium
+model: sonnet
+effort: high
 ---
 
 # User-experience lane

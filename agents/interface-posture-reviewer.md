@@ -99,8 +99,9 @@ Emit the canonical tier directly — there is no per-lane vocabulary to map:
 
 **A critical must cite its anchor**: a reproducible broken flow — the steps, the expected
 result, and the observed one — or, for a cross-surface finding, the concept plus each
-surface's differing rendering, quoted, at `file:line`. A critical without that anchor is
-recorded `important` by the consumer at ingest. **A pixel-blind claim can never be
+surface's differing rendering, quoted, at `file:line`. Since you never run the target, a
+flow's observed result is what the source must produce, cited at `file:line`. A critical
+without that anchor is recorded `important` by the consumer at ingest. **A pixel-blind claim can never be
 critical**: if it needs a rendered page to confirm, it is `inferred` and it is not a
 blocker.
 

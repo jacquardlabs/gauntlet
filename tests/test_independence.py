@@ -117,8 +117,8 @@ def test_roster_row_parses_every_column():
     assert j["judge"] == "security-auditor"
     assert j["lane"] == "security"
     assert j["path"] == "agents/security-auditor.md"
-    assert check._cell_tokens(j["mounts"]) == ["acceptance"]
-    assert check._cell_tokens(j["standard"]) == ["security-checklist"]
+    assert check.cell_tokens(j["mounts"]) == ["acceptance"]
+    assert check.cell_tokens(j["standard"]) == ["security-checklist"]
     assert set(anchors) == {"security-auditor"}
 
 
@@ -135,7 +135,7 @@ def test_both_mounts_declared():
     judges, _ = check.parse_charter(_charter(row))
     # The tokens the cell declares — not `schema.MOUNTS`, which this once
     # compared against only because the enum happened to hold exactly these two.
-    assert check._cell_tokens(judges[0]["mounts"]) == ["intake", "acceptance"]
+    assert check.cell_tokens(judges[0]["mounts"]) == ["intake", "acceptance"]
 
 
 # ── charter integrity ─────────────────────────────────────────────────────────
@@ -486,7 +486,7 @@ def test_every_intake_lane_states_the_document_quote_rule():
     with the copies drifting is the defect this test exists for.
     """
     judges, anchors = check.parse_charter((REPO / "reference/charter.md").read_text())
-    intake = [j for j in judges if "intake" in check._cell_tokens(j["mounts"])]
+    intake = [j for j in judges if "intake" in check.cell_tokens(j["mounts"])]
     assert intake, "no intake lane is registered — this guard has gone vacuous"
     for j in intake:
         text = " ".join((REPO / j["path"]).read_text().split())
@@ -577,6 +577,27 @@ def test_every_dispatch_block_passes_the_worktree_root():
             f"this dispatch block never passes --root, so its judges read the "
             f"working directory rather than the tree §1 resolved:\n{block}"
         )
+
+
+def test_no_dispatch_block_hardcodes_the_context_files():
+    """§2 says to pass `--context` only the files that exist. A block that names a
+    fixed list invites a literal run to pass docs the project doesn't have."""
+    blocks = [
+        block
+        for block in re.findall(
+            r"```bash\n(.*?)```", (REPO / "commands/review.md").read_text(), re.DOTALL
+        )
+        if "dispatch.py" in block
+    ]
+    for block in blocks:
+        assert not re.search(r'--context\s+"[^$]', block), (
+            f"this dispatch block hardcodes its context files:\n{block}"
+        )
+        if "$CONTEXT" in block:
+            assert "CONTEXT=" in block, (
+                f"this dispatch block reads $CONTEXT without setting it, so a "
+                f"literal run passes no --context and drops gated lanes:\n{block}"
+            )
 
 
 def test_the_contract_names_the_entrypoints_the_command_calls():

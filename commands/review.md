@@ -109,14 +109,16 @@ judges are reading.
 
 Selection, the standard mapping, and validation all live in code — a prompt cannot call
 a validator, and the contract requires the invocation be validated where it crosses the
-boundary:
+boundary. Each block sets `CONTEXT` to whichever of `CLAUDE.md`, `DESIGN.md` and
+`PRODUCT.md` exist in the tree being judged; append any register below to it:
 
 ```bash
+CONTEXT=$(cd "${ROOT:-.}" && ls CLAUDE.md DESIGN.md PRODUCT.md 2>/dev/null | paste -sd, -)
 git diff --name-only $BASE..$HEAD > <tmp>/paths.txt
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
   --base $BASE --head $HEAD ${PR:+--pr $PR} ${ROOT:+--root $ROOT} \
   --paths <tmp>/paths.txt \
-  --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
+  ${CONTEXT:+--context "$CONTEXT"} > <tmp>/invocations.json
 ```
 
 For a document, `--document <path>` replaces the shas and there is no `--paths` — a
@@ -127,9 +129,10 @@ them at a document yields inferred findings dressed as sourced ones, and `--moun
 assertion the script refuses when it disagrees with the artifact kind (#67):
 
 ```bash
+CONTEXT=$(cd "${ROOT:-.}" && ls CLAUDE.md DESIGN.md PRODUCT.md 2>/dev/null | paste -sd, -)
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
   --document <path> \
-  --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
+  ${CONTEXT:+--context "$CONTEXT"} > <tmp>/invocations.json
 ```
 
 `falsifiability-auditor` and `trade-study-auditor` are ungated — each needs nothing
@@ -142,10 +145,11 @@ the answer, not an error to route around.
 For a repository, `--ref` replaces the shas and `--paths` is the tracked files at that ref:
 
 ```bash
+CONTEXT=$(cd "${ROOT:-.}" && ls CLAUDE.md DESIGN.md PRODUCT.md 2>/dev/null | paste -sd, -)
 git ls-tree -r --name-only $REF > <tmp>/paths.txt
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
   --ref $REF ${ROOT:+--root $ROOT} --paths <tmp>/paths.txt \
-  --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
+  ${CONTEXT:+--context "$CONTEXT"} > <tmp>/invocations.json
 ```
 
 Mount is the only gate that fires here, and it selects the `posture` lanes. `--paths` is
@@ -162,7 +166,8 @@ named an evidence log — never invent one.
 before you build the invocations: `product-reviewer` needs the project's PRODUCT.md, and
 `premortem-auditor` needs a pre-mortem register for this work (`reference/premortem-format.md`
 is the shape; projects keep them wherever they keep them, often `docs/**/premortems/`).
-Add whichever exist to `--context`. Before passing a register, run
+`CONTEXT` already holds PRODUCT.md when it exists; append a register to it,
+comma-separated. Before passing a register, run
 `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/schema.py" register <path>` and relay what it
 prints — those are the problems the judge would spend its run warning about. It is
 advice, not a gate: the lane dispatches either way. A project that keeps neither never pays for those two
