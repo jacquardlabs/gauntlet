@@ -2,7 +2,7 @@
 
 ## Repo settings
 
-Matched to the sibling repos (studious, viva), with one deliberate difference:
+Matched to the sibling repo viva, with one deliberate difference:
 
 | Setting | Value | Why |
 |---|---|---|
@@ -12,7 +12,7 @@ Matched to the sibling repos (studious, viva), with one deliberate difference:
 | Delete `main` | blocked | |
 | Pull request required | yes, 0 approvals | A solo repo still gets the PR surface — CI, diff, discussion — without a second person to wait for. |
 | Branches up to date before merge | yes | Stacked PRs rebase onto `main` as each lands. |
-| **Status checks required** | **yes — all eight** | **The deliberate difference.** studious and viva have branch protection but do not require checks, so a red PR is mergeable there. Here the checks *are* the product's own discipline; a fleet whose independence check is advisory is a fleet with no independence check. |
+| **Status checks required** | **yes — all eight** | **The deliberate difference.** viva has branch protection but does not require checks, so a red PR is mergeable there. Here the checks *are* the product's own discipline; a fleet whose independence check is advisory is a fleet with no independence check. |
 
 Required contexts, matching the CI job names exactly — renaming a job without updating
 the protection leaves a context that never reports, and wedges every PR:
