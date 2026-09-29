@@ -199,11 +199,67 @@ wrong guess wastes a dispatch and never a verdict.
 
 ## 3. Dispatch
 
-Dispatch every invocation **in parallel**, one `Task` call each, in a single message.
-Give each judge its own invocation object from `invocations.json` verbatim, and tell it
-its entire reply must be the findings document, one JSON object and nothing else.
+Dispatch through the runner. It starts every judge **in parallel**, each as its own
+headless `claude -p --agent gauntlet:<judge>` session given its invocation verbatim, and
+writes each reply to `<tmp>/findings/<judge>.json` itself — so no reply passes through
+you, and you never copy one into a file:
 
-Write each reply verbatim to `<tmp>/findings/<judge>.json`.
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_judges.py" \
+  --invocations <tmp>/invocations.json --findings <tmp>/findings
+```
+
+**Start it with `run_in_background`, and wait for it to exit before §4.** A run can take
+several minutes, and a foreground Bash call is killed at the tool's timeout (two minutes by
+default, ten at most), well inside the runner's own per-lane budget. A killed runner has
+written some lanes and not others, prints no summary, and returns no exit code, so §4
+would report the cut-off lanes as judges that did not report. Read its output once the
+background task reports that it exited.
+
+Relay what it prints. A lane it names as failed (the session errored, or ran past the
+30-minute `--timeout`) wrote nothing, and §4 reports it as a lane that did not report; do
+not re-run it. **Exit 1 with no lane named means no judge ran** (an unreadable
+invocations file, an unregistered judge): relay the error and stop. Do not fall back and
+do not go on to §4.
+
+What the sessions it starts can do:
+
+- **Each is granted exactly the tools its agent file declares, with no per-call
+  permission prompt.** Every judge declares `Bash`, so every judge can run shell
+  unprompted. The in-session `Task` path runs under your own permission mode, which may
+  prompt. To take shell away from the judges on a run you do not trust, forward
+  `--disallowedTools Bash`. Those lanes then judge with file tools alone.
+- **Each starts in an empty scratch directory, never in the tree it judges.** So the
+  runner needs `--root` on every dispatch, a document run's included: it refuses an
+  invocation without an absolute `artifact.root` rather than guess one, so make
+  `<tmp>` absolute (`mktemp -d`). The tree is
+  reached through `--add-dir`, which grants file access without loading the tree's
+  CLAUDE.md or `.claude/` settings and hooks. It does load the tree's `.claude/skills/`,
+  so the runner also passes `--disable-slash-commands`: a judge uses no skill, and a
+  PR's skill is then never loaded as trusted context.
+- **Each loads your own Claude Code settings, plugins, and hooks**, the same as any
+  `claude -p` you would start. A plugin or hook that changes how the model phrases its
+  replies, such as one that stamps a timestamp on each message, changes every judge's
+  reply. Every lane then fails to parse and is reported as not reporting. That is the
+  correct outcome, but it costs the whole run.
+
+Anything after `--` is forwarded to every `claude` call unchanged. Use it to turn such a
+plugin off for the judge sessions only, to withhold shell, or to pass `--plugin-dir` for
+a gauntlet loaded from a directory. That directory must be the one this runner lives
+in, because the runner reads each judge's grant from its own `agents/`:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_judges.py" \
+  --invocations <tmp>/invocations.json --findings <tmp>/findings \
+  -- --settings '{"enabledPlugins": {"<plugin>@<marketplace>": false}}'
+```
+
+**Exit 3 means the `claude` CLI is not on PATH, and no judge ran.** Fall back to
+dispatching in-session: one `Task` call per invocation, all in a single message, each
+given its own invocation object from `invocations.json` verbatim and told its entire
+reply must be the findings document, one JSON object and nothing else. Then write each
+reply verbatim to `<tmp>/findings/<judge>.json`. That path costs a second copy of every
+reply in your context, which is why it is the fallback.
 
 **A judge that returns something unparseable is a lane that did not report.** Keep the
 file as it came back. Do not repair it, re-ask for it, or drop it — a lane silently
@@ -213,9 +269,9 @@ compiler is built to say so out loud.
 The compiler removes exactly one wrapper itself: a code fence around the whole reply,
 which is transport packaging — `docs/findings-contract.md` puts transport out of scope —
 and never content. It parses what was inside byte-for-byte and names the unwrap in the
-report, so the lane lands and the drift still shows (#61). Write the reply verbatim
-anyway: the unwrap is the compiler's business, not yours, and a reply that does not parse
-after unwrapping is a lane that did not report, exactly as before.
+report, so the lane lands and the drift still shows (#61). On the fallback path, write
+the reply verbatim anyway: the unwrap is the compiler's business, not yours, and a reply
+that does not parse after unwrapping is a lane that did not report, exactly as before.
 
 ## 4. Compile
 
