@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v0.19.0 (2026-09-29)
+
+### Bug Fixes
+
+- Defer the lifetime of the file a PRD success signal reads, and record the #239 re-run
+  ([#109](https://github.com/jacquardlabs/gauntlet/pull/109),
+  [`8077dba`](https://github.com/jacquardlabs/gauntlet/commit/8077dbaba3f6c37adc674618f560b5035213bb54))
+
+### Features
+
+- Let a type standard defer claims to a downstream document, and ship a PRD standard that defers its
+  technical half to tech-spec ([#109](https://github.com/jacquardlabs/gauntlet/pull/109),
+  [`8077dba`](https://github.com/jacquardlabs/gauntlet/commit/8077dbaba3f6c37adc674618f560b5035213bb54))
+
+- Let a type standard defer claims to a downstream document, and ship a PRD standard that defers to
+  tech-spec ([#109](https://github.com/jacquardlabs/gauntlet/pull/109),
+  [`8077dba`](https://github.com/jacquardlabs/gauntlet/commit/8077dbaba3f6c37adc674618f560b5035213bb54))
+
+
 ## v0.18.0 (2026-09-29)
 
 ### Bug Fixes
