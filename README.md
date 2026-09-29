@@ -98,7 +98,7 @@ two judge a document before the work exists (see "Judging documents" below).
 | `security-auditor` | injection, auth, authorization, secrets, headers, CSRF, data exposure, unsafe dependency use | `security-checklist` |
 | `code-auditor` | logic errors, type safety, complexity, maintainability, consistency, idioms, error handling, hygiene | `idioms/<language>` |
 | `test-auditor` | coverage of the change, assertion quality, regression tests on fixes, weakened or skipped tests | its own prompt |
-| `architecture-auditor` | pattern fit, coupling, complexity distribution, simplicity, backend performance, data and migrations | its own prompt |
+| `architecture-auditor` | pattern fit, coupling, complexity distribution, backend performance, data and migrations | its own prompt |
 | `infra-auditor` | IaC misconfiguration, blast radius, CI/CD pipeline risk, container hygiene, cost signals | `infra-checklist` |
 | `operability-auditor` | failure signal, resilience, runtime hygiene, concurrency safety, ops commitments | `operability-checklist` |
 | `dependency-auditor` | new and updated packages, known vulnerabilities, licenses, maintenance signal, lockfile drift | `dependency-checklist` |
@@ -109,6 +109,10 @@ two judge a document before the work exists (see "Judging documents" below).
 | `product-reviewer` | problem validity, principles, journeys, scope, simplicity — then whether what shipped delivers it | your PRODUCT.md |
 | `premortem-auditor` | every failure mode recorded at design time, checked against what was built | `premortem-format` |
 | `prompt-auditor` | trigger reliability, instruction conflicts, contract drift, duplication, injection safety, token economy | `prompt-checklist` |
+
+On a changeset, gauntlet no longer checks for duplicated logic, symbols with no caller,
+paths the change left dead, wrappers and single-use scaffolding, or fixes left in a
+caller: exorcist's `/exorcist:exorcise` (v0.7.0+) owns them. Run gauntlet without exorcist and nothing checks them.
 
 Two lanes need something beyond the code and stay silent without it: `product-reviewer`
 wants your PRODUCT.md, and `premortem-auditor` wants a pre-mortem register — plain

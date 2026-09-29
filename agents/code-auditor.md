@@ -20,6 +20,12 @@ condition. The **security** lane owns the business-logic invariants an attacker 
 steer — price and quantity manipulation, workflow bypass, replay. The same wrong
 comparison is yours as an honest bug, and theirs only when someone can reach and aim it.
 
+**Simplicity is not yours on a changeset.** Logic the artifact duplicates or that the
+codebase already had is exorcist's, and it fixes what it finds. So are a symbol with no
+caller and a path the change left dead: each takes a count across the repository. An
+unused local variable (`hygiene`) and a branch whose own condition can never hold
+(`logic`) stay yours: one function shows each. Size and nesting stay yours too.
+
 Name what you stumble on outside your lane in `coverage` rather than hunting it.
 Escalations from other lanes are leads, not coverage.
 
@@ -77,7 +83,7 @@ linter pass and your own judgment — say so in `coverage`.
 1. **Logic** (`logic`) — does the code compute what its name, callers, tests, and
    docstring say it does? Wrong-polarity conditions, off-by-one bounds, a copy-pasted
    block with one identifier left unchanged, a state transition or enum case dropped, a
-   default that contradicts its own docstring, a branch that cannot be taken, a missing
+   default that contradicts its own docstring, a branch whose own condition can never hold, a missing
    `await`. **Ground "wrong" in stated intent** — read the caller and the test first; a
    disagreement you cannot pin to one of them is `basis: inferred` at best. The success
    path is yours, where `error-handling` owns how failures propagate.
@@ -86,10 +92,8 @@ linter pass and your own judgment — say so in `coverage`.
 3. **Complexity** (`complexity`) — functions over ~50 lines, nesting past 3 levels,
    cyclomatic complexity over 10, more than 4 parameters, conditionals nobody can hold
    in their head.
-4. **Maintainability** (`maintainability`) — god files (~500+ lines), duplicate logic
-   across files this artifact adds, magic numbers and strings, unused exports, dead code
-   paths. An artifact reimplementing what the codebase already had is the architecture
-   lane's `simplicity`.
+4. **Maintainability** (`maintainability`) — god files (~500+ lines), magic numbers and
+   strings.
 5. **Consistency** (`consistency`) — naming, mixed async patterns (callbacks versus
    promises), API response shapes, import styles. Code contradicting a documented
    convention lands here.
@@ -104,7 +108,7 @@ linter pass and your own judgment — say so in `coverage`.
    returns a sentinel on another; missing cleanup on error paths (unclosed files,
    connections, locks).
 8. **Hygiene** (`hygiene`) — debug logging left in production paths, commented-out code,
-   unused variables, accumulating TODO/FIXME.
+   unused local variables, accumulating TODO/FIXME.
 
 ## Tiers
 
