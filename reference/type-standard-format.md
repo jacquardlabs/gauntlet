@@ -48,8 +48,10 @@ heading, then a table:
 ```
 
 - **Claim** is a kind of claim, described so a judge can tell whether a gap is one.
-  It is what defers — not a whole dimension. A `verifiability` gap in the product
-  success signal stays a finding even when per-step `verifiability` defers.
+  It is what defers — not a whole dimension. A PRD whose success signal names nothing
+  observable is still a `verifiability` finding when per-step `verifiability` defers;
+  whether the store that signal reads survives until it is read is a mechanism, and
+  defers with it.
 - **Would otherwise file under** names the dimensions the gap would have taken, one or
   more, from either lane. It tells a reader of the deferral where to look in the
   downstream document's review.

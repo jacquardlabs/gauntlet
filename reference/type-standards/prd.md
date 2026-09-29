@@ -24,4 +24,4 @@ technical design. Its sections are the ones `product-reviewer` quotes. The shape
 | The order scope items are built in, and which item produces what a later one consumes | `sequencing` |
 | How each scope item is shown to be done — its test, endpoint response, or rendered state | `verifiability` |
 | Changes to a published interface or contract the scope needs — an API, a protocol, a file format — and the version bump that carries them | `commitment` |
-| Where state lives and how long it survives — storage, caches, what a restart or a new run clears | `verifiability`, `simplicity` |
+| Where state lives and how long it survives — storage, caches, what a restart or a new run clears, and so whether a file the success signal reads is still there to read | `verifiability`, `simplicity` |
