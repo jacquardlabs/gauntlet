@@ -204,9 +204,9 @@ Two entrypoints under gauntlet's root are stable: `<root>/scripts/dispatch.py` a
 `${CLAUDE_PLUGIN_ROOT}`). `dispatch.py` emits one validated invocation per selected
 judge; a consumer may dispatch any subset of them and pass exactly that subset to
 `report.py --expect` — selection is the consumer's, and filtering the emitted array is
-how a second round narrows, so no flag exists for it. Exactly that subset: `--expect` reports every named judge that wrote nothing as a
-lane that did not report, so a roster wider than what was dispatched fails the run
-for lanes the consumer chose not to run.
+how a second round narrows, so no flag exists for it. Exactly that subset: `--expect`
+reports every named judge that wrote nothing as a lane that did not report, so a roster
+wider than what was dispatched fails the run for lanes the consumer chose not to run.
 
 Two uses of those entrypoints are pointed at from elsewhere, so they are named here.
 `report.py --format tally` emits the counts as JSON — tiers, register verdicts,
