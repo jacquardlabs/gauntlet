@@ -109,14 +109,15 @@ judges are reading.
 
 Selection, the standard mapping, and validation all live in code — a prompt cannot call
 a validator, and the contract requires the invocation be validated where it crosses the
-boundary:
+boundary. `$CONTEXT` is whichever of `CLAUDE.md`, `DESIGN.md` and `PRODUCT.md` exist in
+the tree being judged, comma-separated, plus any register below:
 
 ```bash
 git diff --name-only $BASE..$HEAD > <tmp>/paths.txt
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
   --base $BASE --head $HEAD ${PR:+--pr $PR} ${ROOT:+--root $ROOT} \
   --paths <tmp>/paths.txt \
-  --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
+  ${CONTEXT:+--context "$CONTEXT"} > <tmp>/invocations.json
 ```
 
 For a document, `--document <path>` replaces the shas and there is no `--paths` — a
@@ -129,7 +130,7 @@ assertion the script refuses when it disagrees with the artifact kind (#67):
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
   --document <path> \
-  --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
+  ${CONTEXT:+--context "$CONTEXT"} > <tmp>/invocations.json
 ```
 
 `falsifiability-auditor` and `trade-study-auditor` are ungated — each needs nothing
@@ -145,7 +146,7 @@ For a repository, `--ref` replaces the shas and `--paths` is the tracked files a
 git ls-tree -r --name-only $REF > <tmp>/paths.txt
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
   --ref $REF ${ROOT:+--root $ROOT} --paths <tmp>/paths.txt \
-  --context "CLAUDE.md,DESIGN.md,PRODUCT.md" > <tmp>/invocations.json
+  ${CONTEXT:+--context "$CONTEXT"} > <tmp>/invocations.json
 ```
 
 Mount is the only gate that fires here, and it selects the `posture` lanes. `--paths` is

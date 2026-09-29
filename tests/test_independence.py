@@ -579,6 +579,22 @@ def test_every_dispatch_block_passes_the_worktree_root():
         )
 
 
+def test_no_dispatch_block_hardcodes_the_context_files():
+    """§2 says to pass `--context` only the files that exist. A block that names a
+    fixed list invites a literal run to pass docs the project doesn't have."""
+    blocks = [
+        block
+        for block in re.findall(
+            r"```bash\n(.*?)```", (REPO / "commands/review.md").read_text(), re.DOTALL
+        )
+        if "dispatch.py" in block
+    ]
+    for block in blocks:
+        assert not re.search(r'--context\s+"[^$]', block), (
+            f"this dispatch block hardcodes its context files:\n{block}"
+        )
+
+
 def test_the_contract_names_the_entrypoints_the_command_calls():
     """The contract's "Consumer transport" names the stable script entrypoints and
     points at commands/review.md for the calls. A renamed script leaves the contract
