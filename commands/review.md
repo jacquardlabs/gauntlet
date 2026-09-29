@@ -129,11 +129,19 @@ them at a document yields inferred findings dressed as sourced ones, and `--moun
 assertion the script refuses when it disagrees with the artifact kind (#67):
 
 ```bash
-CONTEXT=$(cd "${ROOT:-.}" && ls CLAUDE.md DESIGN.md PRODUCT.md 2>/dev/null | paste -sd, -)
+DOCROOT=$(git rev-parse --show-toplevel)
+CONTEXT=$(cd "$DOCROOT" && ls CLAUDE.md DESIGN.md PRODUCT.md 2>/dev/null | paste -sd, -)
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/dispatch.py" \
-  --document <path> \
+  --document <path> --root "$DOCROOT" \
   ${CONTEXT:+--context "$CONTEXT"} > <tmp>/invocations.json
 ```
+
+A document gets no worktree, so its `--root` is the live repository it is judged
+against, not `${ROOT}`. The `--context` paths resolve against that root, and so does a
+relative `<path>`. A document that lives outside the repository, such as a PRD fetched
+to a scratch file, is named by absolute path. Without `--root`, `root` defaults to the
+working directory, so a session started anywhere else grounds the judges in the wrong
+project, or in none.
 
 `falsifiability-auditor` and `trade-study-auditor` are ungated — each needs nothing
 beyond the document — so every document run dispatches both; a document with no
