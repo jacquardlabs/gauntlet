@@ -249,6 +249,16 @@ the artifact without a direct citation; `taste` is preference, labelled as prefe
 never ranked above `track`. There are no confidence percentages, because a number would
 imply a precision nobody has.
 
+## Where it fits
+
+Issue to PR: build on a branch, run `/gauntlet:review`, fix the findings you judge real,
+then `/exorcist:exorcise <the issue>` before opening the PR. Gauntlet only judges — the
+fixes are yours or your agent's, and [exorcist](https://github.com/jacquardlabs/exorcist)
+owns whether the changeset is as simple as its issue allows. Upstream,
+[viva](https://github.com/jacquardlabs/viva) writes design docs and takes them through
+sign-off, and `/gauntlet:review <doc> --premortem` records the pre-mortem the built
+change is later checked against.
+
 ## Composition
 
 Gauntlet is judges plus thin consumers. Two consumers exist by design:
