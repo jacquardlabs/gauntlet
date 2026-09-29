@@ -243,8 +243,7 @@ def validate_findings(data: dict) -> None:
 def _validate_verdicts(verdicts: object) -> None:
     """One verdict per register item, NOT REALIZED and NOT EXERCISED included —
     the only place those are machine-readable, since they never become findings
-    (#88). A
-    repeated id would count one prediction twice in a hit rate."""
+    (#88). A repeated id would count one prediction twice in a hit rate."""
     if not isinstance(verdicts, list):
         raise ValueError("findings.verdicts must be a list")
     seen = set()

@@ -166,7 +166,7 @@ document surface is factored around that question, not around document types:
   swap: RFC templates, postmortem formats, launch checklists). Adding a document type
   is a standard plus a dispatch row, never an agent file.
 - **A bespoke lane is earned when the type changes what verification means**, not its
-  vocabulary. `premortem-auditor` clears the bar (register ids, three-verdict
+  vocabulary. `premortem-auditor` clears the bar (register ids, four-verdict
   semantics); `trade-study-auditor` does (`cell` locus, recommendation derived from
   the matrix — the contract pre-wired both); a deprecation plan, SLO doc, or runbook
   does not.
