@@ -83,21 +83,36 @@ At `high`, Sonnet made 72% of Opus's tool calls in 42% of its summed time. Run i
 | doc-auditor (`medium`) | 5 (1) | 4 (2) | — | **Sonnet loses** | Sonnet misses the confirmed `important` spec drift: §3 of `winnow-poc-design.md` still lists `unmappedHunkRefs` and `filePath?`, which `cartographer-output.ts` now says are deliberately absent. It also misses 3 `track` gaps in the REST table, DESIGN.md and PRODUCT.md. It adds a confirmed README layout omission (`packages/eval`), and reports that its own grep failed. |
 | dependency-auditor (`high`) | 2 (1) | 1 (0) | 3 (1) | **near parity** | Every run carries the deprecated `prebuild-install`. The subagent run drops the install-script allowlist and rates the main finding `track`. Opus ran osv.dev over all 40 added packages; Sonnet covered 17 and 22. |
 | ux-reviewer (`high`) | 7 (3) | 14 (5) | 10 (3) | **Sonnet at parity or better** | Both Sonnet runs carry all 3 of Opus's `important` findings (the banner stack covering headings, the remand error behind the backdrop, the reused status colors). The subagent run adds 2 confirmed extras: approve and remand have no clickable control, and `HunkDiff.tsx` uses the light-only `defaultHighlightStyle` under a dark palette. |
-| codebase-posture-auditor (`high`) | 6 (5) | 7 (3) | 5 (2) | **Sonnet loses** | Neither Sonnet run finds the UI diff parser that skips the C-quoted path decoding the daemon's parser does (`ui/src/diff.ts` uses `stripPrefix`, daemon uses `extractPath`), or the stale context docs. Neither runs `pnpm audit`, so both miss the 8 high advisories Opus reports through the locked `fastify@5.10.0`. The lock is confirmed; I didn't re-run the audit. |
+| codebase-posture-auditor (`high`) | 6 (5) | 7 (3) | 5 (2) | **Sonnet loses** | Neither Sonnet run finds the UI diff parser that skips the C-quoted path decoding the daemon's parser does (`ui/src/diff.ts` uses `stripPrefix`, daemon uses `extractPath`), or the stale context docs. Neither runs `pnpm audit`, though the prompt calls for "`osv-scanner`, `pip-audit`, or the repo's equivalent" (`codebase-posture-auditor.md:66`), so both miss the 8 high advisories Opus reports through the locked `fastify@5.10.0`. The lock is confirmed; I didn't re-run the audit. |
+
+Speed and tokens on this artifact (subagent runs, seconds / tokens):
+
+| Lane | Opus | Sonnet |
+|---|---|---|
+| infra-auditor | 27 / 19.0k | 10 / 14.8k |
+| frontend-reviewer | 78 / 51.3k | 31 / 39.2k |
+| doc-auditor | 83 / 42.8k | 24 / 22.4k |
+| dependency-auditor | 144 / 32.4k | 34 / 23.6k |
+| ux-reviewer | 64 / 51.1k | 111 / 56.5k |
+| codebase-posture-auditor | 328 / 61.8k | 91 / 43.6k |
+
+Sonnet `high` on ux was slower and used more tokens than Opus. At half the per-token price, it still costs about 55% of Opus.
 
 Run-to-run spread is large. Sonnet `high` filed 1 vs 3 dependency findings and 14 vs 10 ux findings across its two runs on the same input.
 
 ## Conclusion
 Across both artifacts, 2 lanes held parity every time:
 - **infra-auditor** at Sonnet `medium`: the same findings on both artifacts, in about half the time. Sonnet under-tiers them against Opus.
-- **ux-reviewer** at Sonnet `high`: parity on the small artifact, and parity or better on the large one in both harnesses.
+- **ux-reviewer** at Sonnet `high`: parity on the small artifact, and parity or better on the large one in both harnesses. It is not faster: 111s against Opus's 64s on the large artifact. The saving is cost alone, about 45%.
 
 The other 4 split:
 - **dependency-auditor** at `high` loses nothing checkable, but covers roughly half the packages Opus does. A supply-chain lane is judged by its sweep, so it stays on Opus.
 - **frontend-reviewer** and **doc-auditor** at `medium` reached near parity on the small artifact. On the large one each missed 1 confirmed `important` defect that needed a claim traced across files.
 - **codebase-posture-auditor** at `high` reached near parity on gauntlet, but on winnow it missed a real parser defect and never ran the lockfile audit.
 
-Effort explains part of the gap and scale the rest. Sonnet 5.5 holds on lanes that check a surface: CI config, visual and interaction patterns. It falls behind where a finding means following one value across two packages, or running a tool it wasn't told to run.
+Every verdict rests on 1 Opus run per lane per artifact, and Sonnet's own spread shows how far a single run can swing. Frontend and doc each turn on 1 missed finding, and neither was tested at Sonnet `high`.
+
+Effort explains part of the gap and scale the rest. Sonnet 5.5 holds on lanes that check a surface: CI config, visual and interaction patterns. It falls behind where a finding means following one value across two packages, or running the advisory scan its prompt calls for.
 
 ## Incidental findings on gauntlet itself
 All confirmed at `4448859`:
