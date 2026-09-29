@@ -86,6 +86,15 @@ CONTEXT_SIGNALS: Dict[str, str] = {
     "product-reviewer": r"PRODUCT\.md$",
 }
 
+#: The document types gauntlet ships a type standard for, keyed by the name a
+#: consumer passes as `--type`, valued by the file under `reference/`. A document
+#: is named, never sniffed, so the type is too; `--type` appends the standard to
+#: `context`, where the document lanes read it. A project's own standard for any
+#: type goes through `--context` instead — this table is only the ones gauntlet owns.
+TYPE_STANDARDS: Dict[str, str] = {
+    "prd": "type-standards/prd.md",
+}
+
 
 def plugin_version() -> str:
     try:
@@ -338,9 +347,17 @@ def main() -> int:
         "Not taken with --document: a document is one named path, never sniffed",
     )
     parser.add_argument("--context", default="", help="Comma-separated grounding docs")
+    parser.add_argument(
+        "--type",
+        choices=sorted(TYPE_STANDARDS),
+        help="With --document: the document's type, adding gauntlet's standard for it "
+        "to the context (reference/type-standard-format.md)",
+    )
     parser.add_argument("--receipts-path", help="Evidence log this run may cite")
     args = parser.parse_args()
 
+    if args.type and not args.document:
+        parser.error("--type names a document's type and needs --document")
     if args.document:
         if args.paths:
             parser.error("--document names the one path in scope and takes no --paths")
@@ -357,6 +374,8 @@ def main() -> int:
         return 1
 
     context = [c.strip() for c in args.context.split(",") if c.strip()]
+    if args.type:
+        context.append(str(REPO / "reference" / TYPE_STANDARDS[args.type]))
     try:
         artifact = build_artifact(
             args.ref, args.base, args.head, args.root, args.pr, args.document

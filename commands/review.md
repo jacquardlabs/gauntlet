@@ -143,6 +143,14 @@ to a scratch file, is named by absolute path. Without `--root`, `root` defaults 
 working directory, so a session started anywhere else grounds the judges in the wrong
 project, or in none.
 
+When the human names the document's type and gauntlet ships a standard for it, add
+`--type <type>`: the script appends that standard to `context`. `prd` is the one today
+(`reference/type-standards/prd.md`), and it defers the technical half — build order,
+per-step done-checks, interface changes, state lifetime — to the feature's tech spec, so
+those gaps come back as `track` findings headed `Deferred to tech-spec:` rather than as
+importants. A project's own standard for any type goes through `--context` instead.
+Never infer the type from the file: a document is named, never sniffed.
+
 `falsifiability-auditor` and `trade-study-auditor` are ungated — each needs nothing
 beyond the document — so every document run dispatches both; a document with no
 decision matrix costs the trade-study lane a self-skip, the roster's safe default.
