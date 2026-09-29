@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.17.5 (2026-09-29)
+
+### Bug Fixes
+
+- Carry the repository root on a document run so context resolves against the repo, not the cwd
+  ([#110](https://github.com/jacquardlabs/gauntlet/pull/110),
+  [`b778acc`](https://github.com/jacquardlabs/gauntlet/commit/b778acca34b31aba869c8a1413aa40c28ad0c224))
+
+
 ## v0.17.4 (2026-09-29)
 
 ### Bug Fixes
