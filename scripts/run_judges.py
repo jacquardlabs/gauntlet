@@ -24,12 +24,13 @@ exits 3 and writes nothing, and the caller falls back to its own transport —
 the like.
 
 Every session starts in an empty scratch directory, never in the tree it judges:
-a session started inside a PR's worktree — or inside the current checkout, when
-the invocation names no root — would load that tree's CLAUDE.md and `.claude/`
-settings, hooks included, as trusted project config. The tree (the invocation's
-`artifact.root`, else the working directory, as `dispatch.py` defaults it) is
-reached through `--add-dir` instead, which grants file access and
-loads neither. It does load the tree's `.claude/skills/`, so every session also
+a session started inside a PR's worktree or the current checkout would load that
+tree's CLAUDE.md and `.claude/` settings, hooks included, as trusted project
+config. The tree is reached through `--add-dir` instead, which grants file access
+and loads neither. So every invocation must carry an absolute `artifact.root`
+(`dispatch.py --root`): a missing one would default to the judge's working
+directory, which is now the empty scratch directory. The runner refuses the batch
+rather than guess. It does load the tree's `.claude/skills/`, so every session also
 runs with `--disable-slash-commands`: a judge needs no skill, and a PR's skill
 description would otherwise reach the judge as trusted context.
 
@@ -40,7 +41,6 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
-import os
 import subprocess
 import sys
 import tempfile
@@ -145,8 +145,7 @@ def run_one(
     """Run one judge from `workdir`; write its reply. Returns (judge, problem or None)."""
     judge = str(invocation["judge"])
     artifact = invocation.get("artifact")
-    root = artifact.get("root") if isinstance(artifact, dict) else None
-    root = str(Path(str(root or os.getcwd())).resolve())
+    root = str(artifact["root"])  # absolute, checked by run()
     try:
         proc = subprocess.run(
             command(claude, judge, tools, root, extra),
@@ -187,6 +186,16 @@ def run(
     unknown = sorted({str(i["judge"]) for i in invocations} - set(files))
     if unknown:
         raise ValueError(f"not a registered judge: {', '.join(unknown)}")
+    rootless = sorted(
+        str(i["judge"]) for i in invocations
+        if not isinstance(i.get("artifact"), dict)
+        or not Path(str(i["artifact"].get("root") or "")).is_absolute()
+    )
+    if rootless:
+        raise ValueError(
+            f"no absolute artifact.root for {', '.join(rootless)} — pass --root to "
+            "dispatch.py; a judge runs from an empty scratch directory"
+        )
     grants = {str(i["judge"]): declared_tools(files[str(i["judge"])]) for i in invocations}
     findings.mkdir(parents=True, exist_ok=True)
     # A lane that fails writes nothing, so a file left by an earlier run into the

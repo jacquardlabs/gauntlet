@@ -43,7 +43,8 @@ def _invocation(judge):
         "contract_version": 1,
         "judge": judge,
         "mount": "acceptance",
-        "artifact": {"kind": "changeset", "base": "a1b2c3d4e5f6", "head": "f6e5d4c3b2a1"},
+        "artifact": {"kind": "changeset", "base": "a1b2c3d4e5f6", "head": "f6e5d4c3b2a1",
+                     "root": str(REPO)},
         "standard": {"name": judge},
     }
 
@@ -159,32 +160,35 @@ def test_the_session_reaches_the_artifact_root_without_starting_in_it():
         cwd = Path((fake.parent / "security-auditor.cwd").read_text())
         assert cwd not in (Path(tmp).resolve(), tree.resolve()), cwd
         argv = json.loads((fake.parent / "security-auditor.argv").read_text())
-        assert argv[argv.index("--add-dir") + 1] == str(tree.resolve())
+        assert argv[argv.index("--add-dir") + 1] == str(tree)
         # --add-dir still loads the tree's .claude/skills/; only this flag keeps a
         # PR's skill out of the judge's context.
         assert "--disable-slash-commands" in argv
 
 
-def test_with_no_root_the_session_still_starts_outside_the_judged_checkout():
-    """With no artifact.root the judged tree is the working directory; starting the
-    session there would load its CLAUDE.md and hooks, so it is granted instead."""
+def test_an_invocation_without_an_absolute_root_is_refused_before_any_session():
+    """A judge runs from an empty scratch directory, so a missing or relative root
+    would point it at nothing; starting it in the checkout instead would load the
+    judged tree's CLAUDE.md and hooks. The runner refuses the batch."""
     with tempfile.TemporaryDirectory() as tmp:
         fake, invocations, findings = _setup(tmp, {
             "security-auditor": [0, json.dumps(_result(_doc("security-auditor")))],
         })
-        invocation = _invocation("security-auditor")
-        invocation["artifact"].pop("root", None)
-        invocations.write_text(json.dumps([invocation]))
-        subprocess.run(
-            [sys.executable, str(REPO / "scripts/run_judges.py"),
-             "--invocations", str(invocations), "--findings", str(findings),
-             "--claude", str(fake)],
-            capture_output=True, text=True, cwd=tmp,
-        )
-        cwd = Path((fake.parent / "security-auditor.cwd").read_text())
-        assert cwd != Path(tmp).resolve(), "session started inside the judged checkout"
-        argv = json.loads((fake.parent / "security-auditor.argv").read_text())
-        assert argv[argv.index("--add-dir") + 1] == str(Path(tmp).resolve())
+        for root in (None, "relative/tree"):
+            invocation = _invocation("security-auditor")
+            invocation["artifact"].pop("root", None)
+            if root:
+                invocation["artifact"]["root"] = root
+            invocations.write_text(json.dumps([invocation]))
+            proc = subprocess.run(
+                [sys.executable, str(REPO / "scripts/run_judges.py"),
+                 "--invocations", str(invocations), "--findings", str(findings),
+                 "--claude", str(fake)],
+                capture_output=True, text=True, cwd=tmp,
+            )
+            assert proc.returncode == 1, (root, proc.returncode, proc.stderr)
+            assert "absolute artifact.root" in proc.stderr, proc.stderr
+            assert not (fake.parent / "security-auditor.argv").exists(), "a session started"
 
 
 def test_an_empty_reply_is_a_lane_that_did_not_report():
