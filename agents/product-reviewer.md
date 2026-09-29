@@ -81,9 +81,10 @@ nothing to hold a feature to — and mark the rest `taste`.
    user's language or the developer's? "Invalid payload" versus "Something went wrong —
    try again."
 5. **What's missing** (`missing`) — anything a user would expect and cannot do? No undo,
-   no back, no confirmation before something destructive, a specced capability silently
-   dropped. Something built that nothing called for is not yours: exorcist traces each
-   hunk to the stated intent.
+   no back, no confirmation before something destructive.
+6. **Spec fidelity** (`spec-fidelity`) — compare what shipped against what was specced.
+   Something built that nothing called for, or a specced capability silently dropped —
+   both are findings.
 
 ## Tiers
 

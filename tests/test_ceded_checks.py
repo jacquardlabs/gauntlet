@@ -3,8 +3,8 @@
 
 Each ceded check is gone from its lane's rubric and output enum, and each lane names
 the boundary so it escalates rather than hunts; the README tells a consumer without
-exorcist what goes unchecked (#92). The intake mount is not a changeset:
-product-reviewer's intake `simplicity` stays. Self-running:
+exorcist what goes unchecked (#92). product-reviewer keeps `spec-fidelity`, and its
+intake `simplicity` stays. Self-running:
 `python3 tests/test_ceded_checks.py` prints OK.
 """
 import re
@@ -64,12 +64,11 @@ def test_code_separates_what_stays_from_what_exorcist_owns():
     assert "a symbol with no caller and a path the change left dead" in boundary
     assert "unused local variables" in " ".join(_section(text, "## What you check").split())
 
-def test_product_acceptance_cedes_spec_fidelity_but_keeps_dropped_capabilities():
+def test_product_acceptance_keeps_spec_fidelity():
+    # exorcist's trace passed an unrequested PRODUCT.md edit with the issue as intent
+    # (docs/verification/cede-simplicity-before-after-2026-09-27.md), so it stays here.
     acceptance = _section(_text("product-reviewer"), "## What you check at `acceptance`")
-    assert _checks(acceptance) == [
-        "delivers", "error-states", "journeys", "language", "missing",
-    ], _checks(acceptance)
-    assert "specced capability silently" in acceptance
+    assert "spec-fidelity" in _checks(acceptance), _checks(acceptance)
 
 
 def test_product_intake_keeps_simplicity():
@@ -78,9 +77,8 @@ def test_product_intake_keeps_simplicity():
 
 
 def test_each_ceding_lane_names_the_owner():
-    for judge in ("architecture-auditor", "code-auditor", "product-reviewer"):
+    for judge in ("architecture-auditor", "code-auditor"):
         assert "exorcist" in _text(judge), judge
-
 
 
 def test_readme_names_what_exorcist_owns_on_a_changeset():
