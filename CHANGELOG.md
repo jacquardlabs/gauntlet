@@ -2,6 +2,75 @@
 
 <!-- version list -->
 
+## v0.17.4 (2026-09-29)
+
+### Bug Fixes
+
+- Name package-manager audits in codebase-posture's advisory sweep
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+- Pass only existing context files in review's dispatch examples
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+- Pin CI actions to commit SHAs ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+- Say what an observed result means for read-only UI judges
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+- Scope the CI workflow token to contents: read
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+- Select prompt-auditor for prompt_templates/, *.prompt, and hooks.json
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+- Set CONTEXT inside each review dispatch block
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+### Documentation
+
+- Add large-artifact timings and restore the variance caveat
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+- Add the Sonnet 5.5 high-effort arm to the judge comparison
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+- Record the Sonnet 5.5 vs Opus 5.5 judge comparison
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+- Replicate the Sonnet 5.5 comparison on a larger artifact
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+- Scope the Sonnet comparison verdict to medium effort
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+### Performance Improvements
+
+- Run infra and ux judges on Sonnet 5.5, and fix judge-surface bugs
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+- Run infra-auditor on sonnet at medium and ux-reviewer on sonnet at high
+  ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+### Refactoring
+
+- Make the charter cell parser public ([#107](https://github.com/jacquardlabs/gauntlet/pull/107),
+  [`93f121d`](https://github.com/jacquardlabs/gauntlet/commit/93f121d51e601d0a8cb91916f0d0494a19dba40d))
+
+
 ## v0.17.3 (2026-09-29)
 
 ### Bug Fixes
