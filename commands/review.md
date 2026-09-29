@@ -175,7 +175,13 @@ before you build the invocations: `product-reviewer` needs the project's PRODUCT
 `premortem-auditor` needs a pre-mortem register for this work (`reference/premortem-format.md`
 is the shape; projects keep them wherever they keep them, often `docs/**/premortems/`).
 `CONTEXT` already holds PRODUCT.md when it exists; append a register to it,
-comma-separated. Before passing a register, run
+comma-separated. **"For this work" means the changeset adds or changes
+a mechanism at least one of the register's items predicts failing.** A feature register
+spans every child PR, and on a child that builds a different part of the feature it has
+nothing to verify: leave it out. A PR named in an item's scenario does not qualify on
+that alone — read what the diff touches, not what the register mentions. When the call
+is close, pass it: the judge marks each item whose mechanism the changeset does not
+touch NOT EXERCISED, which the hit rate leaves out. Before passing a register, run
 `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/schema.py" register <path>` and relay what it
 prints — those are the problems the judge would spend its run warning about. It is
 advice, not a gate: the lane dispatches either way. A project that keeps neither never pays for those two
@@ -235,9 +241,10 @@ means at least one lane did not report — pass that on; it is not a failure of 
 hide.
 
 When `premortem-auditor` ran, the report also prints its register tally — how many items
-came back REALIZED, NOT REALIZED, and CAN'T VERIFY. `--format tally` emits the same
-counts as data, with any verdict-mismatch notes, for a caller that aggregates a hit rate
-across runs; keeping that history is the caller's business, not this command's.
+came back REALIZED, NOT REALIZED, CAN'T VERIFY, and NOT EXERCISED. `--format tally`
+emits the same counts as data, with any verdict-mismatch notes, for a caller that
+aggregates a hit rate across runs; keeping that history is the caller's business, not
+this command's.
 
 Show the report. **Do not summarize it into a verdict of your own** — "3 critical, 2
 important" is the tally the compiler already printed; whether that ships is the human's
