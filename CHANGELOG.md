@@ -2,6 +2,43 @@
 
 <!-- version list -->
 
+## v0.17.3 (2026-09-29)
+
+### Bug Fixes
+
+- Keep product-reviewer's spec-fidelity, since exorcist's trace passed an unrequested edit
+  ([#95](https://github.com/jacquardlabs/gauntlet/pull/95),
+  [`aa98c1c`](https://github.com/jacquardlabs/gauntlet/commit/aa98c1c60358b64356c0e817a2fcf9ea988087d2))
+
+- State the hygiene/logic boundary and name what exorcist owns
+  ([#95](https://github.com/jacquardlabs/gauntlet/pull/95),
+  [`aa98c1c`](https://github.com/jacquardlabs/gauntlet/commit/aa98c1c60358b64356c0e817a2fcf9ea988087d2))
+
+### Documentation
+
+- Record the before/after on PR #94, and name every ceded check in the README
+  ([#95](https://github.com/jacquardlabs/gauntlet/pull/95),
+  [`aa98c1c`](https://github.com/jacquardlabs/gauntlet/commit/aa98c1c60358b64356c0e817a2fcf9ea988087d2))
+
+- Record the second before/after run, with issue #88 as exorcise's intent
+  ([#95](https://github.com/jacquardlabs/gauntlet/pull/95),
+  [`aa98c1c`](https://github.com/jacquardlabs/gauntlet/commit/aa98c1c60358b64356c0e817a2fcf9ea988087d2))
+
+- Rewrite studious references for its retirement, and state gauntlet's place in issue-to-PR
+  ([#104](https://github.com/jacquardlabs/gauntlet/pull/104),
+  [`1522934`](https://github.com/jacquardlabs/gauntlet/commit/1522934731f518fcd713a78c7e723012b57d8386))
+
+### Refactoring
+
+- Cede changeset simplicity and intent-fidelity checks to exorcist
+  ([#95](https://github.com/jacquardlabs/gauntlet/pull/95),
+  [`aa98c1c`](https://github.com/jacquardlabs/gauntlet/commit/aa98c1c60358b64356c0e817a2fcf9ea988087d2))
+
+- Cede changeset simplicity checks to exorcist
+  ([#95](https://github.com/jacquardlabs/gauntlet/pull/95),
+  [`aa98c1c`](https://github.com/jacquardlabs/gauntlet/commit/aa98c1c60358b64356c0e817a2fcf9ea988087d2))
+
+
 ## v0.17.2 (2026-09-29)
 
 ### Bug Fixes
