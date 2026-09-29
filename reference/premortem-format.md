@@ -52,15 +52,22 @@ what it needs and leaves the rest alone.
 ## What the verifier does with it
 
 Every item gets exactly one verdict: **NOT REALIZED** (positive evidence it did not
-happen), **REALIZED** (evidence it did, at `file:line`), or **CAN'T VERIFY** (not
-observable statically — and it says what manual check would settle it).
+happen), **REALIZED** (evidence it did, at `file:line`), **CAN'T VERIFY** (not
+observable statically — and it says what manual check would settle it), or
+**NOT EXERCISED** (the artifact neither adds nor changes the mechanism the item
+predicts failing, and nothing it does change realized the failure — it names what was
+searched for and not found). The last is what a
+feature register gets on a child PR that builds a different part of the feature: "the
+mechanism does not exist here" is not evidence the failure did not happen.
 
 Only items needing action become findings. An all-NOT-REALIZED register is the best
 possible result and reports as an empty findings list with a substantive coverage line.
 
-Every verdict, NOT REALIZED included, also comes back as data — the findings document's
-`verdicts` list (`docs/findings-contract.md` §4) — and `scripts/report.py --format tally`
-counts them, so a register's hit rate can be tracked across runs.
+Every verdict, NOT REALIZED and NOT EXERCISED included, also comes back as data — the
+findings document's `verdicts` list (`docs/findings-contract.md` §4) — and
+`scripts/report.py --format tally` counts each in its own key, so a register's hit rate
+can be tracked across runs. The hit rate is REALIZED over REALIZED plus NOT REALIZED;
+NOT EXERCISED and CAN'T VERIFY stay out of it, because neither tested the prediction.
 
 ## One thing the verifier will not do
 

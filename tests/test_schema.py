@@ -451,7 +451,9 @@ def _with_verdicts(*pairs):
 def test_verdicts_are_optional_and_valid_when_well_formed():
     schema.validate_findings(_findings_doc())
     schema.validate_findings(
-        _with_verdicts(("1", "REALIZED"), ("2", "NOT REALIZED"), ("3", "CAN'T VERIFY"))
+        _with_verdicts(
+            ("1", "REALIZED"), ("2", "NOT REALIZED"), ("3", "CAN'T VERIFY"), ("4", "NOT EXERCISED")
+        )
     )
     schema.validate_findings(_with_verdicts())
 

@@ -15,8 +15,10 @@ dispatched it.
 
 **What the evidence does not show.** No study shows this prevents failures in
 coding-agent work. The register's hit rate — REALIZED over REALIZED plus NOT REALIZED,
-from `scripts/report.py --format tally` — is how this repo finds out. Cut the lane if
-it stays near zero after about ten stories.
+from `scripts/report.py --format tally` — is how this repo finds out. NOT EXERCISED
+items stay out of it: a register riding a changeset that builds none of it tested no
+prediction, and counting those as NOT REALIZED would push the rate toward zero on
+noise. Cut the lane if it stays near zero after about ten stories.
 
 ## The frame every lens receives
 

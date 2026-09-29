@@ -903,7 +903,7 @@ def _register_run():
 
 def test_verdicts_are_counted_across_documents():
     assert report.verdict_counts(list(_register_run())) == {
-        "REALIZED": 1, "NOT REALIZED": 2, "CAN'T VERIFY": 1,
+        "REALIZED": 1, "NOT REALIZED": 2, "CAN'T VERIFY": 1, "NOT EXERCISED": 0,
     }
 
 
@@ -928,6 +928,37 @@ def test_verdicts_that_disagree_with_findings_are_named():
         _has(notes, "'2' is NOT REALIZED but a finding names it")
 
 
+def _unexercised_register():
+    """A feature register riding a child PR that builds none of it: every item
+    NOT EXERCISED, no findings — viva #246 with the #239 register."""
+    return _premortem(*((str(n), "NOT EXERCISED") for n in range(1, 9)))
+
+
+def test_an_unexercised_register_adds_nothing_to_the_hit_rate():
+    """The #239 register on viva #246 came back 8/8 NOT REALIZED because the
+    mechanisms did not exist there. Its own verdict keeps those 8 out of the
+    denominator (REALIZED plus NOT REALIZED) and raises no mismatch note."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _write(tmp, _unexercised_register())
+        code, out = _run("--findings", tmp, "--format", "tally")
+        assert code == 0, out
+        tally = json.loads(out)
+        assert tally["verdicts"] == {
+            "REALIZED": 0, "NOT REALIZED": 0, "CAN'T VERIFY": 0, "NOT EXERCISED": 8,
+        }
+        assert tally["verdict_mismatches"] == []
+        _, notes, _ = report.load(Path(tmp))
+        assert notes == [], notes
+
+
+def test_a_not_exercised_item_that_a_finding_names_is_a_mismatch():
+    """NOT EXERCISED never becomes a finding, same as NOT REALIZED."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _write(tmp, _premortem(("1", "NOT EXERCISED"), findings=[_finding(judge_dim="1")]))
+        _, notes, _ = report.load(Path(tmp))
+        _has(notes, "'1' is NOT EXERCISED but a finding names it")
+
+
 def test_markdown_prints_the_register_tally_only_when_one_was_judged():
     docs = list(_register_run())
     assert "Register: 1 REALIZED · 2 NOT REALIZED · 1 CAN'T VERIFY" in report.render_markdown(docs, [], [])
@@ -940,7 +971,9 @@ def test_cli_tally_format_emits_the_counts_as_json():
         code, out = _run("--findings", tmp, "--format", "tally")
         assert code == 0, out
         tally = json.loads(out)
-        assert tally["verdicts"] == {"REALIZED": 1, "NOT REALIZED": 2, "CAN'T VERIFY": 1}
+        assert tally["verdicts"] == {
+            "REALIZED": 1, "NOT REALIZED": 2, "CAN'T VERIFY": 1, "NOT EXERCISED": 0,
+        }
         assert tally["tiers"] == {"critical": 0, "important": 1, "track": 1}
         assert tally["judges"] == ["code-auditor", "premortem-auditor"]
         assert tally["failures"] == []
