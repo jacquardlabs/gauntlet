@@ -207,6 +207,9 @@ judge; a consumer may dispatch any subset of them and pass exactly that subset t
 how a second round narrows, so no flag exists for it. Exactly that subset: `--expect`
 reports every named judge that wrote nothing as a lane that did not report, so a roster
 wider than what was dispatched fails the run for lanes the consumer chose not to run.
+`report.py --invocations <file>` takes that dispatched subset as the array itself: its
+judges are the roster when `--expect` is absent, and its one artifact is what every
+document's echo must match and what a document artifact is read from.
 
 Two uses of those entrypoints are pointed at from elsewhere, so they are named here.
 `report.py --format tally` emits the counts as JSON — tiers, register verdicts,

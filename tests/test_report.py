@@ -270,14 +270,170 @@ def test_changeset_criticals_never_face_the_quote_rule():
         assert notes == []
 
 
+INVOKED = {"kind": "changeset", "base": "a1b2c3d4e5f6", "head": "f6e5d4c3b2a1"}
+
+
+def _typo(doc, head="f6e5d4c3b2aX"):
+    doc["artifact"] = {**doc["artifact"], "head": head}
+    return doc
+
+
+def _named(directory, *docs):
+    """Write each reply as `<judge>.json`, the name the consumer uses — so
+    sort order is the judges' own, as on a real run."""
+    for doc in docs:
+        (Path(directory) / f"{doc['judge']}.json").write_text(json.dumps(doc))
+
+
+_LANES = ("accessibility-auditor", "code-auditor", "doc-auditor", "security-auditor")
+
+
 def test_documents_must_agree_about_the_artifact():
+    """Checked against what was dispatched, not a peer: the failure says the
+    echo differs from the invocation and shows both values."""
     other = _doc("test-auditor")
     other["artifact"] = {"kind": "changeset", "base": "999999999999", "head": "888888888888"}
     with tempfile.TemporaryDirectory() as tmp:
         _write(tmp, _doc("security-auditor"), other)
-        docs, _, failures = report.load(Path(tmp))
+        docs, _, failures = report.load(Path(tmp), artifact=INVOKED)
         assert [d["judge"] for d in docs] == ["security-auditor"]
-        _has(failures, "judged a different artifact")
+        assert len(failures) == 1, failures
+        _has(failures, "differs from its invocation")
+        _has(failures, "999999999999..888888888888 echoed vs a1b2c3d4e5f6..f6e5d4c3b2a1")
+        assert not any("judged a different artifact than" in f for f in failures)
+
+
+def test_a_typo_in_the_first_sorted_lane_rejects_only_that_lane():
+    """The viva #203 shape, in the lane that sorts first: it used to become the
+    reference, rejecting every correct lane and titling the report with the typo."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _named(tmp, _typo(_doc(_LANES[0])), *(_doc(j) for j in _LANES[1:]))
+        docs, notes, failures = report.load(Path(tmp), list(_LANES), INVOKED)
+        assert sorted(d["judge"] for d in docs) == list(_LANES[1:])
+        assert len(failures) == 1, failures
+        _has(failures, "accessibility-auditor.json: echoed an artifact that differs")
+        _has(failures, "f6e5d4c3b2aX")
+        title = report.render_markdown(docs, notes, failures).splitlines()[0]
+        assert "a1b2c3d4e5f6..f6e5d4c3b2a1" in title, title
+
+
+def test_a_typo_past_the_short_form_still_shows_both_values():
+    with tempfile.TemporaryDirectory() as tmp:
+        doc = _doc()
+        doc["artifact"] = {**INVOKED, "head": INVOKED["head"] + "0"}
+        _write(tmp, doc)
+        _, _, failures = report.load(Path(tmp), artifact=INVOKED)
+        _has(failures, '"head": "f6e5d4c3b2a10"')
+        _has(failures, '"head": "f6e5d4c3b2a1"')
+
+
+def test_a_lane_that_wrote_a_document_is_never_reported_absent():
+    """Whatever else failed about the file, it exists — `wrote no findings
+    document` beside it is a second, false failure."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _named(tmp, _typo(_doc("security-auditor")))
+        (Path(tmp) / "code-auditor.json").write_text("{not json")
+        (Path(tmp) / "doc-auditor.json").write_text(json.dumps({"judge": "doc-auditor"}))
+        _, _, failures = report.load(
+            Path(tmp), ["security-auditor", "code-auditor", "doc-auditor"], INVOKED
+        )
+        assert len(failures) == 3, failures
+        assert not any("wrote no findings document" in f for f in failures), failures
+
+
+def test_a_stale_reply_in_a_reused_directory_still_fails():
+    """The case the check exists for: a reply from an earlier run over another
+    commit, under a lane this run dispatched."""
+    with tempfile.TemporaryDirectory() as tmp:
+        stale = _doc("test-auditor")
+        stale["artifact"] = {"kind": "changeset", "base": "000000000000", "head": "111111111111"}
+        _named(tmp, _doc("security-auditor"), stale)
+        docs, _, failures = report.load(
+            Path(tmp), ["security-auditor", "test-auditor"], INVOKED
+        )
+        assert [d["judge"] for d in docs] == ["security-auditor"]
+        _has(failures, "test-auditor.json: echoed an artifact that differs")
+
+
+def _reads(directory, invoked):
+    """`load` against `invoked`, plus every artifact it read a document from."""
+    read = []
+    real = report._document_text
+
+    def spy(artifact):
+        read.append(artifact)
+        return real(artifact)
+
+    report._document_text = spy
+    try:
+        return report.load(directory, artifact=invoked), read
+    finally:
+        report._document_text = real
+
+
+def test_a_document_echo_is_refused_and_never_read():
+    """The read is steered by what was dispatched, not by what the judge typed
+    back: an echoed path or root that differs is refused before any read."""
+    for field, value in (("path", "elsewhere.md"), ("root", "/elsewhere")):
+        with tempfile.TemporaryDirectory() as tmp:
+            dir_ = _document_run(tmp, 'Plan claims "a rollback in one step" untested')
+            invoked = {"kind": "document", "path": "plan.md", "root": tmp}
+            reply = dir_ / "0-product-reviewer.json"
+            doc = json.loads(reply.read_text())
+            doc["artifact"] = {**invoked, field: value}
+            reply.write_text(json.dumps(doc))
+            (docs, _, failures), read = _reads(dir_, invoked)
+            assert docs == [] and read == [], (field, read)
+            _has(failures, "differs from its invocation")
+
+
+def test_a_document_is_read_from_the_invocation():
+    with tempfile.TemporaryDirectory() as tmp:
+        dir_ = _document_run(tmp, 'Plan claims "a rollback in one step" untested')
+        invoked = {"kind": "document", "path": "plan.md", "root": tmp}
+        (docs, notes, failures), read = _reads(dir_, invoked)
+        assert read == [invoked]
+        assert docs[0]["findings"][0]["tier"] == "critical"
+        assert notes == [] and failures == []
+
+
+def test_without_invocations_the_majority_is_the_reference():
+    """No invocation to check against: anchored on what most lanes echo, never
+    on the first file, so a typo in the first-sorted lane still costs one lane."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _named(tmp, _typo(_doc(_LANES[0])), *(_doc(j) for j in _LANES[1:]))
+        docs, notes, failures = report.load(Path(tmp), list(_LANES))
+        assert sorted(d["judge"] for d in docs) == list(_LANES[1:])
+        assert len(failures) == 1, failures
+        _has(failures, "accessibility-auditor.json: judged a different artifact than the majority")
+        title = report.render_markdown(docs, notes, failures).splitlines()[0]
+        assert "f6e5d4c3b2a1" in title and "f6e5d4c3b2aX" not in title, title
+
+
+def test_without_invocations_a_split_with_no_majority_fails_every_lane():
+    with tempfile.TemporaryDirectory() as tmp:
+        _named(tmp, _doc("code-auditor"), _doc("doc-auditor"),
+               _typo(_doc("security-auditor")), _typo(_doc("test-auditor")))
+        docs, _, failures = report.load(Path(tmp))
+        assert docs == []
+        assert len(failures) == 4, failures
+        _has(failures, "no majority")
+        _has(failures, "2 judged a1b2c3d4e5f6..f6e5d4c3b2a1")
+        _has(failures, "2 judged a1b2c3d4e5f6..f6e5d4c3b2aX")
+
+
+def test_invocation_artifact_refuses_more_than_one_artifact():
+    one = {"contract_version": 1, "judge": "code-auditor", "mount": "acceptance",
+           "artifact": INVOKED, "standard": {"name": "code"}}
+    two = {**one, "judge": "doc-auditor", "artifact": {**INVOKED, "head": "000000000000"}}
+    artifact, judges = report.invocation_artifact([one, {**one, "judge": "doc-auditor"}])
+    assert artifact == INVOKED and judges == ["code-auditor", "doc-auditor"]
+    for bad in ([one, two], [], {"judge": "x"}, [{"judge": "x"}]):
+        try:
+            report.invocation_artifact(bad)
+        except ValueError:
+            continue
+        raise AssertionError(f"accepted {bad!r}")
 
 
 # ── merging across lanes ──────────────────────────────────────────────────────
@@ -679,6 +835,43 @@ def test_cli_pr_comments_format_emits_parseable_json():
         code, out = _run("--findings", tmp, "--format", "pr-comments")
         assert code == 0
         assert set(json.loads(out)) == {"summary", "comments"}
+
+
+def _invocations(tmp, *judges, artifact=None):
+    path = Path(tmp) / "invocations.json"
+    path.write_text(json.dumps([
+        {"contract_version": 1, "judge": j, "mount": "acceptance",
+         "artifact": artifact or INVOKED, "standard": {"name": j}}
+        for j in judges
+    ]))
+    return str(path)
+
+
+def test_cli_checks_replies_against_the_invocations():
+    with tempfile.TemporaryDirectory() as tmp:
+        findings = Path(tmp) / "findings"
+        findings.mkdir()
+        _named(findings, _typo(_doc("code-auditor")), _doc("security-auditor"))
+        inv = _invocations(tmp, "code-auditor", "security-auditor", "test-auditor")
+        code, out = _run("--findings", str(findings), "--invocations", inv)
+        assert code == 1
+        assert "code-auditor.json: echoed an artifact that differs" in out
+        assert "test-auditor: dispatched but wrote no findings document" in out, (
+            "the invocations supply the roster"
+        )
+        assert "code-auditor: dispatched but wrote no" not in out
+        assert out.startswith("# Gauntlet — changeset a1b2c3d4e5f6..f6e5d4c3b2a1"), out
+
+
+def test_cli_refuses_unusable_invocations():
+    with tempfile.TemporaryDirectory() as tmp:
+        _write(tmp, _doc())
+        bad = Path(tmp) / "bad.txt"
+        bad.write_text("[]")
+        code, _ = _run("--findings", tmp, "--invocations", str(bad))
+        assert code == 1
+        code, _ = _run("--findings", tmp, "--invocations", str(Path(tmp) / "missing"))
+        assert code == 1
 
 
 def test_cli_rejects_a_missing_or_empty_directory():

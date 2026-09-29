@@ -215,20 +215,22 @@ after unwrapping is a lane that did not report, exactly as before.
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/report.py" \
-  --findings <tmp>/findings \
-  --expect "$(python3 -c 'import json,sys; print(",".join(i["judge"] for i in json.load(open(sys.argv[1]))))' <tmp>/invocations.json)"
+  --findings <tmp>/findings --invocations <tmp>/invocations.json
 ```
 
-`--expect` is what lets the compiler see a judge that died before writing anything:
-without it, absence is indistinguishable from a lane with no findings. It reads the
-reverse too — a document from a lane this run never dispatched, which is what a reused
-scratch directory leaves behind.
+`--invocations` gives the compiler what was dispatched, which it uses twice. The judges
+it names are the roster, which is what lets the compiler see a judge that died before
+writing anything: without it, absence is indistinguishable from a lane with no findings.
+It reads the reverse too — a document from a lane this run never dispatched, which is what
+a reused scratch directory leaves behind. And the artifact it names is the reference every
+reply's echo is checked against, and the one a document is read from: a judge that
+mistyped a sha fails its own lane, never its peers'.
 
 It validates every document at the boundary, applies the ingest rules (anchor-or-demote,
 quote-or-demote on a document artifact, taste-caps-at-track), names everything it changed
 or could not check — a demotion, an unwrapped fence, a quote check skipped because the
-document could not be read — checks the documents agree about which
-artifact they judged, orders findings most-severe-first, and renders. A non-zero exit
+document could not be read — checks each document echoes the artifact its invocation
+dispatched, orders findings most-severe-first, and renders. A non-zero exit
 means at least one lane did not report — pass that on; it is not a failure of the run to
 hide.
 
@@ -250,7 +252,7 @@ carry.
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/report.py" --findings <tmp>/findings \
-  --format pr-comments > <tmp>/review.json
+  --invocations <tmp>/invocations.json --format pr-comments > <tmp>/review.json
 ```
 
 `report.py` does the noise work itself, so you do not have to: findings naming the same

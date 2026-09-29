@@ -28,7 +28,7 @@ import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import schema
@@ -44,7 +44,9 @@ TIER_LABEL = {
 
 
 def load(
-    directory: Path, expected: Optional[List[str]] = None
+    directory: Path,
+    expected: Optional[List[str]] = None,
+    artifact: Optional[dict] = None,
 ) -> Tuple[List[dict], List[str], List[str]]:
     """Read every findings document in `directory`.
 
@@ -56,12 +58,26 @@ def load(
     only see documents that exist, so a judge that died before writing anything
     is invisible — the report would simply not mention that lane, which reads
     exactly like a lane with no findings. With it, absence is a failure like any
-    other.
+    other. A lane that wrote a file is never reported absent, whatever else
+    failed about that file: the failure already names it, and a second line
+    saying it wrote nothing is false.
 
-    Documents are also held to agreeing about the artifact. A directory reused
-    across runs, or one judge re-dispatched after a new commit, otherwise yields
-    a report titled with one span while carrying findings graded against
-    another — and PR comments anchored to lines that moved.
+    `artifact` is the one the caller dispatched — the invocations' own. Every
+    document must echo it exactly, and a document artifact's text is read from
+    it, never from the echo: the echo is the judge retyping what it was given,
+    so it is the thing being checked, not the authority to check against. An
+    echo that differs is a lane that did not report — never repaired. A
+    directory reused across runs, or one judge re-dispatched after a new commit,
+    otherwise yields a report titled with one span while carrying findings
+    graded against another — and PR comments anchored to lines that moved.
+
+    Without `artifact` the documents are held to agreeing with each other,
+    anchored on the artifact a strict majority of them echo — never on whichever
+    file sorts first, which let one lane's typo reject every other lane. With no
+    strict majority there is nothing to anchor on, and every lane fails.
+
+    Either way, every document returned echoes one artifact, so a renderer may
+    read the run's artifact from any of them.
 
     Every accommodation this boundary makes lands in the returned notes. The
     accommodations are deliberate — a code fence is unwrapped, an unreadable
@@ -72,8 +88,14 @@ def load(
     documents: List[dict] = []
     notes: List[str] = []
     failures: List[str] = []
+    wrote: Set[str] = set()
+    parsed: List[Tuple[Path, dict, bool]] = []
 
     for path in sorted(directory.glob("*.json")):
+        # `<judge>.json` is the name the consumer writes a reply under
+        # (commands/review.md §3), so a file whose contents name no judge still
+        # names one here.
+        wrote.add(path.stem)
         try:
             raw = path.read_text(encoding="utf-8")
         except (OSError, ValueError) as exc:
@@ -112,20 +134,30 @@ def load(
                 )
                 continue
             unfenced = True
+        if isinstance(data, dict) and isinstance(data.get("judge"), str):
+            wrote.add(data["judge"])
         try:
             schema.validate_findings(data)
         except ValueError as exc:
             failures.append(f"{path.name}: does not satisfy the findings contract — {exc}")
             continue
-        text, unread = _document_text(data["artifact"])
-        normalized, doc_notes = schema.normalize_findings(data, text, unread)
-        if documents and normalized["artifact"] != documents[0]["artifact"]:
+        parsed.append((path, data, unfenced))
+
+    reference, disagreement = (
+        (artifact, None) if artifact is not None else _majority_artifact(parsed)
+    )
+    for path, data, unfenced in parsed:
+        if data["artifact"] != reference:
             failures.append(
-                f"{path.name}: judged a different artifact than "
-                f"{documents[0]['judge']} did — {_artifact_id(normalized['artifact'])} "
-                f"vs {_artifact_id(documents[0]['artifact'])}"
+                f"{path.name}: {disagreement}"
+                if disagreement
+                else f"{path.name}: {_echo_mismatch(data['artifact'], reference, artifact is not None)}"
             )
             continue
+        # Read from the reference, not the echo — equal here, but the reference
+        # is what was dispatched, and the read is steered by nothing else.
+        text, unread = _document_text(reference)
+        normalized, doc_notes = schema.normalize_findings(data, text, unread)
         documents.append(normalized)
         notes.extend(_verdict_notes(normalized))
         if unfenced:
@@ -138,7 +170,7 @@ def load(
     reported = {doc["judge"] for doc in documents}
     failures.extend(
         f"{judge}: dispatched but wrote no findings document"
-        for judge in sorted(set(expected or []) - reported)
+        for judge in sorted(set(expected or []) - wrote)
     )
     if expected:
         # The mirror of the line above, and the same reasoning: without a roster
@@ -152,6 +184,64 @@ def load(
         )
 
     return documents, notes, failures
+
+
+def _majority_artifact(
+    parsed: List[Tuple[Path, dict, bool]],
+) -> Tuple[Optional[dict], Optional[str]]:
+    """The artifact a strict majority of documents echo, or `(None, why)` when
+    none does. Only reached when the caller passed no invocation artifact."""
+    tally = Counter(json.dumps(data["artifact"], sort_keys=True) for _, data, _ in parsed)
+    if not tally:
+        return None, None
+    top, n = tally.most_common(1)[0]
+    if n * 2 > len(parsed):
+        return json.loads(top), None
+    split = ", ".join(
+        f"{count} judged {_artifact_id(json.loads(key))}" for key, count in tally.most_common()
+    )
+    return None, (
+        f"the lanes split over which artifact they judged, with no majority to "
+        f"anchor on ({split}) — pass --invocations to check each against what "
+        "was dispatched"
+    )
+
+
+def _echo_mismatch(echo: dict, reference: dict, dispatched: bool) -> str:
+    """Why a document's artifact was refused, with both values shown in full
+    enough to tell apart — a sha typo past the twelfth character is invisible
+    in the short form."""
+    shown, expected = _artifact_id(echo), _artifact_id(reference)
+    if shown == expected:
+        shown = json.dumps(echo, sort_keys=True)
+        expected = json.dumps(reference, sort_keys=True)
+    if dispatched:
+        return (
+            f"echoed an artifact that differs from its invocation — {shown} "
+            f"echoed vs {expected} dispatched"
+        )
+    return (
+        f"judged a different artifact than the majority of lanes did — "
+        f"{shown} vs {expected}"
+    )
+
+
+def invocation_artifact(invocations: object) -> Tuple[dict, List[str]]:
+    """The one artifact a run's invocations dispatched, and the judges they
+    dispatched it to. Raises `ValueError` when the invocations are malformed or
+    name more than one artifact — a report compiles one run over one artifact,
+    and `dispatch.py` writes the same artifact into every invocation."""
+    if not isinstance(invocations, list) or not invocations:
+        raise ValueError("invocations must be a non-empty JSON array")
+    for invocation in invocations:
+        schema.validate_invocation(invocation)
+    artifacts = _distinct(json.dumps(i["artifact"], sort_keys=True) for i in invocations)
+    if len(artifacts) > 1:
+        raise ValueError(
+            "invocations name more than one artifact — "
+            + ", ".join(_artifact_id(json.loads(a)) for a in artifacts)
+        )
+    return invocations[0]["artifact"], [i["judge"] for i in invocations]
 
 
 #: A fence line: three or more backticks, optionally an info string (```json).
@@ -693,6 +783,15 @@ def main() -> int:
             "document are reported as lanes that did not report."
         ),
     )
+    parser.add_argument(
+        "--invocations",
+        default="",
+        help=(
+            "The invocations.json this run dispatched. Each document must echo "
+            "its artifact, and a document artifact is read from it. Supplies "
+            "the --expect roster when --expect is not given."
+        ),
+    )
     args = parser.parse_args()
 
     directory = Path(args.findings)
@@ -701,7 +800,17 @@ def main() -> int:
         return 1
 
     expected = [j.strip() for j in args.expect.split(",") if j.strip()]
-    documents, notes, failures = load(directory, expected)
+    artifact = None
+    if args.invocations:
+        try:
+            artifact, dispatched = invocation_artifact(
+                json.loads(Path(args.invocations).read_text(encoding="utf-8"))
+            )
+        except (OSError, ValueError) as exc:
+            print(f"gauntlet: unusable --invocations {args.invocations}: {exc}", file=sys.stderr)
+            return 1
+        expected = expected or dispatched
+    documents, notes, failures = load(directory, expected, artifact)
     if not documents and not failures:
         print(f"gauntlet: no findings documents in {directory}", file=sys.stderr)
         return 1
