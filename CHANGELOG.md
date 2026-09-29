@@ -2,6 +2,34 @@
 
 <!-- version list -->
 
+## v0.17.2 (2026-09-29)
+
+### Bug Fixes
+
+- Remove bin/gauntlet so claude.ai, Cowork, and org sync can install gauntlet
+  ([#103](https://github.com/jacquardlabs/gauntlet/pull/103),
+  [`eedaf82`](https://github.com/jacquardlabs/gauntlet/commit/eedaf82b3d03b706c591beffd5e6f4c5111fd6b8))
+
+### Chores
+
+- Remove studious references ([#99](https://github.com/jacquardlabs/gauntlet/pull/99),
+  [`c07b69f`](https://github.com/jacquardlabs/gauntlet/commit/c07b69fdd99af195dbdca152d12e4552b3ca6a6e))
+
+### Documentation
+
+- Rewrap the consumer-transport paragraph
+  ([#103](https://github.com/jacquardlabs/gauntlet/pull/103),
+  [`eedaf82`](https://github.com/jacquardlabs/gauntlet/commit/eedaf82b3d03b706c591beffd5e6f4c5111fd6b8))
+
+- Scope the no-bin/ channels to what the docs name, and pin the rejection text
+  ([#97](https://github.com/jacquardlabs/gauntlet/pull/97),
+  [`dd4ad8e`](https://github.com/jacquardlabs/gauntlet/commit/dd4ad8e1701aaf275d51ff2891c3c0291113307d))
+
+- State consumer discovery for installs without bin/ on PATH
+  ([#97](https://github.com/jacquardlabs/gauntlet/pull/97),
+  [`dd4ad8e`](https://github.com/jacquardlabs/gauntlet/commit/dd4ad8e1701aaf275d51ff2891c3c0291113307d))
+
+
 ## v0.17.1 (2026-09-27)
 
 ### Bug Fixes
