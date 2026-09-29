@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Every GitHub Actions step is pinned to a commit SHA (release.yml states the policy).
+"""Workflow hygiene: actions pinned to commit SHAs (release.yml states the policy), token scoped.
 
 Self-running: `python3 tests/test_workflows.py` prints OK.
 """
@@ -20,6 +20,17 @@ def test_every_action_is_pinned_to_a_commit_sha():
     assert refs, "no workflow steps found"
     floating = [f"{name}: {ref}" for name, ref in refs if not PINNED.match(ref)]
     assert not floating, f"actions on a mutable ref: {floating}"
+
+
+def test_every_workflow_scopes_its_token():
+    """Without a `permissions:` block GITHUB_TOKEN gets the repository default,
+    which may be write-all."""
+    unscoped = [
+        path.name
+        for path in sorted(WORKFLOWS.glob("*.yml"))
+        if not re.search(r"^\s*permissions:", path.read_text(encoding="utf-8"), re.MULTILINE)
+    ]
+    assert not unscoped, f"workflows with no permissions block: {unscoped}"
 
 
 def main():
