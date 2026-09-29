@@ -72,10 +72,32 @@ At `high`, Sonnet made 72% of Opus's tool calls in 42% of its summed time. Run i
 | prompt-posture-auditor | 8 (2) / 5 (0) | **Sonnet loses** | Sonnet still misses both confirmed important findings (the signal-list gap and the observed-anchor conflict) and files nothing above `track`. Its "eleven lanes" vs 14 claim is probably not a defect: the charter says eleven lanes "whose standards read code". |
 | interface-posture-reviewer | 17 (11) / 10 (6) | **Sonnet loses** | Sonnet still misses the critical zoom-receipt defect. It also misses the unmapped bucket shown 3 ways, the claim labels on edges, and approve-without-claims. It now carries the zod-500 and duplicated-guard findings. |
 
-## Conclusion
-Effort explains about half the gap. At `high`, Sonnet 5.5 reaches parity on dependency and ux and near parity on codebase-posture, still in under half Opus's time. No false statements were found. It still loses on accessibility, prompt-posture and interface-posture. Those are the lanes where finding a defect means tracing one behavior across files or surfaces: focus after an unmount, a regex list against a checklist table, a key binding into a receipt.
+## Replication on a larger artifact
+- **Artifact:** the 6 parity candidates reran on winnow `7bd9ba7..9120a04`: 62 commits, 128 files, +8,935/-995, touching CI, 3 manifests plus the lockfile, 13 tsx/css files and 9 docs. Codebase-posture judged winnow at `9120a04`, about 13k lines across 4 packages.
+- **Arms:** infra, frontend and doc ran on Opus and on Sonnet `medium`, all as subagents. Dependency, ux and codebase-posture ran on Opus and on Sonnet `high`. Sonnet `high` ran twice, once headless and once as a subagent: this session loaded the temporary agents only after the headless batch had started. The subagent run shares Opus's harness.
 
-Across both arms, 6 lanes reached parity or near parity (infra, frontend and doc at `medium`; dependency, ux and codebase-posture at `high`), and 3 stayed with Opus. Every verdict is one sample on one artifact, so run-to-run variance is unmeasured. The migration candidates need a second artifact before any frontmatter changes.
+| Lane | Opus | Sonnet (subagent) | Sonnet (headless) | Verdict | Evidence |
+|---|---|---|---|---|---|
+| infra-auditor (`medium`) | 2 (2) | 2 (0) | — | **parity** | The same 2 findings, missing `permissions` and a floating tag. Opus rates both `important`, Sonnet `track`. |
+| frontend-reviewer (`medium`) | 7 (4) | 6 (2) | — | **Sonnet loses** | Both carry the swallowed `/diff` failure, the oversized App component and the stale keydown deps. Sonnet misses a confirmed `important` defect: `handleIngest` selects `concerns[0]` of an `ingesting` snapshot the daemon creates with `concerns: []` (`App.tsx:202`, `server.ts:189`), so nothing is selected and the concern list has no Tab stop. |
+| doc-auditor (`medium`) | 5 (1) | 4 (2) | — | **Sonnet loses** | Sonnet misses the confirmed `important` spec drift: §3 of `winnow-poc-design.md` still lists `unmappedHunkRefs` and `filePath?`, which `cartographer-output.ts` now says are deliberately absent. It also misses 3 `track` gaps in the REST table, DESIGN.md and PRODUCT.md. It adds a confirmed README layout omission (`packages/eval`), and reports that its own grep failed. |
+| dependency-auditor (`high`) | 2 (1) | 1 (0) | 3 (1) | **near parity** | Every run carries the deprecated `prebuild-install`. The subagent run drops the install-script allowlist and rates the main finding `track`. Opus ran osv.dev over all 40 added packages; Sonnet covered 17 and 22. |
+| ux-reviewer (`high`) | 7 (3) | 14 (5) | 10 (3) | **Sonnet at parity or better** | Both Sonnet runs carry all 3 of Opus's `important` findings (the banner stack covering headings, the remand error behind the backdrop, the reused status colors). The subagent run adds 2 confirmed extras: approve and remand have no clickable control, and `HunkDiff.tsx` uses the light-only `defaultHighlightStyle` under a dark palette. |
+| codebase-posture-auditor (`high`) | 6 (5) | 7 (3) | 5 (2) | **Sonnet loses** | Neither Sonnet run finds the UI diff parser that skips the C-quoted path decoding the daemon's parser does (`ui/src/diff.ts` uses `stripPrefix`, daemon uses `extractPath`), or the stale context docs. Neither runs `pnpm audit`, so both miss the 8 high advisories Opus reports through the locked `fastify@5.10.0`. The lock is confirmed; I didn't re-run the audit. |
+
+Run-to-run spread is large. Sonnet `high` filed 1 vs 3 dependency findings and 14 vs 10 ux findings across its two runs on the same input.
+
+## Conclusion
+Across both artifacts, 2 lanes held parity every time:
+- **infra-auditor** at Sonnet `medium`: the same findings on both artifacts, in about half the time. Sonnet under-tiers them against Opus.
+- **ux-reviewer** at Sonnet `high`: parity on the small artifact, and parity or better on the large one in both harnesses.
+
+The other 4 split:
+- **dependency-auditor** at `high` loses nothing checkable, but covers roughly half the packages Opus does. A supply-chain lane is judged by its sweep, so it stays on Opus.
+- **frontend-reviewer** and **doc-auditor** at `medium` reached near parity on the small artifact. On the large one each missed 1 confirmed `important` defect that needed a claim traced across files.
+- **codebase-posture-auditor** at `high` reached near parity on gauntlet, but on winnow it missed a real parser defect and never ran the lockfile audit.
+
+Effort explains part of the gap and scale the rest. Sonnet 5.5 holds on lanes that check a surface: CI config, visual and interaction patterns. It falls behind where a finding means following one value across two packages, or running a tool it wasn't told to run.
 
 ## Incidental findings on gauntlet itself
 All confirmed at `4448859`:
