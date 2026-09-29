@@ -612,6 +612,46 @@ def test_the_cli_reaches_every_mount_the_contract_defines():
     )
 
 
+# ── a document type selects gauntlet's standard for it ───────────────────────
+def test_every_type_standard_resolves_to_a_shipped_file():
+    for name, rel in dispatch.TYPE_STANDARDS.items():
+        assert (REPO / "reference" / rel).is_file(), f"--type {name} names {rel}"
+
+
+def test_cli_type_adds_the_standard_to_every_document_lane_s_context():
+    proc = subprocess.run(
+        [sys.executable, str(REPO / "scripts/dispatch.py"),
+         "--document", "docs/prd.md", "--type", "prd", "--context", "PRODUCT.md"],
+        capture_output=True, text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+    built = json.loads(proc.stdout)
+    standard = str(REPO / "reference" / "type-standards" / "prd.md")
+    for invocation in built:
+        schema.validate_invocation(invocation)
+        assert invocation["context"] == ["PRODUCT.md", standard], invocation["context"]
+
+
+def test_cli_refuses_a_type_without_a_document():
+    proc = subprocess.run(
+        [sys.executable, str(REPO / "scripts/dispatch.py"),
+         "--ref", "HEAD", "--paths", "-", "--type", "prd"],
+        capture_output=True, text=True, input="",
+    )
+    assert proc.returncode == 2
+    assert "needs --document" in proc.stderr
+
+
+def test_cli_refuses_a_type_gauntlet_ships_no_standard_for():
+    proc = subprocess.run(
+        [sys.executable, str(REPO / "scripts/dispatch.py"),
+         "--document", "docs/rfc.md", "--type", "rfc"],
+        capture_output=True, text=True,
+    )
+    assert proc.returncode == 2
+    assert "invalid choice" in proc.stderr
+
+
 def main():
     tests = [
         (name, fn)

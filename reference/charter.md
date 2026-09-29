@@ -164,7 +164,10 @@ document surface is factored around that question, not around document types:
   one gauntlet owns in `reference/` (the premortem pattern) or one the consumer
   supplies through `context` (the product-reviewer pattern — anything an org would
   swap: RFC templates, postmortem formats, launch checklists). Adding a document type
-  is a standard plus a dispatch row, never an agent file.
+  is a standard plus a dispatch row, never an agent file. A standard adds what its type
+  must commit to, and may name what it defers to a downstream document of the same
+  work — declared in the standard, never in the judged document, and reported rather
+  than dropped (`reference/type-standard-format.md`).
 - **A bespoke lane is earned when the type changes what verification means**, not its
   vocabulary. `premortem-auditor` clears the bar (register ids, four-verdict
   semantics); `trade-study-auditor` does (`cell` locus, recommendation derived from

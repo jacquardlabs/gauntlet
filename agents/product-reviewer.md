@@ -69,6 +69,15 @@ nothing to hold a feature to — and mark the rest `taste`.
    "No measurable surface" with a one-line reason satisfies this; silence does not. A
    number with no tie to the job is a vanity metric, and also a finding.
 
+**A type standard in `context` can scope what you check at intake.** Its `## Defers to`
+section names a downstream document of the same work and the kinds of claim that belong
+there (`reference/type-standard-format.md`, "Deferral") — a PRD defers where state lives
+and what a new run clears to its tech spec. A gap whose substance is a listed claim is
+filed at `track` with its summary beginning `Deferred to <type>:`, and `coverage` names
+the receiving type and the count. Only the standard defers — the proposal saying "the
+spec will cover this" defers nothing — and the seven checks above hold at full weight
+for everything it does not list.
+
 ## What you check at `acceptance` — judging what was built
 
 1. **Does it deliver** (`delivers`) — walk the feature as a user would. Not "does the code
@@ -139,7 +148,7 @@ prose around it, no code fence. It is the findings document from
       "receipts": ["sha256:… — only if the invocation carried receipts_path"]
     }
   ],
-  "coverage": "2-3 sentences: which mount you answered, the personas, principles, and journeys you judged against and where they are stated (or that none are), what you walked and found sound, and limitations — nothing was run, so experience claims are reasoned from source."
+  "coverage": "2-3 sentences: which mount you answered, the personas, principles, and journeys you judged against and where they are stated (or that none are), what you walked and found sound, how many gaps a type standard deferred and to which type, and limitations — nothing was run, so experience claims are reasoned from source."
 }
 ```
 

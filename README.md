@@ -194,9 +194,13 @@ inclined to wave through.
 Plans and migration plans need nothing beyond the file. Design docs, RFCs, postmortems,
 experiment designs, and ADRs ride the same lane with a type standard your project
 supplies as context — what a postmortem must commit to (action items with owners) is
-not what an experiment design must (a stopping rule stated before it runs). Adding a
-document type is a standard, never a new judge — unless the type changes what
-verification means, which is what earns the second lane:
+not what an experiment design must (a stopping rule stated before it runs). A standard
+can also defer: gauntlet's PRD standard (`--type prd`) sends build order, per-step
+done-checks, and interface changes to the feature's tech spec, and the lanes list those
+gaps as deferred instead of filing them against the PRD
+(`reference/type-standard-format.md`). Adding a document type is a standard, never a
+new judge — unless the type changes what verification means, which is what earns the
+second lane:
 
 `trade-study-auditor` fires when the document decides by comparison — named options
 scored against criteria, a recommendation claiming to follow. It checks that every
