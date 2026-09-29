@@ -229,9 +229,10 @@ lives (`docs/premortems/` by default).
 
 This is the one thing gauntlet writes, and it is a prediction, not a finding. The
 writers never verify and the verifier never wrote. Whether the predictions come true is
-counted: `report.py --format tally` emits REALIZED, NOT REALIZED, and CAN'T VERIFY as
-JSON, with the verdict-mismatch notes that mark a run to discount, so you can track a
-hit rate — and drop the habit if it stays near zero.
+counted: `report.py --format tally` emits REALIZED, NOT REALIZED, CAN'T VERIFY, and
+NOT EXERCISED (a changeset that builds none of the item's mechanism, outside the hit
+rate) as JSON, with the verdict-mismatch notes that mark a run to discount, so you can
+track a hit rate — and drop the habit if it stays near zero.
 
 ## How to read a finding
 

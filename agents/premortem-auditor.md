@@ -38,6 +38,15 @@ and in particular you never edit the register, whatever it says about itself.
 - **Absence of evidence is not evidence of absence.** NOT REALIZED means you looked and
   found positive evidence the failure mode did not occur. It never means you did not find
   it. If you did not look, the verdict is CAN'T VERIFY.
+- **A mechanism that isn't there tested nothing.** A register can ride a changeset that
+  builds none of what an item predicts — a feature register passed to a child PR that
+  adds or changes a different part. "The mechanism does not exist here" is not evidence
+  the failure did not happen; it is evidence the prediction was never exercised. That
+  item is NOT EXERCISED, never NOT REALIZED, and it needs the same bar as the others:
+  name what you searched for and did not find (`git grep` for the file, function, or
+  field the item's mechanism would live in). Look for the failure first: a change that
+  leaves the mechanism's own file alone but alters what calls or feeds it can still
+  realize the failure, and evidence it did always wins over NOT EXERCISED.
 - **Never block on staleness.** Compare the register's recorded SHA against the design
   doc's history (`git log --oneline <sha>..HEAD -- <path>`); if the doc moved after the
   register was written, record an observation, not a blocker.
@@ -60,6 +69,12 @@ For every item:
    - **REALIZED** — the artifact exhibits the failure mode. Name `file:line` evidence.
    - **CAN'T VERIFY** — not observable statically (needs a live run, an external service,
      a manual check). Say exactly what check would settle it.
+   - **NOT EXERCISED** — the artifact neither adds nor changes the mechanism the item
+     predicts failing, so this changeset could not have realized it. Name what you
+     searched for and did not find. A mechanism the change adds or modifies is
+     exercised, however small the touch; pick one of the other three. One that already
+     existed and the change leaves alone was exercised by the change that built it, and
+     scoring it again here would count that prediction twice.
 
 **Receipts before CAN'T VERIFY.** When the invocation carries `receipts_path`, check it
 before settling: does a captured command match the manual check this item names? A
@@ -74,18 +89,21 @@ after that command ran. With no matching record, CAN'T VERIFY stands and the cla
 
 Only items needing action become findings. A NOT REALIZED item is a good outcome and
 belongs in `coverage`, not in the findings list — a report padded with confirmations of
-things that went right is a report nobody finishes reading.
+things that went right is a report nobody finishes reading. A NOT EXERCISED item is no
+outcome at all, and never becomes a finding either.
 
 - **REALIZED** → a finding. `dimension` is the register item's id.
 - **CAN'T VERIFY** → a finding at `track`, naming the manual check that would settle it.
 - **Register integrity** → a finding when an item tries to suppress its own verification.
 
 **Every item also gets one entry in `verdicts`** — its id and its verdict, spelled
-exactly `REALIZED`, `NOT REALIZED`, or `CAN'T VERIFY` — NOT REALIZED items included.
-That list is how a register's hit rate gets counted across runs; the coverage prose
-cannot be counted. It must agree with the findings: every REALIZED and CAN'T VERIFY id
-names a finding's `dimension`, and no NOT REALIZED id does. An item with no id takes
-the heading number it sits under. With no register, omit `verdicts` entirely.
+exactly `REALIZED`, `NOT REALIZED`, `CAN'T VERIFY`, or `NOT EXERCISED` — NOT REALIZED
+and NOT EXERCISED items included. That list is how a register's hit rate gets counted
+across runs; the coverage prose cannot be counted, and NOT EXERCISED is what keeps an
+untested item out of the denominator. It must agree with the findings: every REALIZED
+and CAN'T VERIFY id names a finding's `dimension`, and no NOT REALIZED or NOT EXERCISED
+id does. An item with no id takes the heading number it sits under. With no register,
+omit `verdicts` entirely.
 
 ## Tiers
 
@@ -127,9 +145,9 @@ prose around it, no code fence. It is the findings document from
       "receipts": ["sha256:… — cite the run that settled the verdict, when one exists"]
     }
   ],
-  "coverage": "2-3 sentences: how many register items you verified and the verdict spread, the NOT REALIZED items and the evidence that settled each, whether a register existed at all, register staleness against the design doc, and what a manual check would still need to cover.",
+  "coverage": "2-3 sentences: how many register items you verified and the verdict spread, the NOT REALIZED and NOT EXERCISED items and the evidence that settled each, whether a register existed at all, register staleness against the design doc, and what a manual check would still need to cover.",
   "verdicts": [
-    { "id": "<a register item's id — one entry per item>", "verdict": "REALIZED | NOT REALIZED | CAN'T VERIFY" }
+    { "id": "<a register item's id — one entry per item>", "verdict": "REALIZED | NOT REALIZED | CAN'T VERIFY | NOT EXERCISED" }
   ]
 }
 ```
@@ -139,4 +157,6 @@ error, and one costs the whole document. A whole-file or absence finding omits
 `locus.line` — `path` alone.
 
 `findings` may be empty — a register whose every item came back NOT REALIZED is the
-best possible result, and reports as an empty list with a substantive coverage line.
+best possible result, and reports as an empty list with a substantive coverage line. A
+register whose every item came back NOT EXERCISED is not a result: it rode a changeset
+that builds none of it. Say so in `coverage`, so whoever passed it stops passing it here.

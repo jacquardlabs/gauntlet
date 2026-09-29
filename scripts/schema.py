@@ -33,9 +33,15 @@ BASES = ("sourced", "inferred", "taste")
 LEVELS = ("high", "medium", "low")
 MOUNTS = ("intake", "acceptance", "posture")
 ARTIFACT_KINDS = ("changeset", "document", "repository")
-#: The three verdicts `premortem-auditor` gives a register item, spelled as
-#: `reference/premortem-format.md` spells them.
-REGISTER_VERDICTS = ("REALIZED", "NOT REALIZED", "CAN'T VERIFY")
+#: The four verdicts `premortem-auditor` gives a register item, spelled as
+#: `reference/premortem-format.md` spells them. NOT EXERCISED is an item whose
+#: mechanism the artifact does not add or change — a register riding a changeset
+#: that builds none of it — so it tested no prediction and sits outside the hit
+#: rate, where NOT REALIZED would have inflated the denominator.
+REGISTER_VERDICTS = ("REALIZED", "NOT REALIZED", "CAN'T VERIFY", "NOT EXERCISED")
+#: The verdicts that never become a finding. Every other verdict does, with the
+#: item's id as the finding's `dimension`.
+UNFILED_VERDICTS = ("NOT REALIZED", "NOT EXERCISED")
 
 
 # ── Shapes (documentation-only TypedDicts) ────────────────────────────────────
@@ -86,7 +92,7 @@ class Finding(TypedDict, total=False):
 
 class Verdict(TypedDict):
     id: str        # the register item's id
-    verdict: str   # "REALIZED" | "NOT REALIZED" | "CAN'T VERIFY"
+    verdict: str   # "REALIZED" | "NOT REALIZED" | "CAN'T VERIFY" | "NOT EXERCISED"
 
 
 class FindingsDocument(TypedDict, total=False):
@@ -235,9 +241,9 @@ def validate_findings(data: dict) -> None:
 
 
 def _validate_verdicts(verdicts: object) -> None:
-    """One verdict per register item, NOT REALIZED included — the only place
-    those are machine-readable, since they never become findings (#88). A
-    repeated id would count one prediction twice in a hit rate."""
+    """One verdict per register item, NOT REALIZED and NOT EXERCISED included —
+    the only place those are machine-readable, since they never become findings
+    (#88). A repeated id would count one prediction twice in a hit rate."""
     if not isinstance(verdicts, list):
         raise ValueError("findings.verdicts must be a list")
     seen = set()

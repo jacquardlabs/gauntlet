@@ -446,7 +446,9 @@ def counts(findings: List[dict]) -> Dict[str, int]:
 def verdict_counts(documents: List[dict]) -> Optional[Dict[str, int]]:
     """Register verdicts across every document that carried them, zero-filled, or
     `None` when none did — no register judged is not a register with zero hits,
-    and a hit rate averaged over both would be a number about nothing."""
+    and a hit rate averaged over both would be a number about nothing. Each
+    verdict keeps its own key: NOT EXERCISED sits outside the hit rate's
+    denominator, which is REALIZED plus NOT REALIZED."""
     carried = [d["verdicts"] for d in documents if "verdicts" in d]
     if not carried:
         return None
@@ -458,8 +460,8 @@ def _verdict_notes(doc: dict) -> List[str]:
     """Where a document's verdicts and its findings disagree.
 
     A REALIZED or CAN'T VERIFY item becomes a finding whose `dimension` is its
-    id; a NOT REALIZED one never does. A tally that disagrees with the findings
-    beside it is one of the two misreporting, and a hit rate built on it
+    id; a NOT REALIZED or NOT EXERCISED one never does. A tally that disagrees
+    with the findings beside it is one of the two misreporting, and a hit rate built on it
     inherits whichever one lied — so the disagreement is named, never repaired.
     """
     dimensions = {f["dimension"] for f in doc["findings"]}
@@ -468,11 +470,11 @@ def _verdict_notes(doc: dict) -> List[str]:
         f"{judge}: verdict-mismatch: register item {v['id']!r} is {v['verdict']} "
         + (
             "but no finding names it"
-            if v["verdict"] != "NOT REALIZED"
+            if v["verdict"] not in schema.UNFILED_VERDICTS
             else "but a finding names it"
         )
         for v in doc.get("verdicts", [])
-        if (v["id"] in dimensions) == (v["verdict"] == "NOT REALIZED")
+        if (v["id"] in dimensions) == (v["verdict"] in schema.UNFILED_VERDICTS)
     ]
 
 
