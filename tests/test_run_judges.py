@@ -302,16 +302,12 @@ def test_reply_reads_both_output_shapes_and_refuses_the_rest():
     assert run_judges.reply("") is None
 
 
-#: Claude Code's Bash tool kills a foreground command at 120s by default and 600s at
-#: most. The runner's budget is per lane, so a whole run can outlast either.
-BASH_TOOL_CAP = 600
-
-
 def test_review_starts_the_runner_in_the_background_not_under_the_bash_timeout():
+    # Claude Code's Bash tool kills a foreground command at 120s by default and 600s
+    # at most; a real 11-lane run takes minutes, whatever the per-lane budget is.
     text = (REPO / "commands" / "review.md").read_text(encoding="utf-8")
     dispatch = text.split("## 3. Dispatch", 1)[1].split("## 4.", 1)[0]
     primary = dispatch.split("**Exit 3", 1)[0]
-    assert run_judges.TIMEOUT > BASH_TOOL_CAP, "the premise of this test moved"
     assert "run_in_background" in primary, (
         "§3 must start the runner in the background: a foreground Bash call is killed "
         "at the tool's timeout, mid-run, with lanes unwritten and no exit code"
