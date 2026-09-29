@@ -59,14 +59,15 @@ PATH_SIGNALS: Dict[str, List[str]] = {
     # the lane it gates is the one that reads that table, so a signal list
     # narrower than the standard drops the lane instead of running it.
     "prompt-auditor": [
-        r"(^|/)(agents|prompts|skills|commands|reference|output-styles)/",
+        r"(^|/)(agents|prompts|prompt_templates|skills|commands|reference|output-styles)/",
         r"(^|/)(CLAUDE|AGENTS|SKILL|GEMINI)\.md$",
         r"(^|/)\.claude/",
         r"(^|/)\.cursorrules$",
         r"(^|/)\.cursor/rules/",
         r"(^|/)copilot-instructions\.md$",
         r"(^|/)system_prompt\.",
-        r"\.prompt\.md$",
+        r"\.prompt(\.md)?$",
+        r"(^|/)hooks/hooks\.json$",
     ],
     "accessibility-auditor": [
         r"\.(tsx|jsx|vue|svelte|html|hbs|erb|css|scss|sass|less)$",

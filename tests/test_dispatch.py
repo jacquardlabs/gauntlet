@@ -185,6 +185,21 @@ def test_path_signals_drop_a_lane_the_artifact_cannot_touch():
     assert [j["judge"] for j in chosen] == ["accessibility-auditor"]
 
 
+def test_prompt_signals_cover_the_checklist_signature_table():
+    """One path per file shape in reference/prompt-checklist.md's signature table.
+    A shape the signals miss drops prompt-auditor for a changeset touching only it."""
+    judges = [_judge("prompt-auditor")]
+    for path in [
+        "agents/a.md", "commands/c.md", "skills/s/SKILL.md", "hooks/hooks.json",
+        "output-styles/o.md", "reference/r.md", ".claude/agents/a.md", "CLAUDE.md",
+        "pkg/CLAUDE.md", "AGENTS.md", ".cursorrules", ".cursor/rules/r.mdc",
+        ".github/copilot-instructions.md", "GEMINI.md", "prompts/p.txt",
+        "prompt_templates/system.md", "system_prompt.txt", "greet.prompt",
+        "greet.prompt.md",
+    ]:
+        assert dispatch.selected(judges, [path], "acceptance"), path
+
+
 def test_a_judge_not_declaring_the_mount_is_never_selected():
     judges = [_judge("security-auditor", mounts="`acceptance`")]
     assert dispatch.selected(judges, ["a.py"], "intake") == []
