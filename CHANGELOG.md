@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.17.6 (2026-09-29)
+
+### Bug Fixes
+
+- Check each reply's artifact against its invocation, not the first-sorted lane
+  ([#108](https://github.com/jacquardlabs/gauntlet/pull/108),
+  [`b37787e`](https://github.com/jacquardlabs/gauntlet/commit/b37787e145a5ae92b38d89e104f23614d3690f53))
+
+
 ## v0.17.5 (2026-09-29)
 
 ### Bug Fixes
