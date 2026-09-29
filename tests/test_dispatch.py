@@ -549,6 +549,36 @@ def test_a_document_run_never_pays_for_the_tree_check():
         assert proc.returncode == 0, proc.stderr
 
 
+def test_a_document_outside_the_repo_carries_the_repo_as_root():
+    """A document that lives outside the repository it describes (a PRD fetched
+    to a scratch file) is judged against that repository: the invocation names
+    the repository as `root`, so repo-relative `context` resolves against it,
+    and names the document by absolute path, so it does not.
+
+    The root is deliberately not a git repository and the run starts elsewhere:
+    a document gets no worktree, so it never pays for the tree check.
+    """
+    with tempfile.TemporaryDirectory() as repo, tempfile.TemporaryDirectory() as away:
+        doc = Path(away) / "prd.md"
+        doc.write_text("# PRD\n")
+        proc = subprocess.run(
+            [sys.executable, str(REPO / "scripts/dispatch.py"),
+             "--document", str(doc), "--root", repo,
+             "--context", "CLAUDE.md,PRODUCT.md"],
+            capture_output=True, text=True, cwd=away,
+        )
+        assert proc.returncode == 0, proc.stderr
+        built = json.loads(proc.stdout)
+        assert built, "a document run dispatches at least the ungated lanes"
+        for invocation in built:
+            schema.validate_invocation(invocation)
+            assert invocation["artifact"] == {
+                "kind": "document", "path": str(doc), "root": repo,
+            }
+            assert Path(invocation["artifact"]["path"]).is_absolute()
+            assert invocation["context"] == ["CLAUDE.md", "PRODUCT.md"]
+
+
 def test_the_cli_reaches_every_mount_the_contract_defines():
     """Mount is derived from the artifact kind, never picked by the consumer, so
     a mount no kind defaults to is a mount no entrypoint reaches without an

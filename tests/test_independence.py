@@ -560,9 +560,10 @@ def test_every_dispatch_block_passes_the_worktree_root():
     block that drops `--root` spends the checkout and then judges whatever is on
     disk, which is the failure the worktree was added to prevent (#28).
 
-    A document run is the one exemption, ruled in §1 — it names one file and
-    builds no worktree, so it has no root to pass and the human's working
-    directory is the right default.
+    A document run builds no worktree but passes `--root` all the same: its root
+    is the repository the judges ground in, and its `--context` paths resolve
+    against it. Exempting it left the judges grounded in whatever directory the
+    session started in, and a PRD living outside the repo resolved no context.
     """
     blocks = [
         block
@@ -573,7 +574,7 @@ def test_every_dispatch_block_passes_the_worktree_root():
     ]
     assert blocks, "commands/review.md shows no dispatch call at all"
     for block in blocks:
-        assert "--root" in block or "--document" in block, (
+        assert "--root" in block, (
             f"this dispatch block never passes --root, so its judges read the "
             f"working directory rather than the tree §1 resolved:\n{block}"
         )
