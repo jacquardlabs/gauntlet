@@ -39,3 +39,31 @@ Before #95 ceded "code nothing asked for", that half needed one of two changes, 
 - run exorcise with the issue as its intent source.
 
 This is n=1: one changeset, one run per side.
+## Second run: issue #88 as intent
+
+**Result: #89's done-means is not met.** Both findings the removed checks used to catch are still lost when exorcise takes issue #88 as its intent.
+
+**Method:** I read `exorcise-94-issue.json` (intent = issue #88's 7 claims, scope `b958b78..c9e7f06`, 34 hunks, report-only). I checked each lost finding against the diff in `m94` and against the first run's `exorcise-94.json` (intent = PR #94 body).
+
+| Finding (removed check) | Where it lives | Run 1 (PR #94 body) | Run 2 (issue #88) | Why |
+|---|---|---|---|---|
+| arch `simplicity` (track): the 5-to-8 bound is stated twice | `scripts/schema.py:386` `GENERATED_ITEMS = (5, 8)`; `reference/premortem-lenses.md:72` "between five and eight items" | LOST | **LOST** | No applied or held entry names either location. A value repeated across code and prose isn't a pattern any of the four lanes (trace, abstraction, threshold, deletion) looks for, so a different intent can't bring it back. |
+| product `spec-fidelity` (important): the PRODUCT.md non-goal was rewritten without being asked for | `PRODUCT.md:19-20` (+2/-1 in the diff) | LOST | **LOST** | PRODUCT.md is in the diff. No claim covers it, yet `out_of_intent_files` lists only `commands/review.md`, and trace raised no revert or hold on it. Even with the issue as intent, trace let the edit through. |
+
+Findings that are new compared with run 1 (run 1's only finding was the abstraction inline of `_verdict_line`, which run 2 also has):
+
+| Lane | Action | Location | Finding |
+|---|---|---|---|
+| trace | revert | `commands/review.md:165-168` | A pre-dispatch register lint that no claim asks for. `commands/review.md` is flagged out of intent. |
+| trace | hold (unmet claim) | claim 1 | `--premortem` on an issue body has no route: §0 reads a bare number as a PR, and §1/§6 take only a committed file path. |
+
+**Counts:** 2 lost findings checked: 0 carried, 2 lost. 2 new findings (1 revert, 1 held unmet claim). 1 finding shared with run 1 (inline `_verdict_line`).
+
+Running exorcise on the issue does make the trace lane sharper than running it on the PR body. It caught an out-of-intent hunk in `commands/review.md` and an unmet claim, and run 1 found neither. But #89's second done-means item says a before/after run must show "no lost finding that exorcise's report doesn't carry", and two findings are still lost:
+
+- **The simplicity finding:** This is outside exorcist's lanes by construction, so no choice of intent will recover it. Either `architecture-auditor` keeps a narrow "one value, one source" check, or exorcist gets a lane for it (for example under jacquardlabs/exorcist#11).
+- **The spec-fidelity finding:** trace passed over an unrequested edit to PRODUCT.md even with the issue as intent. That is a gap in how trace decides what is out of intent, and it needs fixing in exorcist before product-reviewer's spec-fidelity half can go.
+
+Until one of those happens, #95 should not claim #89's done-means is met.
+
+The run itself completed. Report JSON kept out of tree.
