@@ -91,7 +91,7 @@ def test_an_empty_reply_file_is_a_lane_that_did_not_report():
         docs, _, failures = report.load(Path(tmp), ["security-auditor", "test-auditor"])
         assert [d["judge"] for d in docs] == ["security-auditor"]
         _has(failures, "test-auditor.json: could not be read as JSON")
-        _has(failures, "test-auditor: dispatched but wrote no findings document")
+        assert sum("test-auditor" in f for f in failures) == 1, failures
 
 
 def test_a_judge_that_wrote_nothing_is_a_failure_not_an_absence():
