@@ -18,9 +18,16 @@ Two rules this holds rather than restates:
   written, and `report.py --expect` names the lane as one that wrote nothing.
 
 Runtime dependency: the `claude` CLI on PATH (or `--claude`). Without it this
-exits 2 and writes nothing, and the caller falls back to its own transport —
+exits 3 and writes nothing, and the caller falls back to its own transport —
 `commands/review.md` §3 names that path. Anything after `--` is passed to every
-`claude` call unchanged: `--plugin-dir`, `--settings`, and the like.
+`claude` call unchanged: `--plugin-dir`, `--settings`, `--disallowedTools`, and
+the like.
+
+Every session starts in the caller's working directory, never in the tree it
+judges: a session started inside a PR's worktree would load that tree's
+CLAUDE.md and `.claude/` settings — hooks included — as trusted project config.
+The tree is reached through `--add-dir` instead, which grants file access and
+loads nothing.
 
 Standard library only, 3.9-compatible: this ships to consuming projects.
 """
@@ -48,8 +55,12 @@ INSTRUCTION = (
     "nothing else. The invocation follows."
 )
 
-#: Exit status when the CLI cannot be found, distinct from a lane failing.
-NO_CLI = 2
+#: Exit status when the CLI cannot be found — distinct from a lane failing (1)
+#: and from an argparse usage error (2).
+NO_CLI = 3
+
+#: Seconds before a judge is abandoned, so one hung session cannot stall the run.
+TIMEOUT = 1800.0
 
 
 def prompt(invocation: Dict[str, object]) -> str:
@@ -71,7 +82,13 @@ def declared_tools(agent_file: Path) -> List[str]:
     return tools
 
 
-def command(claude: str, judge: str, tools: Sequence[str], extra: Sequence[str]) -> List[str]:
+def command(
+    claude: str,
+    judge: str,
+    tools: Sequence[str],
+    root: Optional[str],
+    extra: Sequence[str],
+) -> List[str]:
     return [
         claude,
         "-p",
@@ -82,6 +99,7 @@ def command(claude: str, judge: str, tools: Sequence[str], extra: Sequence[str])
         "--no-session-persistence",
         "--allowedTools",
         ",".join(tools),
+        *(["--add-dir", root] if root else []),
         *extra,
     ]
 
@@ -117,15 +135,12 @@ def run_one(
 ) -> Tuple[str, Optional[str]]:
     """Run one judge; write its reply. Returns (judge, problem or None)."""
     judge = str(invocation["judge"])
-    # The session starts in the tree it judges: `artifact.root` when the consumer
-    # built a worktree, so its file tools reach that tree without an extra grant.
     artifact = invocation.get("artifact")
     root = artifact.get("root") if isinstance(artifact, dict) else None
     try:
         proc = subprocess.run(
-            command(claude, judge, tools, extra),
+            command(claude, judge, tools, root, extra),
             input=prompt(invocation),
-            cwd=root or None,
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -140,7 +155,10 @@ def run_one(
     if proc.returncode != 0 or text is None:
         detail = (proc.stderr.strip() or proc.stdout.strip())[-500:]
         return judge, f"exited {proc.returncode} with no reply: {detail}"
-    (findings / f"{judge}.json").write_bytes(text.encode("utf-8"))
+    try:
+        (findings / f"{judge}.json").write_bytes(text.encode("utf-8"))
+    except OSError as exc:
+        return judge, f"replied, but the reply could not be written: {exc}"
     return judge, None
 
 
@@ -160,6 +178,10 @@ def run(
         raise ValueError(f"not a registered judge: {', '.join(unknown)}")
     grants = {str(i["judge"]): declared_tools(files[str(i["judge"])]) for i in invocations}
     findings.mkdir(parents=True, exist_ok=True)
+    # A lane that fails writes nothing, so a file left by an earlier run into the
+    # same directory would read as this run's reply. Clear each lane's file first.
+    for judge in grants:
+        (findings / f"{judge}.json").unlink(missing_ok=True)
     with ThreadPoolExecutor(max_workers=max(1, jobs)) as pool:
         outcomes = list(
             pool.map(
@@ -185,7 +207,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument(
         "--jobs", type=int, default=0, help="Judges run at once; 0 means all of them"
     )
-    parser.add_argument("--timeout", type=float, help="Seconds before a judge is abandoned")
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=TIMEOUT,
+        help=f"Seconds before a judge is abandoned (default {TIMEOUT:g})",
+    )
     args = parser.parse_args(argv)
 
     claude = shutil.which(args.claude)
@@ -196,8 +223,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             file=sys.stderr,
         )
         return NO_CLI
-    invocations = json.loads(Path(args.invocations).read_text(encoding="utf-8"))
     try:
+        invocations = json.loads(Path(args.invocations).read_text(encoding="utf-8"))
+        if not isinstance(invocations, list) or not all(
+            isinstance(i, dict) and "judge" in i for i in invocations
+        ):
+            raise ValueError(
+                f"{args.invocations}: not a list of invocations, each naming its judge"
+            )
         problems = run(
             invocations,
             Path(args.findings),
@@ -206,8 +239,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             args.jobs or len(invocations),
             args.timeout,
         )
-    except ValueError as exc:
-        print(f"gauntlet: {exc}", file=sys.stderr)
+    except (OSError, ValueError) as exc:
+        print(f"gauntlet: no judge was run — {exc}", file=sys.stderr)
         return 1
     for line in problems:
         print(f"gauntlet: {line}", file=sys.stderr)

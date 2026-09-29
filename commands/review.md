@@ -209,16 +209,32 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_judges.py" \
   --invocations <tmp>/invocations.json --findings <tmp>/findings
 ```
 
-Relay what it prints. A lane it names as failed wrote nothing, and §4 reports it as a
-lane that did not report; do not re-run it. Two things to know about the sessions it
-starts. Each is granted exactly the tools its agent file declares, without a permission
-prompt. And each loads your own Claude Code settings, plugins, and hooks, the same as any
-`claude -p` you would start. A plugin or hook that changes how the model phrases its
-replies, such as one that stamps a timestamp on each message, changes every judge's reply.
-That lane then fails to parse and is reported, which is the right outcome, but every
-lane goes with it. To turn such a plugin off for the judge sessions only, pass flags after
-`--`, and the runner forwards them to every `claude` call unchanged. `--plugin-dir`
-works the same way, for a gauntlet loaded from a directory:
+Relay what it prints. A lane it names as failed (the session errored, or ran past the
+30-minute `--timeout`) wrote nothing, and §4 reports it as a lane that did not report; do
+not re-run it. **Exit 1 with no lane named means no judge ran** (an unreadable
+invocations file, an unregistered judge): relay the error and stop. Do not fall back and
+do not go on to §4.
+
+What the sessions it starts can do:
+
+- **Each is granted exactly the tools its agent file declares, with no per-call
+  permission prompt.** Every judge declares `Bash`, so every judge can run shell
+  unprompted. The in-session `Task` path runs under your own permission mode, which may
+  prompt. To take shell away from the judges on a run you do not trust, forward
+  `--disallowedTools Bash`. Those lanes then judge with file tools alone.
+- **Each starts in your working directory, never in the tree it judges.** The worktree
+  is reached through `--add-dir`, which grants file access and loads nothing from it.
+  A PR's own CLAUDE.md or `.claude/` hooks are therefore never loaded as trusted config.
+- **Each loads your own Claude Code settings, plugins, and hooks**, the same as any
+  `claude -p` you would start. A plugin or hook that changes how the model phrases its
+  replies, such as one that stamps a timestamp on each message, changes every judge's
+  reply. Every lane then fails to parse and is reported as not reporting. That is the
+  correct outcome, but it costs the whole run.
+
+Anything after `--` is forwarded to every `claude` call unchanged. Use it to turn such a
+plugin off for the judge sessions only, to withhold shell, or to pass `--plugin-dir` for
+a gauntlet loaded from a directory. That directory must be the one this runner lives
+in, because the runner reads each judge's grant from its own `agents/`:
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_judges.py" \
@@ -226,7 +242,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_judges.py" \
   -- --settings '{"enabledPlugins": {"<plugin>@<marketplace>": false}}'
 ```
 
-**Exit 2 means the `claude` CLI is not on PATH, and no judge ran.** Fall back to
+**Exit 3 means the `claude` CLI is not on PATH, and no judge ran.** Fall back to
 dispatching in-session: one `Task` call per invocation, all in a single message, each
 given its own invocation object from `invocations.json` verbatim and told its entire
 reply must be the findings document, one JSON object and nothing else. Then write each

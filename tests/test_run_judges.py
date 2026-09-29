@@ -138,7 +138,9 @@ def test_the_judge_is_given_its_invocation_verbatim():
         assert json.loads(body) == _invocation("security-auditor")
 
 
-def test_the_session_starts_in_the_artifact_root():
+def test_the_session_reaches_the_artifact_root_without_starting_in_it():
+    """A session started inside a PR's worktree would load that tree's CLAUDE.md
+    and hooks as trusted config; the tree is granted by --add-dir instead."""
     with tempfile.TemporaryDirectory() as tmp:
         fake, invocations, findings = _setup(tmp, {
             "security-auditor": [0, json.dumps(_result(_doc("security-auditor")))],
@@ -148,9 +150,15 @@ def test_the_session_starts_in_the_artifact_root():
         invocation = _invocation("security-auditor")
         invocation["artifact"]["root"] = str(tree)
         invocations.write_text(json.dumps([invocation]))
-        _run("--invocations", str(invocations), "--findings", str(findings),
-             "--claude", str(fake))
-        assert (fake.parent / "security-auditor.cwd").read_text() == str(tree.resolve())
+        subprocess.run(
+            [sys.executable, str(REPO / "scripts/run_judges.py"),
+             "--invocations", str(invocations), "--findings", str(findings),
+             "--claude", str(fake)],
+            capture_output=True, text=True, cwd=tmp,
+        )
+        assert (fake.parent / "security-auditor.cwd").read_text() == str(Path(tmp).resolve())
+        argv = json.loads((fake.parent / "security-auditor.argv").read_text())
+        assert argv[argv.index("--add-dir") + 1] == str(tree)
 
 
 def test_an_empty_reply_is_a_lane_that_did_not_report():
@@ -200,7 +208,8 @@ def test_a_failed_session_writes_nothing_and_report_names_the_lane():
             assert f"{judge}: dispatched but wrote no findings document" in failures
 
 
-def test_a_missing_cli_exits_2_and_runs_nothing():
+def test_a_missing_cli_exits_3_and_runs_nothing():
+    """Not 2: argparse exits 2 on a usage error, which must not read as no CLI."""
     with tempfile.TemporaryDirectory() as tmp:
         _, invocations, findings = _setup(tmp, {"security-auditor": [0, ""]})
         proc = _run("--invocations", str(invocations), "--findings", str(findings),
@@ -220,6 +229,59 @@ def test_the_cli_is_found_on_path_by_default():
                     env=env)
         assert proc.returncode == 0, proc.stderr
         assert (findings / "security-auditor.json").exists()
+
+
+def test_a_reused_directory_never_passes_off_an_earlier_reply():
+    with tempfile.TemporaryDirectory() as tmp:
+        fake, invocations, findings = _setup(tmp, {"security-auditor": [1, ""]})
+        findings.mkdir()
+        (findings / "security-auditor.json").write_text(_doc("security-auditor"))
+        proc = _run("--invocations", str(invocations), "--findings", str(findings),
+                    "--claude", str(fake))
+        assert proc.returncode == 1
+        assert not (findings / "security-auditor.json").exists()
+        _, _, failures = report.load(findings, ["security-auditor"])
+        assert "security-auditor: dispatched but wrote no findings document" in failures
+
+
+def test_a_reply_that_cannot_be_written_is_that_lanes_problem_not_the_runs():
+    with tempfile.TemporaryDirectory() as tmp:
+        fake, _, _ = _setup(tmp, {
+            "security-auditor": [0, json.dumps(_result(_doc("security-auditor")))],
+        })
+        not_a_dir = Path(tmp) / "findings"
+        not_a_dir.write_text("")  # writing <findings>/<judge>.json under a file fails
+        judge, problem = run_judges.run_one(
+            _invocation("security-auditor"), ["Read"], not_a_dir, str(fake), [], 30
+        )
+        assert judge == "security-auditor"
+        assert problem.startswith("replied, but the reply could not be written")
+
+
+def test_an_unreadable_invocations_file_is_an_error_line_not_a_traceback():
+    with tempfile.TemporaryDirectory() as tmp:
+        fake, invocations, findings = _setup(tmp, {"security-auditor": [0, ""]})
+        for content in ("{not json", json.dumps({"judge": "x"}), json.dumps([{}])):
+            invocations.write_text(content)
+            proc = _run("--invocations", str(invocations), "--findings", str(findings),
+                        "--claude", str(fake))
+            assert proc.returncode == 1
+            assert "gauntlet: no judge was run" in proc.stderr
+            assert "Traceback" not in proc.stderr
+        proc = _run("--invocations", str(Path(tmp) / "absent.json"),
+                    "--findings", str(findings), "--claude", str(fake))
+        assert proc.returncode == 1 and "Traceback" not in proc.stderr
+
+
+def test_a_hung_judge_is_abandoned_at_the_timeout():
+    with tempfile.TemporaryDirectory() as tmp:
+        fake, invocations, findings = _setup(tmp, {"security-auditor": [0, ""]})
+        fake.write_text(f"#!{sys.executable}\nimport time\ntime.sleep(30)\n")
+        proc = _run("--invocations", str(invocations), "--findings", str(findings),
+                    "--claude", str(fake), "--timeout", "0.5")
+        assert proc.returncode == 1
+        assert "security-auditor: timed out after 0.5s" in proc.stderr
+        assert not (findings / "security-auditor.json").exists()
 
 
 def test_an_unregistered_judge_is_refused_before_anything_runs():
