@@ -199,11 +199,39 @@ wrong guess wastes a dispatch and never a verdict.
 
 ## 3. Dispatch
 
-Dispatch every invocation **in parallel**, one `Task` call each, in a single message.
-Give each judge its own invocation object from `invocations.json` verbatim, and tell it
-its entire reply must be the findings document, one JSON object and nothing else.
+Dispatch through the runner. It starts every judge **in parallel**, each as its own
+headless `claude -p --agent gauntlet:<judge>` session given its invocation verbatim, and
+writes each reply to `<tmp>/findings/<judge>.json` itself — so no reply passes through
+you, and you never copy one into a file:
 
-Write each reply verbatim to `<tmp>/findings/<judge>.json`.
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_judges.py" \
+  --invocations <tmp>/invocations.json --findings <tmp>/findings
+```
+
+Relay what it prints. A lane it names as failed wrote nothing, and §4 reports it as a
+lane that did not report; do not re-run it. Two things to know about the sessions it
+starts. Each is granted exactly the tools its agent file declares, without a permission
+prompt. And each loads your own Claude Code settings, plugins, and hooks, the same as any
+`claude -p` you would start. A plugin or hook that changes how the model phrases its
+replies, such as one that stamps a timestamp on each message, changes every judge's reply.
+That lane then fails to parse and is reported, which is the right outcome, but every
+lane goes with it. To turn such a plugin off for the judge sessions only, pass flags after
+`--`, and the runner forwards them to every `claude` call unchanged. `--plugin-dir`
+works the same way, for a gauntlet loaded from a directory:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_judges.py" \
+  --invocations <tmp>/invocations.json --findings <tmp>/findings \
+  -- --settings '{"enabledPlugins": {"<plugin>@<marketplace>": false}}'
+```
+
+**Exit 2 means the `claude` CLI is not on PATH, and no judge ran.** Fall back to
+dispatching in-session: one `Task` call per invocation, all in a single message, each
+given its own invocation object from `invocations.json` verbatim and told its entire
+reply must be the findings document, one JSON object and nothing else. Then write each
+reply verbatim to `<tmp>/findings/<judge>.json`. That path costs a second copy of every
+reply in your context, which is why it is the fallback.
 
 **A judge that returns something unparseable is a lane that did not report.** Keep the
 file as it came back. Do not repair it, re-ask for it, or drop it — a lane silently
@@ -213,9 +241,9 @@ compiler is built to say so out loud.
 The compiler removes exactly one wrapper itself: a code fence around the whole reply,
 which is transport packaging — `docs/findings-contract.md` puts transport out of scope —
 and never content. It parses what was inside byte-for-byte and names the unwrap in the
-report, so the lane lands and the drift still shows (#61). Write the reply verbatim
-anyway: the unwrap is the compiler's business, not yours, and a reply that does not parse
-after unwrapping is a lane that did not report, exactly as before.
+report, so the lane lands and the drift still shows (#61). On the fallback path, write
+the reply verbatim anyway: the unwrap is the compiler's business, not yours, and a reply
+that does not parse after unwrapping is a lane that did not report, exactly as before.
 
 ## 4. Compile
 

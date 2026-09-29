@@ -82,6 +82,18 @@ def test_malformed_document_is_a_failure_not_a_silent_drop():
         _has(failures, "does not satisfy the findings contract")
 
 
+def test_an_empty_reply_file_is_a_lane_that_did_not_report():
+    """What a transport writes when a judge's reply came back empty: the file
+    exists, so the lane is not absent — and it holds nothing, so it is not clean."""
+    with tempfile.TemporaryDirectory() as tmp:
+        _write(tmp, _doc("security-auditor"))
+        (Path(tmp) / "test-auditor.json").write_bytes(b"")
+        docs, _, failures = report.load(Path(tmp), ["security-auditor", "test-auditor"])
+        assert [d["judge"] for d in docs] == ["security-auditor"]
+        _has(failures, "test-auditor.json: could not be read as JSON")
+        _has(failures, "test-auditor: dispatched but wrote no findings document")
+
+
 def test_a_judge_that_wrote_nothing_is_a_failure_not_an_absence():
     with tempfile.TemporaryDirectory() as tmp:
         _write(tmp, _doc("security-auditor"))
