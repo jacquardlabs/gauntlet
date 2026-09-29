@@ -23,10 +23,12 @@ exits 3 and writes nothing, and the caller falls back to its own transport —
 `claude` call unchanged: `--plugin-dir`, `--settings`, `--disallowedTools`, and
 the like.
 
-Every session starts in the caller's working directory, never in the tree it
-judges: a session started inside a PR's worktree would load that tree's
-CLAUDE.md and `.claude/` settings — hooks included — as trusted project config.
-The tree is reached through `--add-dir` instead, which grants file access and
+Every session starts in an empty scratch directory, never in the tree it judges:
+a session started inside a PR's worktree — or inside the current checkout, when
+the invocation names no root — would load that tree's CLAUDE.md and `.claude/`
+settings, hooks included, as trusted project config. The tree (the invocation's
+`artifact.root`, else the working directory, as `dispatch.py` defaults it) is
+reached through `--add-dir` instead, which grants file access and
 loads neither. It does load the tree's `.claude/skills/`, so every session also
 runs with `--disable-slash-commands`: a judge needs no skill, and a PR's skill
 description would otherwise reach the judge as trusted context.
@@ -38,8 +40,10 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import os
 import subprocess
 import sys
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -88,7 +92,7 @@ def command(
     claude: str,
     judge: str,
     tools: Sequence[str],
-    root: Optional[str],
+    root: str,
     extra: Sequence[str],
 ) -> List[str]:
     return [
@@ -102,7 +106,8 @@ def command(
         "--disable-slash-commands",
         "--allowedTools",
         ",".join(tools),
-        *(["--add-dir", root] if root else []),
+        "--add-dir",
+        root,
         *extra,
     ]
 
@@ -135,14 +140,17 @@ def run_one(
     claude: str,
     extra: Sequence[str],
     timeout: Optional[float],
+    workdir: str,
 ) -> Tuple[str, Optional[str]]:
-    """Run one judge; write its reply. Returns (judge, problem or None)."""
+    """Run one judge from `workdir`; write its reply. Returns (judge, problem or None)."""
     judge = str(invocation["judge"])
     artifact = invocation.get("artifact")
     root = artifact.get("root") if isinstance(artifact, dict) else None
+    root = str(Path(str(root or os.getcwd())).resolve())
     try:
         proc = subprocess.run(
             command(claude, judge, tools, root, extra),
+            cwd=workdir,
             input=prompt(invocation),
             capture_output=True,
             text=True,
@@ -185,11 +193,11 @@ def run(
     # same directory would read as this run's reply. Clear each lane's file first.
     for judge in grants:
         (findings / f"{judge}.json").unlink(missing_ok=True)
-    with ThreadPoolExecutor(max_workers=max(1, jobs)) as pool:
+    with tempfile.TemporaryDirectory() as workdir, ThreadPoolExecutor(max_workers=max(1, jobs)) as pool:
         outcomes = list(
             pool.map(
                 lambda i: run_one(
-                    i, grants[str(i["judge"])], findings, claude, extra, timeout
+                    i, grants[str(i["judge"])], findings, claude, extra, timeout, workdir
                 ),
                 invocations,
             )

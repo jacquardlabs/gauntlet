@@ -156,12 +156,35 @@ def test_the_session_reaches_the_artifact_root_without_starting_in_it():
              "--claude", str(fake)],
             capture_output=True, text=True, cwd=tmp,
         )
-        assert (fake.parent / "security-auditor.cwd").read_text() == str(Path(tmp).resolve())
+        cwd = Path((fake.parent / "security-auditor.cwd").read_text())
+        assert cwd not in (Path(tmp).resolve(), tree.resolve()), cwd
         argv = json.loads((fake.parent / "security-auditor.argv").read_text())
-        assert argv[argv.index("--add-dir") + 1] == str(tree)
+        assert argv[argv.index("--add-dir") + 1] == str(tree.resolve())
         # --add-dir still loads the tree's .claude/skills/; only this flag keeps a
         # PR's skill out of the judge's context.
         assert "--disable-slash-commands" in argv
+
+
+def test_with_no_root_the_session_still_starts_outside_the_judged_checkout():
+    """With no artifact.root the judged tree is the working directory; starting the
+    session there would load its CLAUDE.md and hooks, so it is granted instead."""
+    with tempfile.TemporaryDirectory() as tmp:
+        fake, invocations, findings = _setup(tmp, {
+            "security-auditor": [0, json.dumps(_result(_doc("security-auditor")))],
+        })
+        invocation = _invocation("security-auditor")
+        invocation["artifact"].pop("root", None)
+        invocations.write_text(json.dumps([invocation]))
+        subprocess.run(
+            [sys.executable, str(REPO / "scripts/run_judges.py"),
+             "--invocations", str(invocations), "--findings", str(findings),
+             "--claude", str(fake)],
+            capture_output=True, text=True, cwd=tmp,
+        )
+        cwd = Path((fake.parent / "security-auditor.cwd").read_text())
+        assert cwd != Path(tmp).resolve(), "session started inside the judged checkout"
+        argv = json.loads((fake.parent / "security-auditor.argv").read_text())
+        assert argv[argv.index("--add-dir") + 1] == str(Path(tmp).resolve())
 
 
 def test_an_empty_reply_is_a_lane_that_did_not_report():
@@ -255,7 +278,7 @@ def test_a_reply_that_cannot_be_written_is_that_lanes_problem_not_the_runs():
         not_a_dir = Path(tmp) / "findings"
         not_a_dir.write_text("")  # writing <findings>/<judge>.json under a file fails
         judge, problem = run_judges.run_one(
-            _invocation("security-auditor"), ["Read"], not_a_dir, str(fake), [], 30
+            _invocation("security-auditor"), ["Read"], not_a_dir, str(fake), [], 30, tmp
         )
         assert judge == "security-auditor"
         assert problem.startswith("replied, but the reply could not be written")

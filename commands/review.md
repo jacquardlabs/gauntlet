@@ -229,8 +229,9 @@ What the sessions it starts can do:
   unprompted. The in-session `Task` path runs under your own permission mode, which may
   prompt. To take shell away from the judges on a run you do not trust, forward
   `--disallowedTools Bash`. Those lanes then judge with file tools alone.
-- **Each starts in your working directory, never in the tree it judges.** The worktree
-  is reached through `--add-dir`, which grants file access without loading the tree's
+- **Each starts in an empty scratch directory, never in the tree it judges** — not the
+  worktree, and not your checkout when no `--root` was given. The tree is reached
+  through `--add-dir`, which grants file access without loading the tree's
   CLAUDE.md or `.claude/` settings and hooks. It does load the tree's `.claude/skills/`,
   so the runner also passes `--disable-slash-commands`: a judge uses no skill, and a
   PR's skill is then never loaded as trusted context.
