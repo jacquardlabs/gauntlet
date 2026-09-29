@@ -95,8 +95,10 @@ Emit the canonical tier directly — there is no per-lane vocabulary to map:
 - **track** — cleanup and preference.
 
 **A critical must cite its anchor**: a reproducible broken flow — the steps, the expected
-result, and the observed one. A critical without that anchor is recorded `important` by
-the consumer at ingest.
+result, and the observed one. Since you never run the target, the observed result is what
+the source must produce, cited at `file:line`; a critical rests on source that cannot
+produce a working result. A critical without that anchor is recorded `important` by the
+consumer at ingest.
 
 ## Output
 
